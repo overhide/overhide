@@ -1,4 +1,4 @@
-# *overhide*  
+# ![](docs/logo-sm.png) *overhide*  
 
 *Over*tly *hide*: a system to store users' clandestine data within their purview and to enable rich collaborative services without the cost of private and proprietary infrastructure.
 
