@@ -4,17 +4,17 @@
 
 ## About
 
-At it's core *overhide* is solving a people problem.  Consider an app developer who wants to create something, but doesn't want to front time, money, resources into infrastructure to support the solution.  Further consider a user who wants to use said service, but doesn't want to worry about who they're trusting with their data and information.  Although both likely want the ease of centralized hubs for discovery--e.g. app stores--they might not want the burden of maintaining some centralized relationship: another account/login/network.
+At it's core *overhide* is solving a people problem.  Consider an app developer who wants to create something, but doesn't want to front time, money, resources, into infrastructure to support the solution.  Further consider a user who wants to use said service, but doesn't want to worry about who they're trusting with their data and information.  Although both likely want the ease of centralized hubs for discovery--e.g. app stores--they might not want the burden of maintaining some centralized relationship: another account/login/network.
 
 For certain solutions--*overhide* isn't universally applicable--we want to free the app developer from the standard deployment model and free the user from trusting yet another provider.
 
-Are users ready for *overhide*?  Although we all enjoy the benefits of centralization for discovery and distribution--e.g. app stores--we do want the freedom of not locking-in, owning our data, keeping our particulars to ourselves.  
+Are users ready for *overhide*?  Although we all enjoy the benefits of centralization for discovery and distribution--e.g. app stores--we do want the freedom of not locking-in, owning our data, and keeping our particulars to ourselves.  
 
-Services built on top of *overhide* can be as decentralized as the service author enables.  An app can be fully decentralized leveraging some distributed implementation of the *overhide* (data) broker, and some blockchain solution for remuneration.  Or said app could start with a simple on-premises instance of an *overhide* broker and no remuneration structure.
+Services built on top of *overhide* can be as decentralized as the service author enables.  An app can be fully decentralized leveraging a distributed implementation of the *overhide* (data) broker, and a blockchain solution for remuneration.  Or said app could start with a simple on-premises instance of an *overhide* broker and no remuneration structure.
 
 ---
 
-Within this repo you will find API specifications, API reference implementations, JavaScript client library, and tooling, that act together to broker storing of a service's user data with qualities described above.
+Within this repo you will find documentation and API specifications relevant to *overhide*.  Implementations of these APIs constitute *overhide* deployments that act together to broker storing of a service's user data with qualities described above.
 
 The heart of *overhide* is a "broker" between a "service" and a "user".  It is a data-store that is completely uninterested in what the "service" is and who the "user" is.
 
@@ -22,15 +22,16 @@ A "service" could be an app who's authors don't want to be in the business of ma
 
 A "user" could be a person who wants to own all the data used by the "service" and wants to remain pseudonymous to both the *overhide* "broker" instance and the "service".
 
-For reference, below is a model of the above mentioned components.  In green are the artifacts provided by this repository.
+For reference, below is a sample model of the above mentioned components.  Green arrows point to the artifacts documented by this repository.
 
 ![components](docs/provided.png)
 
-* a user can interface with a configured blochchain external to *overhide*
-* purview of "service" to expose blockchain details via service's UX; e.g. pseudonymously add funds for "broker" or "service" subscription.  *overhide* not involved; e.g. "service" could expose UI and use blockchain's web3 APIs to manage funds.
-* a user uses the "service" to work with data (e.g. persist application data)
-* service uses "client library" to interface with *overhide* broker
-* *overhide* provides "tooling" for working with data stored by broker: (e.g. import/export of user data)
+* a user interfaces with a configured blockchain external to *overhide*
+* a user uses the "service" to persist application data with *overhide*
+* a user uses some "tooling" to import/export their data on their own terms, external to the application.
+* both the application service and tooling use the "client library" to interface with an *overhide* broker
+
+The above is one model of possible access patterns.  There is nothing precluding a service or tooling from using the APIs directly, foregoing a client library.
 
 ### Qualities of *overhide*
 
