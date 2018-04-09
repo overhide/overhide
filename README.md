@@ -36,8 +36,8 @@ The above is one model of possible access patterns.  There is nothing precluding
 ### Qualities of *overhide*
 
 * open source specifications: to enable storing of data in the open
- * broker API for data storage
- * remuneration API to enable payment of brokerage and service subscriptions
+   * broker API for data storage
+   * remuneration API to enable payment of brokerage and service subscriptions
 * as available and reliable as the technology stack implementing the specification
 * provides ability to remunerate brokerage and service provider via blockchain: pseudonymous subscription fees
 
