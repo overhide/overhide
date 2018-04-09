@@ -147,3 +147,31 @@ Backchannel--if enabled by *group-owner*--is to enqueue messages from anyone (pu
 A *user-key* owned by a *group-owner* but meant for a specific member: established between group-owner and member user to communicate user's view of group data.
 
 As an example, a *member-group-key* could be established by having a user post a subscription message to the *group-key* along with the user's *secrets[?]<sub>pub</sub>*.  The *group-owner* would use *(secrets[?]<sub>pub</sub>◠key)<sub>hash</sub>* for the first SHA256 of a *member-group-key*, *key<sub>hash</sub>* for the second SHA256, and start setting a value at that *datastore-key*.  The value would be *secrets[?]<sub>pub</sub>* encrypted such that only the user can read it with their *secrets[?]<sub>pub</sub>⇒*.  
+
+###### identity
+
+The broker datastore keeps a mapping of each *datastore-key* to some user, group, or service provider.  This is known as an *identity*.
+
+See the [identity](identity.md) write-up.
+
+###### user-address
+
+When dealing with *identity*, this is a public address of a user.  Likely a blockchain public address (hash):  a user's *blockchain<sub>pub</sub>* key.
+
+A user using *overhide* for some service will know their *user-address* as well as be able to prove *identity* using their knowledge of the corresponding private key.  For *blockchain<sub>pub</sub>* the user would prove they know their *blockchain<sub>priv</sub>*.
+
+###### broker-address
+
+When dealing with *identity*, this is a public address of an *overhide* broker.  Likely a blockchain public address (hash).
+
+A recent enough transaction from a *user-address* to a *broker-address* indicates a subscription to the broker's services.
+
+A broker could issue different public addresses for different tiers of service.
+
+###### service-address
+
+When dealing with *identity*, this is a public address of some service provider brokered by *overhide*.  Likely a blockchain public address (hash).
+
+A recent enough transaction from a *user-address* to a *service-address* indicates a subscription to the service.
+
+A service provider could issue different public addresses for different tiers of service.

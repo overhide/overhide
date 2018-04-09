@@ -4,7 +4,7 @@
 
 ## About
 
-*overhide* is solving a people problem.  Consider an app developer who wants to create something, but doesn't want to front time, money, resources into infrastructure to support the solution.  Further consider a user who wants to use said service, but doesn't want to worry about who they're trusting with their data and information.  Although both likely want the ease of centralized hubs for discovery--e.g. app stores--they might not want the burden of maintaining some centralized relationship: another account/login/network.
+At it's core *overhide* is solving a people problem.  Consider an app developer who wants to create something, but doesn't want to front time, money, resources into infrastructure to support the solution.  Further consider a user who wants to use said service, but doesn't want to worry about who they're trusting with their data and information.  Although both likely want the ease of centralized hubs for discovery--e.g. app stores--they might not want the burden of maintaining some centralized relationship: another account/login/network.
 
 For certain solutions--*overhide* isn't universally applicable--we want to free the app developer from the standard deployment model and free the user from trusting yet another provider.
 
@@ -70,13 +70,13 @@ Please refer to the [glossary](docs/glossary.md) to get comfortable with terms a
 
 Aim of *overhide* is to keep data private.  Anonymity is an important part of privacy.  See how [*overhide* leverages pseudonymous identity](docs/identity.md) to remunerate brokers.
 
-## [Storage API](docs/storage-api/index.md)
+## [Broker API](docs/broker-api/index.md)
 
-[HTTP API](docs/storage-api/index.md) exposed by *overhide* broker, provides access to broker's services.
+An [API](docs/broker-api/index.md) exposed by *overhide* broker, provides access to broker's services.
 
-## [Contract API](docs/contract-api/index.md)
+## [Remuneration API](docs/remuneration-api/index.md)
 
-[Ethereum API](docs/contract-api/index.md) exposed by a contract on some blockchain, to be used to remunerate *overhide* broker for their service.
+An [API](docs/remuneration-api/index.md) to facilitate proof of payment for remunerating an *overhide* broker or a brokered service.  Likely abstracting some blockchain.
 
 ## [Client Library](docs/client-lib/index.md)
 
