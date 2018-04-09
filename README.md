@@ -44,8 +44,9 @@ For reference, below is a model of the above mentioned components.  In green are
 
 * no need to administer a backend: outsource reliability and availability to experts
 * no need to be responsible for user data: empower user with their data security, no data breaches
+* General Data Protection Regulation (GDPR) compliance
 * no need to worry about who the users are: they're pseudonymous shadows
-* can still collect service subscription fees using APIs via blockchain.
+* can still collect service subscription fees using APIs via blockchain
 * retains option to implement own *overhide* brokerage, own blockchain/tokens (leverage that business model); but *overhide* won't help making it proprietary
 
 ### Benefits to User
