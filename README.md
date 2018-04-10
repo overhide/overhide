@@ -71,9 +71,9 @@ Please refer to the [glossary](docs/glossary.md) to get comfortable with terms a
 
 Aim of *overhide* is to keep data private.  Anonymity is an important part of privacy.  See how [*overhide* leverages pseudonymous identity](docs/identity.md) to remunerate brokers.
 
-## [Broker API](docs/broker-api/index.md)
+## [Broker API](docs/broker-api/index.html)
 
-An [API](docs/broker-api/index.md) exposed by *overhide* broker, provides access to broker's services.
+An [API](https://jakubner.github.io/overhide/docs/index.html) exposed by *overhide* broker, provides access to broker's services.
 
 ## [Remuneration API](docs/remuneration-api/index.md)
 
