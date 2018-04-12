@@ -1,4 +1,4 @@
-# ![](docs/logo-sm.png) *overhide*  
+# ![](docs/.images/logo-sm.png) *overhide*  
 
 *Over*tly *hide*: a system to store users' clandestine data within their purview and to enable rich collaborative services without the cost of private and proprietary infrastructure.
 
@@ -24,7 +24,7 @@ A "user" could be a person who wants to own all the data used by the "service" a
 
 For reference, below is a sample model of the above mentioned components.  Green arrows point to the artifacts documented by this repository.
 
-![components](docs/provided.png)
+![components](docs/.images/provided.png)
 
 * a user interfaces with a configured blockchain external to *overhide*
 * a user uses the "service" to persist application data with *overhide*
@@ -47,14 +47,20 @@ The above is one model of possible access patterns.  There is nothing precluding
 * no need to be responsible for user data: empower user with their data security, no data breaches
 * General Data Protection Regulation (GDPR) compliance
 * no need to worry about who the users are: they're pseudonymous shadows
+* no need to deal with user passwords, password complexity, password recovery
 * can still collect service subscription fees using APIs via blockchain
 * retains option to implement own *overhide* brokerage, own blockchain/tokens (leverage that business model); but *overhide* won't help making it proprietary
 
 ### Benefits to User
 
 * user owns their data
-* data is as secure as the user's access to it, and service's use of it
-* depending on service, user might have flexibility to choose own *overhide* broker
+* service secures user's data client side--secured before leaves the browser
+* user can validate security of their data: user has transparency into *overhide* broker to validate encryption by service
+* user has the option to treat their online data like any other local computer application data; back it up, export, import, move providers.  
+   * depending on service, user might have flexibility to choose own *overhide* broker
+* user continues to have all the availability and reliability benefits of storing data in the cloud
+* user owns their passwords: store them in a browser wallet
+   * security and recovery as rich as the wallet allows
 
 ### Expected Use Cases
 
@@ -71,18 +77,18 @@ Please refer to the [glossary](docs/glossary.md) to get comfortable with terms a
 
 Aim of *overhide* is to keep data private.  Anonymity is an important part of privacy.  See how [*overhide* leverages pseudonymous identity](docs/identity.md) to remunerate brokers.
 
-## [Broker API](docs/broker-api/index.html)
+## [Broker API](docs/.generated/broker.md)
 
-An [API](https://jakubner.github.io/overhide/docs/index.html) exposed by *overhide* broker, provides access to broker's services.
+An [API](docs/.generated/broker.md) exposed by *overhide* broker, provides access to broker's services.
 
-## [Remuneration API](docs/remuneration-api/index.md)
+## [Remuneration API](docs/.generated/remuneration.md)
 
-An [API](docs/remuneration-api/index.md) to facilitate proof of payment for remunerating an *overhide* broker or a brokered service.  Likely abstracting some blockchain.
+An [API](docs/.generated/remuneration.md) to facilitate proof of payment for remunerating an *overhide* broker or a brokered service.  Likely abstracting some blockchain.
 
-## [Client Library](docs/client-lib/index.md)
+## [Client Library](docs/.generated/client.md)
 
-[JavaScript library](docs/client-lib/index.md) to be used by application (service), wraps/abstracts the APIs.
+[JavaScript library](docs/.generated/client.md) to be used by application (service), wraps/abstracts the APIs.
 
-## [Sample Use Cases](docs/use-cases/index.md)
+## [Sample Use Cases](docs/usecases.md)
 
-[Verbiage](docs/use-cases/index.md) documenting sample deployment scenarios and corresponding collaboration flows to demonstrate *overhide*.
+[Verbiage](docs/usecases.md) documenting sample deployment scenarios and corresponding collaboration flows to demonstrate *overhide*.
