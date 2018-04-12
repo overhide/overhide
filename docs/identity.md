@@ -22,9 +22,11 @@ The *identity* could represent a user, a group, or a service provider.
 
 ## Identity Authority
 
-Being authenticated as some *identity* within an *overhide* broker system means ability to create new *datastore-keys* with *identity* as owner, ability to write to such keys, and ability to read any *datastore-key* in the whole system.
+Being authenticated as an "active" *identity* within an *overhide* broker system means ability to create new *datastore-keys* with *identity* as owner, ability to write to such keys, and ability to read any *datastore-key* in the whole system.
 
-Read/write usage rates and limits for an *overhide* broker system are also authorized via the *identity*:
+Only "active" *identities* are authorized.  An "active" *identity* is an *identity* with an active subscription.
+
+Specific read/write usage rates and limits to an *overhide* broker system are also authorized per "active" *identity*:
 
 * read rate (bytes/second)
 * read limit (bytes)
@@ -35,7 +37,7 @@ Read/write usage rates and limits for an *overhide* broker system are also autho
 
 A user authenticates in order to establish their *identity* for a session with an *overhide* broker.
 
-An *identity* is a *secret-phrase<sub>hash</sub>* such that *F(secret-phrase, user-address, secret-phrase<sub>sig(user-address)</sub>)* returns 'true' where *secret-phrase*, *user-address*, and *secret-phrase<sub>sig(user-address)</sub>* are provided by the authenticated user.  *F(..)* returns 'true' if *secret-phrase* checks out against *secret-phrase<sub>sig(user-address)</sub>*.  
+An *identity* is a *secret-phrase<sub>hash</sub>* such that *F(secret-phrase, user-address, user-address<sub>sig</sub>(secret-phrase))* returns 'true' where *secret-phrase*, *user-address*, and *user-address<sub>sig</sub>(secret-phrase)* are provided by the authenticated user.  *F(..)* returns 'true' if *secret-phrase* checks out against *user-address<sub>sig</sub>(secret-phrase)*.  
 
 *user-address* is the public address of a user: likely a blockchain public-key.  To prove that the user owns the provided *user-address*, the user signs the *secret-phrase* with *user-address<sub>priv</sub>*: the corresponding blockchain private-key.  
 
@@ -45,14 +47,25 @@ The *secret-phrase* is something only the authenticated user is privy to.  The *
 
 The *user-address*--being a blockchain address--is used by the *overhide* broker to check a user's subscription and authorities: access levels to the broker system.  An *overhide* broker can check the blockchain for a transaction from the *user-address* to the broker's *broker-address*.  If the transaction shows sufficient fees paid sufficiently recently (timestamp check), the user is subscribed.
 
+A subscribed user has an "active" *identity*.  The "active" state of an *identity* is checked explicitly on authentication.  An *overhide* broker tracks two expiration dates for each *identity*:
+
+1. the *active-until* date: date the *identity* subscription expires.
+1. the *available-until* date: date after which the *overhide* broker may delete all data owned by *identity*.
+
+*active-until* may be same or earlier than *available-until* date.
+
+*active-until* and *available-until* will be updated on authentication as per the most recent payment from *user-address* to *broker-address*.
+
 #### *secret-phrase* Security
 
 Note that the *overhide* broker is privy to the user's *secret-phrase* during runtime.  As such it's possible the *overhide* broker can be used to expose users' *secret-phrases* such that users' data can be deleted or corrupted: the data cannot be deciphered as the *datastore-value* is encrypted by keys known only to the users themselves.  Therefore the *overhide* broker must be trusted to not give up users' *secret-phrases* as they're passed in.  In reality if an *overhide* broker implementation cannot be trusted in this situation, it likely cannot be trusted with it's underlying data storage either.  Such breaches of trust would damage an *overhide* broker's reputation because of the data-loss.
 
-An *overhide* broker has no reason to expose *identities*.  These should always be internal to the broker system.
+Similarly, an *overhide* broker has no reason to expose *identities*.  These should always be internal to the broker system.
 
 ## Two Address Authentication:  Authorize use of Service
 
 The above "Subscriptions" section describes how an *overhide* broker can verify validity of a user's subscription to use the broker.
 
 The same mechanism of looking up transactions from *user-address* to *broker-address* can be used to validate transactions to other public addresses, for example from the *user-address* to a *service-address*.
+
+This is just a utility mechanism and doesn't tie into the *identity* and its *active-until* or *available-until* metadata.
