@@ -12,13 +12,24 @@ We want the ability to have a public blockchain address prove it has paid a "sub
 
 It'll always be publicly known that a pseudonym subscribes to the broker:  broker's public blockchain address is well known and advertised and the pseudonym's payment is in the public ledger.  What's inhibited is tracability of which data is tied to the pseudonym.
 
-An extension of this quality is a desire for a subscriber's blockchain address to pay for different sets of datastore storage--different services, apps--without anyone but the subscriber being able to correlate the sets to their blockchain pseudonym.
-
 ## Identity Tracked by Broker
+
+An *identity* represent a user, a group, or a service provider.  
 
 The broker datastore keeps a mapping of each *datastore-key* to an *identity*.
 
-The *identity* could represent a user, a group, or a service provider.
+Additionally, the broker datastore keeps a mapping of each *user-address* to an *identity'*.
+
+Both *identity* and *identity'* are functions of some user provided secret, *secret-phrase*.  *identity* cannot be correlated to *identity'* without at least knowing this *secret-phrase*.
+
+Tracking *datastore-keys* by *identity* allows to prove data ownership.
+
+Tracking *user-address* by *identity'* ensures only a single *secret-phrase* is used for a given *user-address* within the system.  This enables fair remuneration to the broker:  prevents a user from using multiple *secret-phrases* for a single *user-address* to double-dip on a paid-for subscription.
+
+Specifically:
+
+   * *datastore-key* maps to *user-address<sub>hash</sub>(secret-phrase)*: *identity* is a hash of *secret-phrase* salted with *user-address*.
+   * *user-address* maps to *broker-salt<sub>hash</sub>(secret-phrase)*: *identity'* is a hash of *secret-phrase* salted with some *overhide* broker specific salt.
 
 ## Identity Authority
 
@@ -28,10 +39,9 @@ Only "active" *identities* are authorized.  An "active" *identity* is an *identi
 
 Specific read/write usage rates and limits to an *overhide* broker system are also authorized per "active" *identity*:
 
-* read rate (bytes/second)
-* read limit (bytes)
-* write rate (bytes/second)
-* write limit (bytes)
+   * read rate (bytes/second)
+   * write rate (bytes/second)
+   * storage limit (bytes)
 
 ## Identity Authentication
 
@@ -42,6 +52,12 @@ An *identity* is a *user-address<sub>hash</sub>(secret-phrase)* such that *F(sec
 *user-address* is the public address of a user: likely a blockchain public-key.  To prove that the user owns the provided *user-address*, the user signs the *secret-phrase* with *user-address<sub>priv</sub>*: the corresponding blockchain private-key.  
 
 The *secret-phrase* is something only the authenticated user is privy to.  The *overhide* broker hashes it to create an *identity*.  In the future to prove one's *identity* the user must know the *secret-phrase* such that it hashes to the *identity*, proving the user knows the *secret-phrase* corresponding to said *identity*.
+
+During authentication the broker system also verifies that there is a single mapping from the provided *user-address* and *secret-phrase* to a *broker-salt<sub>hash</sub>(secret-phrase)*.  If the mapping exists and the computed hash doesn't equal the stored hash, the provided *secret-phrase* is different from one provided earlier.  As such the *user-address* already has an *identity* in the system with a different *secret-phrase*, and the *secret-phrase* provided at no cannot be accepted.
+
+If the user remembers the previous *secret-phrase*, the user's original *identity* can be calculated and all *datastore-keys* owned by that *identity* can be changed to be owned by an *identity* with a new *secret-phrase*:  somewhat akin to a password change.  The *user-address* could be changed as part of this operation as well.
+
+If the user doesn't remember the previous *secret-phrase*, the original *identity* cannot be calculated, all *datastore-keys* owned by that *identity* are unrecoverable.
 
 #### Subscriptions
 
@@ -55,8 +71,8 @@ Regardless of the technology behind a *remuneration API*, the API is there to te
 
 A subscribed user is a user with an "active" *identity*.  The "active" state of an *identity* is checked explicitly on authentication.  An *overhide* broker tracks two expiration dates for each *identity*:
 
-1. the *active-until* date: date the *identity* subscription expires.
-1. the *available-until* date: date after which the *overhide* broker may delete all data owned by *identity*.
+   1. the *active-until* date: date the *identity* subscription expires.
+   1. the *available-until* date: date after which the *overhide* broker may delete all data owned by *identity*.
 
 *active-until* may be same or earlier than *available-until* date.
 
