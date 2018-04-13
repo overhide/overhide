@@ -37,7 +37,7 @@ Specific read/write usage rates and limits to an *overhide* broker system are al
 
 A user authenticates in order to establish their *identity* for a session with an *overhide* broker.
 
-An *identity* is a *secret-phrase<sub>hash</sub>* such that *F(secret-phrase, user-address, user-address<sub>sig</sub>(secret-phrase))* returns 'true' where *secret-phrase*, *user-address*, and *user-address<sub>sig</sub>(secret-phrase)* are provided by the authenticated user.  *F(..)* returns 'true' if *secret-phrase* checks out against *user-address<sub>sig</sub>(secret-phrase)*.  
+An *identity* is a *user-address<sub>hash</sub>(secret-phrase)* such that *F(secret-phrase, user-address, user-address<sub>sig</sub>(secret-phrase))* returns 'true' where *secret-phrase*, *user-address*, and *user-address<sub>sig</sub>(secret-phrase)* are provided by the authenticated user.  *F(..)* returns 'true' if *secret-phrase* checks out against *user-address<sub>sig</sub>(secret-phrase)*.  
 
 *user-address* is the public address of a user: likely a blockchain public-key.  To prove that the user owns the provided *user-address*, the user signs the *secret-phrase* with *user-address<sub>priv</sub>*: the corresponding blockchain private-key.  
 
@@ -45,9 +45,15 @@ The *secret-phrase* is something only the authenticated user is privy to.  The *
 
 #### Subscriptions
 
-The *user-address*--being a blockchain address--is used by the *overhide* broker to check a user's subscription and authorities: access levels to the broker system.  An *overhide* broker can check the blockchain for a transaction from the *user-address* to the broker's *broker-address*.  If the transaction shows sufficient fees paid sufficiently recently (timestamp check), the user is subscribed.
+*overhide* isn't concerned with the exact mechanism for subscriptions and recurring subscriptions outside of what's made available with some *remuneration API* implementation.  There is no *overhide* specific token.  Implementations of the *renumeration API* abstract different blockchains for subscription purposes.  
 
-A subscribed user has an "active" *identity*.  The "active" state of an *identity* is checked explicitly on authentication.  An *overhide* broker tracks two expiration dates for each *identity*:
+At a minimum a cryptocurrency could be paid from a *user-address* to *broker-address* and a simple transaction timestamp check is all that can be done to set subscription expiration dates.  The *remuneration API* abstracting said blockchain would make this information available to the *overhide* broker.  The *user-address*--being a blockchain address--is used by the *overhide* broker to check a user's subscription and authorities: access levels to the broker system.  If the transaction shows sufficient fees paid sufficiently recently (timestamp check), the user is subscribed.
+
+More capable blockchain implementations could have more advanced smart contracts that make the funds available at a specific date (subscription renewal).  Again, these mechanisms and complexities are hidden behind the specific *remuneration API*.
+
+Regardless of the technology behind a *remuneration API*, the API is there to tell the *overhide* broker if an *identity* is "active" and at what levels.
+
+A subscribed user is a user with an "active" *identity*.  The "active" state of an *identity* is checked explicitly on authentication.  An *overhide* broker tracks two expiration dates for each *identity*:
 
 1. the *active-until* date: date the *identity* subscription expires.
 1. the *available-until* date: date after which the *overhide* broker may delete all data owned by *identity*.
