@@ -96,13 +96,33 @@ These domain human readable keys are referred to as *domain-keys* in our writeup
 
 Some form of a security token; salt, public key, private key, symmetric key, whatever makes sense in a given context.
 
+#### segment-key
+
+In *overhide* the *segment-key* is a function of the domain-key.
+
+Each *segment-key* is 64 bytes long.
+
+In the reference implementation of the *client library* a *segment-key* is a *crypto-key<sub>hash</sub>(domain-key)◠crypto-key<sub>sym</sub>(domain-key)*: a hash for the first 32 bytes (SHA256) followed by a 32 byte ciphertext (2 AES blocks), both using the same *crypto-key*.  The idea being that a concatenation of these two reduces already miniscule chance of conflict.
+
 #### datastore-key
 
-In *overhide* the *datastore-key* is a function of the domain-key.
+A key used by *overhide* broker's datastore.
 
-Each *datastore-key* is 64 bytes long.
+It is a *segment-key* combined with an *identity*.
 
-In the reference implementation of the *client library* a *datastore-key* is a *crypto-key<sub>hash</sub>(domain-key)◠crypto-key<sub>sym</sub>(domain-key)*: a hash for the first 32 bytes (SHA256) followed by a 32 byte ciphertext (2 AES blocks), both using the same *crypto-key*.  The idea being that a concatenation of these two reduces already miniscule chance of conflict.
+*segment-keys* are *datastore-keys* segmented by *identity*:  *datastore-keys* with *identity* removed are *segment-keys*.
+
+*Identities* are combined with *segment-keys* to create *datastore-keys* in the form:  *segment-key*@*identity*.
+
+#### identity
+
+The broker datastore keeps an ownership mapping of each *datastore-key* to some user, group, or service provider--some owning *identity*.
+
+A *datastore-key* itself is a function of *identity*, which usually is the same value as the owning *identity*.
+
+*Identities* are hashes: big values.  There exist special *identities*, values including 0 through 9999, that are restricted from being assigned to actual owners, they are considered "public".  *group-keys* usually end up tied to "public" identities.  Note that *datastore-keys* tied to "public" identities are still owned by someone, the owner's *identity* value is simply not advertised.
+
+See the [identity](identity.md) write-up.
 
 #### datastore-value
 
@@ -113,6 +133,8 @@ In reference implementation of the *client library* a *datastore-value* is a *cr
 #### key-owner
 
 Entity that created a certain *datastore-key* and therefore owns that key.
+
+A *key-owner* has a unique *identity* in the system.
 
 The *key-owner* is the only entity that can read data posted to a *datastore-key*, see *backchannel* below.
 
@@ -155,12 +177,6 @@ Backchannel--if enabled by *group-owner*--is to enqueue messages from anyone (pu
 A *user-key* owned by a *group-owner* but meant for a specific member: established between group-owner and member user to communicate user's view of group data.
 
 As an example, a *member-group-key* could be established by having a user post a subscription message to a group's *group-key* along with the user's *secrets[?]<sub>pub</sub>*.  The *group-owner* would use the *secrets[?]<sub>pub</sub>* as the *member-group-key*'s *crypto-key*.  As such the value would be *secrets[?]<sub>pub</sub>* encrypted such that only the user can read it with their *secrets[?]<sub>pub</sub>⇒*.  
-
-#### identity
-
-The broker datastore keeps a mapping of each *datastore-key* to some user, group, or service provider.  This is known as an *identity*.
-
-See the [identity](identity.md) write-up.
 
 #### user-address
 

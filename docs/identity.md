@@ -16,7 +16,7 @@ It'll always be publicly known that a pseudonym subscribes to the broker:  broke
 
 An *identity* represent a user, a group, or a service provider.  
 
-The broker datastore keeps a mapping of each *datastore-key* to an *identity*.
+The broker datastore keeps a mapping of each *datastore-key* to an owning *identity*.
 
 Additionally, the broker datastore keeps a mapping of each *user-address* to an *identity'*.
 
