@@ -102,7 +102,7 @@ In *overhide* the *datastore-key* is a function of the domain-key.
 
 Each *datastore-key* is 64 bytes long.
 
-In the reference implementation of the *client library* a *datastore-key* is a *crypto-key<sub>hash</sub>(domain-key)crypto-key<sub>sym</sub>(domain-key)*: a hash for the first 32 bytes (SHA256) followed by a 32 byte ciphertext (2 AES blocks), both using the same *crypto-key*.  The idea being that a concatenation of these two reduces already miniscule chance of conflict.
+In the reference implementation of the *client library* a *datastore-key* is a *crypto-key<sub>hash</sub>(domain-key)◠crypto-key<sub>sym</sub>(domain-key)*: a hash for the first 32 bytes (SHA256) followed by a 32 byte ciphertext (2 AES blocks), both using the same *crypto-key*.  The idea being that a concatenation of these two reduces already miniscule chance of conflict.
 
 #### datastore-value
 
