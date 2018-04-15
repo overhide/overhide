@@ -46,7 +46,7 @@ Result (ciphertext) of a *payload* encrypted with the specified key.
 
 Definitions below are not in alphabetic order but ordered increasing in specificity to our system.  
 
-For example a *member-channel* is a function of *user-key*: F(user-key). which is an instance of *datastore-key*.  As such these are defined in the order *datastore-key* first, then *user-key*, then *member-channel*.
+For example a *member-group-key* is a function of *user-key*: F(user-key). which is an instance of *datastore-key*.  As such these are defined in the order *datastore-key* first, then *user-key*, then *member-group-key*.
 
 > **service, user, group, group-owner, member**
 >
@@ -82,9 +82,11 @@ The broker doesn't enforce that the keys nor values are encrypted.  This mechani
 
 The keys have an additional property of being a queue as a backchannel.
 
-#### client library (wallet)
+#### overhide.js (keyring library)
 
 Software library, dependency for services communicating to a *broker*.  Takes care of establishing identity, hashing and ciphering domain keys and values for *broker* datastore to persist.
+
+Some definitions here pertain to this specific reference implementation.
 
 #### domain-key
 
@@ -102,7 +104,7 @@ In *overhide* the *segment-key* is a function of the domain-key.
 
 Each *segment-key* is 64 bytes long.
 
-In the reference implementation of the *client library* a *segment-key* is a *crypto-key<sub>hash</sub>(domain-key)◠crypto-key<sub>sym</sub>(domain-key)*: a hash for the first 32 bytes (SHA256) followed by a 32 byte ciphertext (2 AES blocks), both using the same *crypto-key*.  The idea being that a concatenation of these two reduces already miniscule chance of conflict.
+In the *overhide.js* a *segment-key* is a *crypto-key<sub>hash</sub>(domain-key)◠crypto-key<sub>sym</sub>(domain-key)*: a hash for the first 32 bytes (SHA256) followed by a 32 byte ciphertext (2 AES blocks), both using the same *crypto-key*.  The idea being that a concatenation of these two reduces already miniscule chance of conflict.
 
 #### datastore-key
 
@@ -126,9 +128,9 @@ See the [identity](identity.md) write-up.
 
 #### datastore-value
 
-Each datastore-value is somehow encrypted.  Details of encryption depend on the client library (wallet).  
+Each datastore-value is somehow encrypted.  Details of encryption depend on the client library.  
 
-In reference implementation of the *client library* a *datastore-value* is a *crypto-key<sub>sym</sub>(payload)*: a payload value AES-encrypted with some *crypto-key*.
+In *overhide.js* a *datastore-value* is a *crypto-key<sub>sym</sub>(payload)*: a payload value AES-encrypted with some *crypto-key*.
 
 #### key-owner
 
@@ -152,13 +154,13 @@ These messages can be dequeued by the *key-owner*.
 
 A type of a *datastore-key* with some individual user as the *key-owner*.
 
-In the reference implementation of the *client library* it's a function of a *domain-key* and a private key from one of the user's secrets; the private key is used as the *crypto-key* to salt and encrypt the *domain-key*.
+In *overhide.js* it's a function of a *domain-key* and a private key from one of the user's secrets; the private key is used as the *crypto-key* to salt and encrypt the *domain-key*.
 
 #### group-key
 
 A type of a *datastore-key* used to convey a value to a group: some *group-owner* is the *key-owner*.
 
-In the reference implementation of the *client library* it's a function of a *domain-key* and a public key from the *group-owner* and shared with the group; the public key is used as the *crypto-key* to salt and encrypt the *domain-key*.
+In *overhide.js* it's a function of a *domain-key* and a public key from the *group-owner* and shared with the group; the public key is used as the *crypto-key* to salt and encrypt the *domain-key*.
 
 #### psa-group-key
 
