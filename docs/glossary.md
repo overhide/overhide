@@ -150,29 +150,37 @@ These queues form a *backchannel* for a particular *datastore-key*.
 
 These messages can be dequeued by the *key-owner*.
 
+A *backchannel*'s publisher can be configured to be "any", "self" or "signed".  *backchannels* configured for "any" publisher allows anyone to post a message to it.  *backchannels* configured with "signed" publishers are configured with a list of public keys allowed to publish a message to the *backchannel*:  checked for signature at time of posting.  By default *backchannels* are restricted to "self":  only the *datastore-key* owner can publish:  *datastore-key* owner can always publish to the *datastore-key's* *backchannel*.
+
+In *overhide.js* all *backchannel* messages are public key encrypted to be private key decrypted by the owner.
+
 #### user-key
 
 A type of a *datastore-key* with some individual user as the *key-owner*.
 
-In *overhide.js* it's a function of a *domain-key* and a private key from one of the user's secrets; the private key is used as the *crypto-key* to salt and encrypt the *domain-key*.
+In *overhide.js* it's a function of a *domain-key* and a private key from one of the user's secrets; the private key is used as the *crypto-key*.
+
+Specifically *user-key<sub>priv</sub>* denotes the private key used for the *crypto-key*:
 
 #### group-key
 
 A type of a *datastore-key* used to convey a value to a group: some *group-owner* is the *key-owner*.
 
-In *overhide.js* it's a function of a *domain-key* and a public key from the *group-owner* and shared with the group; the public key is used as the *crypto-key* to salt and encrypt the *domain-key*.
+In *overhide.js* it's a function of a *domain-key* and a public key from the *group-owner* and shared with the group; the public key is used as the *crypto-key*.
+
+Specifically *group-key<sub>pub</sub>* denotes one of group-owner's public keys used for the *crypto-key*:
 
 #### psa-group-key
 
-A *group-key* used to convey public information from the *group-owner*: value is *group-key<sub>pub</sub>* decryptable; the *datastore-key*'s *crypto-key* is *group-key<sub>pub</sub>⇒* and encrypted by *group-owner*.  Since the *group-key* decryptable value is public, it's considered a PSA: the public at large can read it.
+A *group-key* used to convey public information from the *group-owner*.  A *group-key* owner's public key is made available publicly: *group-key<sub>pub</sub>*.  The value is *group-key<sub>pub</sub>* decryptable; the *datastore-key*'s *crypto-key* is *group-key<sub>pub</sub>* and encrypted by *group-owner*.  Since the *group-key* decryptable value is public, it's considered a PSA: the public at large can read it.
 
- Backchannel--if enabled by *group-owner*--is to enqueue messages from anyone (public) by encrypting with *group-key<sub>pub</sub>*.  Decryptable by *group-owner* with the *group-key<sub>pub</sub>⇒*
+Backchannel--if enabled by *group-owner*--is to enqueue messages from publishers by encrypting with *group-key<sub>pub</sub>*.  Decryptable by *group-owner* with the *group-key<sub>pub</sub>⇒*.
 
 #### members-group-key
 
-A *group-key* used to convey information to all members of a group: value is decryptable by members only--*group-key<sub>pub</sub>⇒* or *k<sub>sym</sub>* encrypted by *group-owner*.  Decryption key (either *group-key<sub>pub</sub>* or *k<sub>sym</sub>*) disseminated via each member's *member-channel*, for member eyes only.
+A *group-key* used to convey information to all members of a group: value is decryptable by members only--*crypto-key* is one of group owner's public keys--*group-key<sub>pub</sub>*--as encrypted by *group-owner* and shared with members.
 
-Backchannel--if enabled by *group-owner*--is to enqueue messages from anyone (public) by encrypting with *group-key<sub>pub</sub>* or *k<sub>sym</sub>*.  Decryptable by *group-owner* with the *group-key<sub>pub</sub>⇒* or *k<sub>sym</sub>*.
+Backchannel--if enabled by *group-owner*--is to enqueue messages from publishers by encrypting with the membership *group-key<sub>pub</sub>*.  Decryptable by *group-owner* with the *group-key<sub>pub</sub>⇒*.
 
 #### member-group-key
 
