@@ -20,11 +20,11 @@ Function of *X*:  *X* is used in generation of result from *F*.
 
 #### x-key<sub>pub | priv</sub>⇒
 
-*y-key* is the "other" key in a private/public key pair.
+This is the "other" key in a private/public key pair.
 
-If *x-key* is a public key, then *y-key* is the corresponding private key.  E.g. *some-key<sub>pub</sub>⇒* is the private key of *some-key<sub>pub</sub>*.
+If *x-key* is a public key, then this is the corresponding private key.  E.g. *some-key<sub>pub</sub>⇒* is the private key of *some-key<sub>pub</sub>*.
 
-If *x-key* is a private key, then *y-key* is the corresponding public key.  E.g. *some-key<sub>priv</sub>⇒* is the public key of *some-key<sub>priv</sub>*.
+If *x-key* is a private key, then this is the corresponding public key.  E.g. *some-key<sub>priv</sub>⇒* is the public key of *some-key<sub>priv</sub>*.
 
 #### x-key<sub>sym</sub>
 
@@ -64,7 +64,7 @@ For example a *member-group-key* is a function of *user-key*: F(user-key). which
 
 #### secrets
 
-Secrets are an array of private-public key pairs obtained from a 12 word mneumonic using the BIP39 algorithm.
+Secrets are an array of private key-public address pairs obtained from a 12 word mneumonic using the BIP39 algorithm.
 
 Secrets can be per user, per service, per group, whatever the domain calls for.
 
@@ -74,13 +74,13 @@ Secrets can be per user, per service, per group, whatever the domain calls for.
 
 #### broker
 
-The "broker"--abstracted via the broker API--uses secrets to store and provide users' data.
+The "broker"--abstracted via the broker API--stores and provides users' data.
 
 The broker is a key-value datastore with simplistic CRUD data operations.
 
 The broker doesn't enforce that the keys nor values are encrypted.  This mechanism of *override* is by convention: it's what makes sense.  A user can always verify their data is encrypted on an *overhide* broker instance.
 
-The keys have an additional property of being a queue as a backchannel.
+Although the broker is a key-value store in the standard sense; the keys have an additional property of being a queue for a backchannel.
 
 #### overhide.js (keyring library)
 
@@ -92,7 +92,7 @@ Some definitions here pertain to this specific reference implementation.
 
 In a key-value store values are retrieved using human readable keys.  Keys that have some domain specific meaning, prefixed and suffixed in domain meaningful ways.
 
-These domain human readable keys are referred to as *domain-keys* in our writeups.
+These domain human readable keys are referred to as *domain-keys* in our write-ups.
 
 #### crypto-key
 
@@ -104,7 +104,11 @@ In *overhide* the *segment-key* is a function of the domain-key.
 
 Each *segment-key* is 64 bytes long.
 
-In the *overhide.js* a *segment-key* is a *crypto-key<sub>hash</sub>(domain-key)◠crypto-key<sub>sym</sub>(domain-key)*: a hash for the first 32 bytes (SHA256) followed by a 32 byte ciphertext (2 AES blocks), both using the same *crypto-key*.  The idea being that a concatenation of these two reduces already miniscule chance of conflict.
+In the *overhide.js* a *segment-key* is a *crypto-key'<sub>hash</sub>(domain-key)◠crypto-key'<sub>sym</sub>(domain-key)*: a hash for the first 32 bytes (SHA256) followed by a 32 byte ciphertext (2 AES blocks), both using the same *crypto-key'*.  The idea being that a concatenation of these two reduces already miniscule chance of conflict.
+
+*crypto-key'* must necessarily be 32 bytes.  As such if provided *crypto-key* is not 32 bytes, a SHA256 of *crypto-key* is taken to provide *crypto-key'*.
+
+Note that the *domain-key* is decipherable from the *segment-key*:  *crypto-key<sub>sym</sub>* applied against the last 32 bytes.
 
 #### datastore-key
 
@@ -142,7 +146,7 @@ The *key-owner* is the only entity that can read data posted to a *datastore-key
 
 #### backchannel (queue)
 
-Each *datastore-key* can have a message posted to it; beyond just reading a from it.
+Each *datastore-key* can have a message posted to it; beyond just reading from it.
 
 Messages posted to the *datastore-key* are enqueued in a queue.
 
@@ -168,7 +172,9 @@ A type of a *datastore-key* used to convey a value to a group: some *group-owner
 
 In *overhide.js* it's a function of a *domain-key* and a public key from the *group-owner* and shared with the group; the public key is used as the *crypto-key*.
 
-Specifically *group-key<sub>pub</sub>* denotes one of group-owner's public keys used for the *crypto-key*:
+Specifically *group-key<sub>pub</sub>* denotes a group-owner's public key used for the *crypto-key*.
+
+It should be noted this isn't one of the *secter[?]<sub>pub</sub>* BIP39 keys, but a RSA public key, used to encrypt the payload.
 
 #### psa-group-key
 
