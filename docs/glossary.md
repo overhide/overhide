@@ -68,7 +68,14 @@ Secrets are an array of private key-public address pairs obtained from a 12 word
 
 Secrets can be per user, per service, per group, whatever the domain calls for.
 
-*secrets* is an array, *secrets[0]* would be the first key pair of *secrets[0]<sub>pub</sub>* and *secrets[0]<sub>priv</sub>*.  Keys from *secrets* can be used for anything in the system.
+*secrets* is an array, *secrets[0]* would be the first key pair of *secrets[0]<sub>pub</sub>* and *secrets[0]<sub>priv</sub>*.  Keys from *secrets* can be used for:
+
+* hash salts
+* symmetric (AES) keys
+* identities
+* addresses
+
+*secrets* key pairs cannot be used for RSA asymmetric keys--not long enough--those are RSA generated; possibly with a secret as a seed.
 
 *secrets[?]<sub>priv</sub>* would be any/some secret from the array: domain/context specific.
 
