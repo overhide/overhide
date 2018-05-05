@@ -71,13 +71,15 @@ Secrets can be per user, per service, per group, whatever the domain calls for.
 *secrets* is an array, *secrets[0]* would be the first key pair of *secrets[0]<sub>pub</sub>* and *secrets[0]<sub>priv</sub>*.  Keys from *secrets* can be used for:
 
 * hash salts
-* symmetric (AES) keys
+* symmetric keys
+* asymmetric keys
+* signature keys
 * identities
 * addresses
 
-*secrets* key pairs cannot be used for RSA asymmetric keys--not long enough--those are RSA generated; possibly with a secret as a seed.
-
 *secrets[?]<sub>priv</sub>* would be any/some secret from the array: domain/context specific.
+
+*overhide.js* promotes the use of such secrets via the concept of a "keyring": instead of user generated pass-phrases.
 
 #### broker
 
@@ -101,21 +103,19 @@ In a key-value store values are retrieved using human readable keys.  Keys that 
 
 These domain human readable keys are referred to as *domain-keys* in our write-ups.
 
-#### crypto-key
+#### segment-key-secret
 
-Some form of a security token; salt, public key, private key, symmetric key, whatever makes sense in a given context.
+A key used to salt and encrypt the *segment-key*.
+
+In *overhide.js* this is either the private key or public address from one of the *secrets* used as a salt and a symmetric key when producing a *segment-key*.  As such in *overhide.js* a *segment-key-secret* is necessarily 32 bytes long.  If a byte stream longer than 32 bytes is used as a *segment-key-secret* it is truncated to the last 32 bytes.
 
 #### segment-key
 
-In *overhide* the *segment-key* is a function of the domain-key.
+In *overhide* the *segment-key* is a function of the domain-key limited to 128 bytes.
 
-Each *segment-key* is 64 bytes long.
+In *overhide.js* a *segment-key* is a 128 bytes long using a 32 byte long *segment-key-secret*.  The *segment-key* is derived by *sement-key-secret<sub>hash</sub>(domain-key)◠segment-key-secret<sub>sym</sub>(domain-key')*: a SHA256 hash of the *domain-key*, salted with *segment-key-secret* for the first 32 bytes, followed by 96 bytes of AES256 ciphertext.   The *domain-key'* must necessarily be 79 bytes long, as such *domain-key'* is *domain-key* that's PKCS7 padded.
 
-In the *overhide.js* a *segment-key* is a *crypto-key'<sub>hash</sub>(domain-key)◠crypto-key'<sub>sym</sub>(domain-key)*: a hash for the first 32 bytes (SHA256) followed by a 32 byte ciphertext (2 AES blocks), both using the same *crypto-key'*.  The idea being that a concatenation of these two reduces already miniscule chance of conflict.
-
-*crypto-key'* must necessarily be 32 bytes.  As such if provided *crypto-key* is not 32 bytes, a SHA256 of *crypto-key* is taken to provide *crypto-key'*.
-
-Note that the *domain-key* is decipherable from the *segment-key*:  *crypto-key<sub>sym</sub>* applied against the last 32 bytes.
+Note the important property that the *domain-key* is decipherable from the *segment-key*:  *crypto-key<sub>sym</sub>* applied against the tail bytes (length - 32 bytes).
 
 #### datastore-key
 
@@ -137,11 +137,24 @@ A *datastore-key* itself is a function of *identity*, which usually is the same 
 
 See the [identity](identity.md) write-up.
 
+#### datastore-value-secret
+
+A key used to encrypt *datastore-value*.
+
+In *overhide.js* this is either the private key or public address from one of the *secrets* used as a key when encrypting a *datastore-value*.  As such in *overhide.js* a *datastore-value-secret* is necessarily 32 bytes long.  If a byte stream longer than 32 bytes is used as a *datastore-value-secret* it is truncated to the last 32 bytes.
+
+The *segment-key-secret* can usually be the *datastore-value-secret*.
+
 #### datastore-value
 
 Each datastore-value is somehow encrypted.  Details of encryption depend on the client library.  
 
-In *overhide.js* a *datastore-value* is a *crypto-key<sub>sym</sub>(payload)*: a payload value AES-encrypted with some *crypto-key*.
+In *overhide.js* a *datastore-value* can be encrypted using:
+
+* AES256 for symmetric encryption
+* ECDSA for asymmetric encryption
+
+The encryption key used for the datastore-value is the *datastore-value-secret*.
 
 #### key-owner
 
@@ -150,6 +163,8 @@ Entity that created a certain *datastore-key* and therefore owns that key.
 A *key-owner* has a unique *identity* in the system.
 
 The *key-owner* is the only entity that can read data posted to a *datastore-key*, see *backchannel* below.
+
+By default only the *key-owner* can write data to an owned *datastore-key*: notice writing data is different than posting, posting uses the *backchannel*, writing simply sets the *datastore-value*.  Other identities can be configured as "writers" against a *datastore-key* by the *key-owner*.
 
 #### backchannel (queue)
 
@@ -169,37 +184,31 @@ In *overhide.js* all *backchannel* messages are public key encrypted to be priva
 
 A type of a *datastore-key* with some individual user as the *key-owner*.
 
-In *overhide.js* it's a function of a *domain-key* and a private key from one of the user's secrets; the private key is used as the *crypto-key*.
-
-Specifically *user-key<sub>priv</sub>* denotes the private key used for the *crypto-key*:
+In *overhide.js* it's a function of a *domain-key* and a private key from one of the user's secrets; the private key is used as the *segment-key-secret*.  The *datastore-value* is AES256 encrypted.
 
 #### group-key
 
 A type of a *datastore-key* used to convey a value to a group: some *group-owner* is the *key-owner*.
 
-In *overhide.js* it's a function of a *domain-key* and a public key from the *group-owner* and shared with the group; the public key is used as the *crypto-key*.
+Since the *datastore-value* needs to be group readable, the *datastore-value-secret* is a public key made available to the group.  Specifically *group-key<sub>pub</sub>* denotes a group-owner's public key used for the *datastore-value-secret*.
 
-Specifically *group-key<sub>pub</sub>* denotes a group-owner's public key used for the *crypto-key*.
-
-It should be noted this isn't one of the *secter[?]<sub>pub</sub>* BIP39 keys, but a RSA public key, used to encrypt the payload.
-
-#### psa-group-key
-
-A *group-key* used to convey public information from the *group-owner*.  A *group-key* owner's public key is made available publicly: *group-key<sub>pub</sub>*.  The value is *group-key<sub>pub</sub>* decryptable; the *datastore-key*'s *crypto-key* is *group-key<sub>pub</sub>* and encrypted by *group-owner*.  Since the *group-key* decryptable value is public, it's considered a PSA: the public at large can read it.
-
-Backchannel--if enabled by *group-owner*--is to enqueue messages from publishers by encrypting with *group-key<sub>pub</sub>*.  Decryptable by *group-owner* with the *group-key<sub>pub</sub>⇒*.
-
-#### members-group-key
-
-A *group-key* used to convey information to all members of a group: value is decryptable by members only--*crypto-key* is one of group owner's public keys--*group-key<sub>pub</sub>*--as encrypted by *group-owner* and shared with members.
-
-Backchannel--if enabled by *group-owner*--is to enqueue messages from publishers by encrypting with the membership *group-key<sub>pub</sub>*.  Decryptable by *group-owner* with the *group-key<sub>pub</sub>⇒*.
+In *overhide.js* the *datastore-value* is ECDSA (public key) encrypted with a *datastore-value-secret* that's shared with the group.  This is one of the *secter[?]<sub>pub</sub>* BIP39 keys.  The same key is used for the *segment-key-secret* to salt and encrypt the *segment-key*.
 
 #### member-group-key
 
 A *user-key* owned by a *group-owner* but meant for a specific member: established between group-owner and member user to communicate user's view of group data.
 
-As an example, a *member-group-key* could be established by having a user post a subscription message to a group's *group-key* along with the user's *secrets[?]<sub>pub</sub>*.  The *group-owner* would use the *secrets[?]<sub>pub</sub>* as the *member-group-key*'s *crypto-key*.  As such the value would be *secrets[?]<sub>pub</sub>* encrypted such that only the user can read it with their *secrets[?]<sub>pub</sub>⇒*.  
+As an example, a *member-group-key* could be established by having a user post a subscription message to a group's *group-key* along with the user's *secrets[?]<sub>pub</sub>*.  The *group-owner* would use the *secrets[?]<sub>pub</sub>* as the *member-group-key*'s *segment-key-secret* and *datastore-value-secret*.  As such the *datastore-value* would be *secrets[?]<sub>pub</sub>* encrypted such that only the user can read it with their *secrets[?]<sub>pub</sub>⇒*.  The *segment-key* would be deterministic by both the *group-owner* and member as they both know the *segment-key-secret*.
+
+A member user can usually post data to a *member-group-key* but the *datastore-key* is writable only by the *group-owner*: it's a view with feedback.
+
+#### delegate-key
+
+A *datastore-key* owned by a *group-owner* but writable by another user, the "write" delegate.  The idea being that authorities, limits, remuneration of the *datastore-key* are the responsibility of the *group-owner*, but data stored is by another *identity*.  
+
+The *delegate-key* allows services where the service user isn't forced to participate in remunerating the broker.
+
+Note that use of a *delegate-key* undermines the user's ownership of their own data.  The benefit is that a service using *overhide* is not forcing the user to participate in owning their data.  The risk is that the user doesn't own their data.
 
 #### user-address
 
