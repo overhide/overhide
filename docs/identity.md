@@ -14,7 +14,7 @@ It'll always be publicly known that a pseudonym subscribes to the broker:  broke
 
 ## Identity Tracked by Broker
 
-An *identity* represent a user, a group, or a service provider.  
+An *identity* represents a user, a group, or a service provider.  
 
 The broker datastore keeps a mapping of each *datastore-key* to an owning *identity*.
 
@@ -53,7 +53,7 @@ An *identity* is a *user-address<sub>hash</sub>(secret-phrase)* such that *F(sec
 
 The *secret-phrase* is something only the authenticated user is privy to.  The *overhide* broker hashes it to create an *identity*.  In the future to prove one's *identity* the user must know the *secret-phrase* such that it hashes to the *identity*, proving the user knows the *secret-phrase* corresponding to said *identity*.
 
-During authentication the broker system also verifies that there is a single mapping from the provided *user-address* and *secret-phrase* to a *broker-salt<sub>hash</sub>(secret-phrase)*.  If the mapping exists and the computed hash doesn't equal the stored hash, the provided *secret-phrase* is different from one provided earlier.  As such the *user-address* already has an *identity* in the system with a different *secret-phrase*, and the *secret-phrase* provided at no cannot be accepted.
+During authentication the broker system also verifies that there is a single mapping from the provided *user-address* and *secret-phrase* to a *broker-salt<sub>hash</sub>(secret-phrase)*.  If the mapping exists and the computed hash doesn't equal the stored hash, the provided *secret-phrase* is different from one provided earlier.  As such the *user-address* already has an *identity* in the system with a different *secret-phrase*, and the *secret-phrase* provided cannot be accepted.
 
 If the user remembers the previous *secret-phrase*, the user's original *identity* can be calculated and all *datastore-keys* owned by that *identity* can be changed to be owned by an *identity* with a new *secret-phrase*:  somewhat akin to a password change.  The *user-address* could be changed as part of this operation as well.
 
