@@ -23,15 +23,15 @@
           <a href="#introduction">Introduction</a>
           <h5>Paths</h5>
           <!-- <section>
-                <a href="#path--capabilities-hash-algorithms">/capabilities/hash-algorithms</a>
+                <a href="#path--capabilities-remuneration-providers">/capabilities/remuneration-providers</a>
                 <ul> -->
           <!-- <li> -->
-          <a href="#operation--capabilities-hash-algorithms-get"> List of hashing algorithms supported. </a>
+          <a href="#operation--capabilities-remuneration-providers-get"> List of remuneration providers supported. </a>
           <!-- </li> -->
           <!-- </ul>
               </section> -->
           <h5>Schema Definitions</h5>
-          <a href="#definition-HashingAlgorithms"> HashingAlgorithms </a>
+          <a href="#definition-RemunerationProvider"> RemunerationProvider </a>
         </nav>
       </div>
       <div id="docs" class="row collapse expanded drawer" data-drawer>
@@ -62,8 +62,8 @@
             </div>
           </div>
           <h1>Paths</h1>
-          <span id="path--capabilities-hash-algorithms"></span>
-          <div id="operation--capabilities-hash-algorithms-get" class="operation panel" data-traverse-target="operation--capabilities-hash-algorithms-get">
+          <span id="path--capabilities-remuneration-providers"></span>
+          <div id="operation--capabilities-remuneration-providers-get" class="operation panel" data-traverse-target="operation--capabilities-remuneration-providers-get">
             <!-- <section class="operation-tags row"> -->
             <!-- <div class="doc-copy"> -->
             <div class="operation-tags">
@@ -73,13 +73,20 @@
             <!-- </div> -->
             <!-- </section> -->
             <h2 class="operation-title">
-              <span class="operation-summary">List of hashing algorithms supported.</span>
+              <span class="operation-summary">List of remuneration providers supported.</span>
             </h2>
             <div class="doc-row">
               <div class="doc-copy">
                 <section class="swagger-operation-path">
                   <span class="operation-method">GET</span>
-                  <span class="operation-path">/capabilities/hash-algorithms</span>
+                  <span class="operation-path">/capabilities/remuneration-providers</span>
+                </section>
+              </div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-copy">
+                <section class="swagger-operation-description">
+                  <p>Mapping of remuneration providers to the broker&#39;s public address for given provider.</p>
                 </section>
               </div>
             </div>
@@ -94,14 +101,25 @@
                     <div class="prop-name">
                       <div class="prop-title">200 OK</div>
                       <div class="prop-ref">
-                        <span class="">
-                          <a class="json-schema-ref" href="#/definitions/HashingAlgorithms">HashingAlgorithms</a>
+                        <span class="json-schema-ref-array">
+                          <a class="json-schema-ref" href="#/definitions/RemunerationProvider">RemunerationProvider</a>
                         </span>
                       </div>
                       <!-- <span class="swagger-global"></span> <span class="json-schema-reference"><a href=""></a></span> -->
                     </div>
                     <div class="prop-value">
-                      <p>List of supported hashing algorithms.</p>
+                      <p>null</p>
+                    </div>
+                  </div>
+                  <div class="prop-row prop-inner">
+                    <div class="prop-name">type</div>
+                    <div class="prop-value">
+                      <span class="json-property-type">
+                        <span class="json-schema-ref-array">
+                          <a class="json-schema-ref" href="#/definitions/RemunerationProvider">RemunerationProvider</a>
+                        </span>
+                      </span>
+                      <span class="json-property-range" title="Value limits"></span>
                     </div>
                   </div>
                 </section>
@@ -112,7 +130,10 @@
                     <span>(200 OK)</span>
                   </h5>
                   <!-- <div class="hljs"> --><pre><code class="hljs lang-json">[
-  <span class="hljs-string">&quot;string&quot;</span>
+  {
+    <span class="hljs-attr">&quot;key&quot;</span>: <span class="hljs-string">&quot;string&quot;</span>,
+    <span class="hljs-attr">&quot;broker-address&quot;</span>: <span class="hljs-string">&quot;string&quot;</span>
+  }
 ]
 </code></pre>
                   <!-- </div> -->
@@ -121,10 +142,10 @@
             </div>
           </div>
           <h1>Schema Definitions</h1>
-          <div id="definition-HashingAlgorithms" class="definition panel" data-traverse-target="definition-HashingAlgorithms">
+          <div id="definition-RemunerationProvider" class="definition panel" data-traverse-target="definition-RemunerationProvider">
             <h2 class="panel-title">
-              <a name="/definitions/HashingAlgorithms"></a>HashingAlgorithms: array
-              <!-- <span class="json-property-type"><span class="json-property-type">string[]</span>
+              <a name="/definitions/RemunerationProvider"></a>RemunerationProvider: object
+              <!-- <span class="json-property-type"><span class="json-property-type">object</span>
               <span class="json-property-range" title="Value limits"></span>
               
               
@@ -132,21 +153,30 @@
             </h2>
             <div class="doc-row">
               <div class="doc-copy">
-                <section class="json-schema-array-items">
-                  <span class="json-property-type">string</span>
-                  <span class="json-property-enum" title="Possible values">
-                    <span class="json-property-enum-item">SHA256</span>
-                  </span>
-                  <span class="json-property-range" title="Value limits"></span>
-                  <div class="json-inner-schema"> </div>
+                <section class="json-schema-properties">
+                  <dl>
+                    <dt data-property-name="key">
+                      <span class="json-property-name">key:</span>
+                      <span class="json-property-type">string</span>
+                      <span class="json-property-range" title="Value limits"></span>
+                      <span class="json-property-required"></span>
+                    </dt>
+                    <dt data-property-name="broker-address">
+                      <span class="json-property-name">broker-address:</span>
+                      <span class="json-property-type">string</span>
+                      <span class="json-property-range" title="Value limits"></span>
+                      <span class="json-property-required"></span>
+                    </dt>
+                  </dl>
                 </section>
               </div>
               <div class="doc-examples">
                 <section>
                   <h5>Example</h5>
-                  <!-- <div class="hljs"> --><pre><code class="hljs lang-json">[
-  <span class="hljs-string">&quot;string&quot;</span>
-]
+                  <!-- <div class="hljs"> --><pre><code class="hljs lang-json">{
+  <span class="hljs-attr">&quot;key&quot;</span>: <span class="hljs-string">&quot;string&quot;</span>,
+  <span class="hljs-attr">&quot;broker-address&quot;</span>: <span class="hljs-string">&quot;string&quot;</span>
+}
 </code></pre>
                   <!-- </div> -->
                 </section>

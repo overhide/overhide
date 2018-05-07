@@ -15,25 +15,34 @@ tags:
   - name: capabilities
     description: Discover capabilities of the OverHide broker system.
 paths:
-  /capabilities/hash-algorithms:
+  /capabilities/remuneration-providers:
     get:
-      summary: List of hashing algorithms supported.
-      description: ''
+      summary: List of remuneration providers supported.
+      description: >-
+        Mapping of remuneration providers to the broker's public address for given
+        provider.
       tags:
         - capabilities
-      operationId: getHashAlgorithms
+      operationId: getRemunerationProviders
       responses:
         200:
-          description: List of supported hashing algorithms.
+          description: >-
+            Array of objects each defining one remuneration provider mapping.
           schema:
-            $ref: "#/definitions/HashingAlgorithms"
+            type: array
+            items:
+              $ref: "#/definitions/RemunerationProvider"
 definitions:
-  HashingAlgorithms:
-    type: array
-    items:
-      type: string
-      enum:
-        - SHA256
+  RemunerationProvider:
+    type: object
+    required:
+      - key
+      - broker-address
+    properties:
+      key:
+        type: string
+      broker-address:
+        type: string
 externalDocs:
   description: OverHide documentation
   url: 'https://pages.github.com/JakubNer/overhide'
