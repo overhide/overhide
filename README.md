@@ -1,4 +1,4 @@
-# ![](docs/.images/logo-sm.png) *overhide*  
+# ![](docs/images/logo-sm.png) *overhide*  
 
 *Over*tly *hide*: a system to store users' clandestine data within their purview and to enable rich collaborative services without the cost of private and proprietary infrastructure.
 
@@ -26,7 +26,7 @@ For reference, below is a sample model of the above mentioned components.  In gr
 
 Note that the model below shows a browser with *overhide*'s' *overhide.js* JavaScript client as part of a *keyring*, a *wallet* using Ethereum's *web3.js*, and an *Ethereum blockchain*.  This is but one model of possible access patterns, just for demonstration purposes.  There is nothing precluding a service or tooling written in any language from using the APIs directly, going against another blockchain stack, or a completely different remuneration mechanism altogether (as long as it implements *remuneration API*).
 
-![components](docs/.images/provided.png)
+![components](docs/images/provided.png)
 
 * a user interfaces with an Ethereum blockchain using their *wallet* browser extension--external to *overhide*--to pay service and broker subscriptions
 * a user interfaces with a *keyring* browser extension to manage their passwords in-browser

@@ -1,9 +1,13 @@
 swagger: '2.0'
+host: overhide.io
+basePath: /broker
+schemes:
+  - https
 info:
-  description: >-
+  description: |
     An API expected to be exposed by an OverHide "broker": specification of the
     "broker API" connector in the [OverHide component
-    diagram](https://github.com/JakubNer/overhide/raw/master/docs/.images/provided.png).
+    diagram](https://github.com/JakubNer/overhide/raw/master/docs/images/provided.png).
   version: 1.0.0
   title: OverHide Broker API
   contact:
@@ -12,37 +16,152 @@ info:
     name: MIT License
     url: 'https://pages.github.com/JakubNer/overhide/blob/master/LICENSE'
 tags:
+  - name: authenticate
+    description: |
+      Authenticate providing an [access token](#authentication).
   - name: capabilities
-    description: Discover capabilities of the OverHide broker system.
+    description: |
+      Discover capabilities of the OverHide broker system.
+      * subscription providers
+      * subscription tiers
+  - name: authority levels
+    description: |
+      Work with  authority levels.
+  - name: identity
+    description: |
+      Change *identity* credentials.  Setting *identity* for the first time is
+      done with the [authenticate endpoint](#tag-authenticate).
+  - name: subscription details
+    description: |
+      Work with subscription details for a supported remuneration API and a
+      given *identity*.
 paths:
+  /auth/authenticate:
+    post:
+      summary: Authenticate an identity returning a token.
+      description: |
+        Authenticate an identity returning a token to be used for [token
+        authentication](#authentication) in the rest of the API.
+      tags:
+        - authenticate
+      security: []
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        200:
+          description: |
+            Authentication token is returned to be used in subsequent calls into
+            OverHide broker.
+          schema:
+            type: string
   /capabilities/remuneration-providers:
     get:
       summary: List of remuneration providers supported.
-      description: >-
+      description: |
         Mapping of remuneration providers to the broker's public address for given
         provider.
       tags:
         - capabilities
       operationId: getRemunerationProviders
+      produces:
+        - application/json
+      security:
+        - Authorization Header: []
       responses:
+        401:
+          $ref: "#/responses/UnauthorizedError"
         200:
-          description: >-
+          description: |
             Array of objects each defining one remuneration provider mapping.
           schema:
             type: array
             items:
               $ref: "#/definitions/RemunerationProvider"
+  /capabilities/remuneration-tiers/{providerKey}:
+    get:
+      summary: List of subscription tiers available.
+      description: |
+         List of subscription tiers available for this broker from a given
+         remuneration provider.
+      tags:
+        - capabilities
+      operationId: getRemunerationTiers
+      parameters:
+        - in: path
+          name: providerKey
+          description: |
+            One of the provider keys from */capabilities/remuneration-providers*
+          type: string
+          required: true
+      security:
+        - Authorization Header: []
+      produces:
+        - application/json
+      responses:
+        200:
+          description: |
+            Array of objects each defining one remuneration tier mapping.
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/RemunerationTier"
 definitions:
   RemunerationProvider:
     type: object
     required:
       - key
       - broker-address
+      - description-md
     properties:
       key:
         type: string
+        description: |
+          Remuneration provider identifying key string.
       broker-address:
         type: string
+        description: |
+          This broker's specific public payment address with the reumneration
+          provider.  This is the public address to which a subscription payment
+          needs to be made from a user identity.
+      description-md:
+        type: string
+        description: |
+          Description Markdown formatted text for this remuneration provider.
+          Can have links and other markdown directing user to more information
+          about this remuneration provider.
+  RemunerationTier:
+    type: object
+    required:
+      - key
+      - description-md
+    properties:
+      key:
+        type: string
+        description: |
+          Remuneration provider's tier identifying key string.
+      description-md:
+        type: string
+        description: |
+          Description Markdown formatted text for this remuneration tier.
+          Can have links and other markdown directing user to more information
+          about this remuneration provider tier.
+responses:
+  UnauthorizedError:
+    description: |
+      For an endpoint protected with the *Token* security definition, an "Authorization"
+      header was not provided a valid token--returned from the */auth/authenticate*
+      endpoint.
+securityDefinitions:
+  Authorization Header:
+    type: apiKey
+    in: header
+    name: Authorization
+    description: |
+      Retrieve an authentication token using the [authentication endpoint](#tag-authenticate).
+      The returned token must be provided in an "Authorization" header
+      to API calls secured with this security definition.
 externalDocs:
   description: OverHide documentation
   url: 'https://pages.github.com/JakubNer/overhide'

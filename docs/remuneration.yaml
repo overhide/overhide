@@ -3,7 +3,7 @@ info:
   description: >-
     An API expected to be exposed by an OverHide "broker": specification of the
     "broker API" connector in the [OverHide component
-    diagram](https://github.com/JakubNer/overhide/raw/master/docs/.images/provided.png).
+    diagram](https://github.com/JakubNer/overhide/raw/master/docs/images/provided.png).
   version: 1.0.0
   title: OverHide Remuneration API
   contact:
