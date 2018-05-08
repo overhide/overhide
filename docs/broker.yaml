@@ -16,46 +16,22 @@ info:
     name: MIT License
     url: 'https://pages.github.com/JakubNer/overhide/blob/master/LICENSE'
 tags:
-  - name: authenticate
-    description: |
-      Authenticate providing an [access token](#authentication).
   - name: capabilities
     description: |
       Discover capabilities of the OverHide broker system.
       * subscription providers
       * subscription tiers
-  - name: authority levels
+  - name: auth
     description: |
-      Work with  authority levels.
-  - name: identity
-    description: |
-      Change *identity* credentials.  Setting *identity* for the first time is
-      done with the [authenticate endpoint](#tag-authenticate).
-  - name: subscription details
-    description: |
-      Work with subscription details for a supported remuneration API and a
+      Authentication, authorization, and credential management:
+
+      * authenticate providing an [access token](#security-definition-Authorization Header).
+      * work with  authority levels.
+      * change *identity* credentials.  Setting *identity* for the first time is
+      done with the [authenticate endpoint](#path--auth-authenticate).
+      * work with subscription details for a supported remuneration API and a
       given *identity*.
 paths:
-  /auth/authenticate:
-    post:
-      summary: Authenticate an identity returning a token.
-      description: |
-        Authenticate an identity returning a token to be used for [token
-        authentication](#authentication) in the rest of the API.
-      tags:
-        - authenticate
-      security: []
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      responses:
-        200:
-          description: |
-            Authentication token is returned to be used in subsequent calls into
-            OverHide broker.
-          schema:
-            type: string
   /capabilities/remuneration-providers:
     get:
       summary: List of remuneration providers supported.
@@ -67,11 +43,7 @@ paths:
       operationId: getRemunerationProviders
       produces:
         - application/json
-      security:
-        - Authorization Header: []
       responses:
-        401:
-          $ref: "#/responses/UnauthorizedError"
         200:
           description: |
             Array of objects each defining one remuneration provider mapping.
@@ -95,8 +67,6 @@ paths:
             One of the provider keys from */capabilities/remuneration-providers*
           type: string
           required: true
-      security:
-        - Authorization Header: []
       produces:
         - application/json
       responses:
@@ -107,6 +77,44 @@ paths:
             type: array
             items:
               $ref: "#/definitions/RemunerationTier"
+  /auth/authenticate:
+    post:
+      summary: Authenticate an identity returning a token.
+      description: |
+        Authenticate an identity returning a token to be used for [token
+        authentication](#security-definition-Authorization Header) in the rest of the API.
+      tags:
+        - auth
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        200:
+          description: |
+            Authentication token is returned to be used in subsequent calls into
+            OverHide broker.
+          schema:
+            type: string
+  /auth/get-authorities:
+    get:
+      summary: Retrieves authorities for an identity.
+      description: |
+        Retrieve authorities for an *identity*:
+
+        * read-rate
+        * write-rate
+        * storage-limit
+        * active-until
+        * available-until
+
+        See [identities write-up](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) for more information.
+      tags:
+        - auth
+      security:
+        - Authorization Header: []
+      produces:
+        - application/json
 definitions:
   RemunerationProvider:
     type: object
@@ -148,7 +156,7 @@ definitions:
           Can have links and other markdown directing user to more information
           about this remuneration provider tier.
 responses:
-  UnauthorizedError:
+  (401) UnauthorizedError:
     description: |
       For an endpoint protected with the *Token* security definition, an "Authorization"
       header was not provided a valid token--returned from the */auth/authenticate*
@@ -159,7 +167,7 @@ securityDefinitions:
     in: header
     name: Authorization
     description: |
-      Retrieve an authentication token using the [authentication endpoint](#tag-authenticate).
+      Retrieve an authentication token using the [authentication endpoint](#path--auth-authenticate).
       The returned token must be provided in an "Authorization" header
       to API calls secured with this security definition.
 externalDocs:
