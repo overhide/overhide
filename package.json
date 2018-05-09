@@ -4,13 +4,19 @@
   "dependencies": {
     "bootprint": "1.0.2",
     "bootprint-openapi": "1.1.0",
-    "html-inline": "1.2.0"
+    "html-inline": "1.2.0",
+    "npm-watch": "0.3.0"
+  },
+  "watch": {
+    "build:broker": "docs/broker.yaml",
+    "build:remuneration": "docs/remuneration.yaml"
   },
   "scripts": {
     "build:broker": "bootprint openapi docs/broker.yaml docs/.generated/broker",
     "build:remuneration": "bootprint openapi docs/remuneration.yaml docs/.generated/remuneration",
     "pack:broker": "html-inline docs/.generated/broker/index.html > docs/broker.html",
     "pack:remuneration": "html-inline docs/.generated/remuneration/index.html > docs/remuneration.html",
-    "all": "npm run build:broker & npm run build:remuneration & npm run pack:broker & npm run pack:remuneration"
+    "all": "npm run build:broker & npm run build:remuneration & npm run pack:broker & npm run pack:remuneration",
+    "watch": "npm-watch"
   }
 }

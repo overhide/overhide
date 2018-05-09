@@ -172,9 +172,8 @@ Original style from softwaremaniacs.org (c) Ivan Sagalaev <Maniac@SoftwareManiac
         Version: <span class="sw-info-version">1.0.0</span>,     <a href="https://pages.github.com/JakubNer/overhide" class="sw-external-doc">OverHide documentation</a>
     
     </p>
-    <p><p>An API expected to be exposed by an OverHide &quot;broker&quot;: specification of the
-    &quot;broker API&quot; connector in the <a href="https://github.com/JakubNer/overhide/raw/master/docs/images/provided.png">OverHide component
-    diagram</a>.</p>
+    <p><p>This is the API contract expected to be exposed by an OverHide &quot;broker&quot;.  This API is represented by the green &quot;broker API&quot; connector in the OverHide component model:</p>
+    <p>To load this API into another <a href="https://editor.swagger.io">Swagger viewer/editor</a> find <a href="https://github.com/JakubNer/overhide/blob/master/docs/broker.yaml">the GitHub <em>Swagger 2.0</em> definition file</a> and import as YAML.</p>
     </p>
     
     
@@ -237,12 +236,22 @@ Original style from softwaremaniacs.org (c) Ivan Sagalaev <Maniac@SoftwareManiac
                 <tbody>
                     <tr>
                         <td><a href="#operation--auth-authenticate-post">POST /auth/authenticate</a></td>
-                        <td><p>Authenticate an identity returning a token.</p>
+                        <td><p>Authenticate an <a href="https://github.com/JakubNer/overhide/blob/master/docs/identity.md">identity</a> returning a token.</p>
         </td>
                     </tr>
                     <tr>
                         <td><a href="#operation--auth-get-authorities-get">GET /auth/get-authorities</a></td>
-                        <td><p>Retrieves authorities for an identity.</p>
+                        <td><p>Retrieves authorities for an <a href="https://github.com/JakubNer/overhide/blob/master/docs/identity.md">identity</a>.</p>
+        </td>
+                    </tr>
+                    <tr>
+                        <td><a href="#operation--auth-change-credentials-post">POST /auth/change-credentials</a></td>
+                        <td><p>Change authentication of token&#39;s user.</p>
+        </td>
+                    </tr>
+                    <tr>
+                        <td><a href="#operation--auth-get-transaction--remuneration-key---from-address---to-address--get">GET /auth/get-transaction/{remuneration-key}/{from-address}/{to-address}</a></td>
+                        <td><p>Retrieve remuneration transaction.</p>
         </td>
                     </tr>
                 </tbody>
@@ -292,14 +301,14 @@ Original style from softwaremaniacs.org (c) Ivan Sagalaev <Maniac@SoftwareManiac
         <span id="path--auth-authenticate"></span>
             <div id="operation--auth-authenticate-post" class="swagger--panel-operation-post panel">
                 <div class="panel-heading">
-                    <div class="operation-summary">Authenticate an identity returning a token.</div>
+                    <div class="operation-summary">Authenticate an <a href="https://github.com/JakubNer/overhide/blob/master/docs/identity.md">identity</a> returning a token.</div>
                     <h3 class="panel-title"><span class="operation-name">POST</span> <strong>/auth/authenticate</strong></h3>
                         Tags:
                             <a href="#tag-auth">auth</a>
                 </div>
                 <div class="panel-body">
                     <section class="sw-operation-description">
-                        <p>Authenticate an identity returning a token to be used for <a href="#security-definition-Authorization Header">token
+                        <p>Authenticate an <a href="https://github.com/JakubNer/overhide/blob/master/docs/identity.md">identity</a> returning a token to be used for <a href="#security-definition-Authorization Header">token
             authentication</a> in the rest of the API.</p>
             
                     </section>
@@ -309,6 +318,87 @@ Original style from softwaremaniacs.org (c) Ivan Sagalaev <Maniac@SoftwareManiac
                                 
                                     <p><span class="label label-default">application/json</span> 
                         </p>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p><p>Authentication parameters.</p>
+                        </p>
+                                            </div>
+                                            <div class="col-md-6 sw-request-model">
+                            <div  class="panel panel-definition">
+                                <div class="panel-body">
+                                        
+                                                <section class="json-schema-properties">
+                                                    <dl>
+                                                            <dt data-property-name="remuneration-key">
+                                                                <span class="json-property-name">remuneration-key:</span>
+                                                                
+                                                                <span class="json-property-type">string</span>
+                                                                <span class="json-property-range" title="Value limits"></span>
+                                                                
+                                                                    <span class="json-property-required"></span>
+                                                            </dt>
+                                                            <dd>
+                                                                <p>Key from remuneration-providers which contains subscription payment(s) from the
+                                                provided <em>user-address</em> to this broker&#39;s <em>broker-address</em>.</p>
+                                                <p>Must be one of the remuneration provider keys from this broker&#39;s <a href="#operation--capabilities-remuneration-providers-get">capabilities</a>.</p>
+                                                
+                                                                <div class="json-inner-schema">
+                                                                    
+                                                                </div>
+                                                            </dd>
+                                                            <dt data-property-name="secret-phase">
+                                                                <span class="json-property-name">secret-phase:</span>
+                                                                
+                                                                <span class="json-property-type">string</span>
+                                                                <span class="json-property-range" title="Value limits"></span>
+                                                                
+                                                                    <span class="json-property-required"></span>
+                                                            </dt>
+                                                            <dd>
+                                                                <p>A secret phrase for the specified user-address.  Once a user authenticates against the broker with a secret-phrase and a user-address, the secret-phrase is tied to the user-address indefinitely, unless changed by <a href="#operation--auth-change-credentials-post">change-credentials</a>.</p>
+                                                
+                                                                <div class="json-inner-schema">
+                                                                    
+                                                                </div>
+                                                            </dd>
+                                                            <dt data-property-name="user-address">
+                                                                <span class="json-property-name">user-address:</span>
+                                                                
+                                                                <span class="json-property-type">string</span>
+                                                                <span class="json-property-range" title="Value limits"></span>
+                                                                
+                                                                    <span class="json-property-required"></span>
+                                                            </dt>
+                                                            <dd>
+                                                                <p>A public user-address to verify an active subscription to this broker&#39;s broker-address.</p>
+                                                <p>Must be an address for the remuneration provider indicated in <em>remuneration-key</em>.</p>
+                                                
+                                                                <div class="json-inner-schema">
+                                                                    
+                                                                </div>
+                                                            </dd>
+                                                            <dt data-property-name="secret-phrase-signed">
+                                                                <span class="json-property-name">secret-phrase-signed:</span>
+                                                                
+                                                                <span class="json-property-type">string</span>
+                                                                <span class="json-property-range" title="Value limits"></span>
+                                                                
+                                                                    <span class="json-property-required"></span>
+                                                            </dt>
+                                                            <dd>
+                                                                <p>The <em>secret-phrase</em> provided above signed with the private key corrsponding to the
+                                                <em>user-address</em>.</p>
+                                                <p>The signature uses Bitcoin&#39;s ECDSA curve - secp256k1.</p>
+                                                
+                                                                <div class="json-inner-schema">
+                                                                    
+                                                                </div>
+                                                            </dd>
+                                                    </dl>
+                                                </section>
+                                </div>
+                            </div></div>
+                                        </div>
                             </section>        
                     
                         <section class="sw-responses">
@@ -338,7 +428,227 @@ Original style from softwaremaniacs.org (c) Ivan Sagalaev <Maniac@SoftwareManiac
                                                 </div></div>
                                             
                                             </div>                </dd>
+                                    <dt class="sw-response-402">
+                                        402 Payment Required
+                                    
+                                    </dt>
+                                    <dd class="sw-response-402">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <p>Payment Required -- Remuneration provider indicates insufficient transactions to the broker system to meet a
+                                            service tier subscription requirements.</p>
+                                            <p>See <a href="https://github.com/JakubNer/overhide/blob/master/docs/identity.md#subscriptions">subscriptions write-up</a>.</p>
+                                            
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                
+                                                <div class="col-md-6 sw-response-model">
+                                            </div>
+                                            
+                                            </div>                </dd>
+                                    <dt class="sw-response-409">
+                                        409 Conflict
+                                            <span class="swagger--global"></span> <span class="json-schema--reference"><a href="#/responses/409">#/responses/409</a></span>
+                                    
+                                    </dt>
+                                    <dd class="sw-response-409">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <p>Go play a lottery:  the generated identity conflicts with some other identity or ended up being a restricted number &lt;10000.</p>
+                                            <p><em>User-address</em> hashed with its <em>secret-phrase</em> must be unique within the system.  Another <em>user-address</em>/<em>secret-phrase</em> already in the system hashes to the same hash as the provided <em>user-address</em>/<em>secret-phrase</em>.</p>
+                                            <p>Try a different <em>secret-phrase</em>.</p>
+                                            
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                
+                                                <div class="col-md-6 sw-response-model">
+                                            </div>
+                                            
+                                            </div>                </dd>
                             </dl>
+                        </section>
+                </div>
+            </div>
+        
+        <span id="path--auth-change-credentials"></span>
+            <div id="operation--auth-change-credentials-post" class="swagger--panel-operation-post panel">
+                <div class="panel-heading">
+                    <div class="operation-summary">Change authentication of token&apos;s user.</div>
+                    <h3 class="panel-title"><span class="operation-name">POST</span> <strong>/auth/change-credentials</strong></h3>
+                        Tags:
+                            <a href="#tag-auth">auth</a>
+                </div>
+                <div class="panel-body">
+                    <section class="sw-operation-description">
+                        
+                    </section>
+            
+                        
+                            <section class="sw-request-body">
+                                
+                                    <p><span class="label label-default">application/json</span> 
+                        </p>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p><p>New authentication credentials for user indicated by the <em>identity</em> in the <a href="#security-definition-Authorization Header">security header</a>.</p>
+                        </p>
+                                            </div>
+                                            <div class="col-md-6 sw-request-model">
+                            <div  class="panel panel-definition">
+                                <div class="panel-body">
+                                        
+                                                <section class="json-schema-properties">
+                                                    <dl>
+                                                            <dt data-property-name="new-remuneration-key">
+                                                                <span class="json-property-name">new-remuneration-key:</span>
+                                                                
+                                                                <span class="json-property-type">string</span>
+                                                                <span class="json-property-range" title="Value limits"></span>
+                                                                
+                                                                    <span class="json-property-required"></span>
+                                                            </dt>
+                                                            <dd>
+                                                                <p>Key from remuneration-providers which contains subscription payment(s) from the
+                                                provided <em>new-user-address</em> to this broker&#39;s <em>broker-address</em>.</p>
+                                                <p>Must be one of the remuneration provider keys from this broker&#39;s <a href="#operation--capabilities-remuneration-providers-get">capabilities</a>.</p>
+                                                
+                                                                <div class="json-inner-schema">
+                                                                    
+                                                                </div>
+                                                            </dd>
+                                                            <dt data-property-name="new-secret-phase">
+                                                                <span class="json-property-name">new-secret-phase:</span>
+                                                                
+                                                                <span class="json-property-type">string</span>
+                                                                <span class="json-property-range" title="Value limits"></span>
+                                                                
+                                                                    <span class="json-property-required"></span>
+                                                            </dt>
+                                                            <dd>
+                                                                <p>A new secret phrase for the new user-address.  Once credentials are changed successfully; the <em>new-secret-phrase</em> is tied to the <em>new-user-address</em> indefinitely, unless changed again by <a href="#operation--auth-change-credentials-post">change-credentials</a>.</p>
+                                                
+                                                                <div class="json-inner-schema">
+                                                                    
+                                                                </div>
+                                                            </dd>
+                                                            <dt data-property-name="new-user-address">
+                                                                <span class="json-property-name">new-user-address:</span>
+                                                                
+                                                                <span class="json-property-type">string</span>
+                                                                <span class="json-property-range" title="Value limits"></span>
+                                                                
+                                                                    <span class="json-property-required"></span>
+                                                            </dt>
+                                                            <dd>
+                                                                <p>A public user-address to verify an active subscription to this broker&#39;s broker-address.</p>
+                                                <p>Must be an address for the remuneration provider indicated in <em>new-remuneration-key</em>.</p>
+                                                
+                                                                <div class="json-inner-schema">
+                                                                    
+                                                                </div>
+                                                            </dd>
+                                                            <dt data-property-name="new-secret-phrase-signed">
+                                                                <span class="json-property-name">new-secret-phrase-signed:</span>
+                                                                
+                                                                <span class="json-property-type">string</span>
+                                                                <span class="json-property-range" title="Value limits"></span>
+                                                                
+                                                                    <span class="json-property-required"></span>
+                                                            </dt>
+                                                            <dd>
+                                                                <p>The <em>new-secret-phrase</em> provided above signed with the private key corrsponding to the
+                                                <em>new-user-address</em>.</p>
+                                                <p>The signature uses Bitcoin&#39;s ECDSA curve - secp256k1.</p>
+                                                
+                                                                <div class="json-inner-schema">
+                                                                    
+                                                                </div>
+                                                            </dd>
+                                                    </dl>
+                                                </section>
+                                </div>
+                            </div></div>
+                                        </div>
+                            </section>        
+                    
+                        <section class="sw-responses">
+                    
+                            <dl>
+                                    <dt class="sw-response-200">
+                                        200 OK
+                                    
+                                    </dt>
+                                    <dd class="sw-response-200">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <p>Credentials successfully changed.</p>
+                                            
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                
+                                                <div class="col-md-6 sw-response-model">
+                                            </div>
+                                            
+                                            </div>                </dd>
+                                    <dt class="sw-response-401">
+                                        401 Unauthorized
+                                            <span class="swagger--global"></span> <span class="json-schema--reference"><a href="#/responses/401">#/responses/401</a></span>
+                                    
+                                    </dt>
+                                    <dd class="sw-response-401">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <p>For an endpoint protected with the <a href="#security-definition-Authorization Header">token security definition</a>, an &quot;Authorization&quot; header was not provided a valid token--as returned from the <a href="#operation--auth-authenticate-post">authenticate endpoint</a>.</p>
+                                            
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                
+                                                <div class="col-md-6 sw-response-model">
+                                            </div>
+                                            
+                                            </div>                </dd>
+                                    <dt class="sw-response-409">
+                                        409 Conflict
+                                            <span class="swagger--global"></span> <span class="json-schema--reference"><a href="#/responses/409">#/responses/409</a></span>
+                                    
+                                    </dt>
+                                    <dd class="sw-response-409">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <p>Go play a lottery:  the generated identity conflicts with some other identity or ended up being a restricted number &lt;10000.</p>
+                                            <p><em>User-address</em> hashed with its <em>secret-phrase</em> must be unique within the system.  Another <em>user-address</em>/<em>secret-phrase</em> already in the system hashes to the same hash as the provided <em>user-address</em>/<em>secret-phrase</em>.</p>
+                                            <p>Try a different <em>secret-phrase</em>.</p>
+                                            
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                
+                                                <div class="col-md-6 sw-response-model">
+                                            </div>
+                                            
+                                            </div>                </dd>
+                            </dl>
+                        </section>
+                        <section class="sw-request-security">
+                            <table class="table">
+                                <thead>
+                                <tr>
+                                    <th class="sw-request-security-schema"></th>
+                                    <th class="sw-request-security-scopes"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                        <tr>
+                                            <td><a href="#security-definition-Authorization Header">Authorization Header</a></td>
+                                            <td>
+                                            </td>
+                                        </tr>
+                                </tbody>
+                            </table>
                         </section>
                 </div>
             </div>
@@ -346,27 +656,284 @@ Original style from softwaremaniacs.org (c) Ivan Sagalaev <Maniac@SoftwareManiac
         <span id="path--auth-get-authorities"></span>
             <div id="operation--auth-get-authorities-get" class="swagger--panel-operation-get panel">
                 <div class="panel-heading">
-                    <div class="operation-summary">Retrieves authorities for an identity.</div>
+                    <div class="operation-summary">Retrieves authorities for an <a href="https://github.com/JakubNer/overhide/blob/master/docs/identity.md">identity</a>.</div>
                     <h3 class="panel-title"><span class="operation-name">GET</span> <strong>/auth/get-authorities</strong></h3>
                         Tags:
                             <a href="#tag-auth">auth</a>
                 </div>
                 <div class="panel-body">
                     <section class="sw-operation-description">
-                        <p>Retrieve authorities for an <em>identity</em>:</p>
-            <ul>
-            <li>read-rate</li>
-            <li>write-rate</li>
-            <li>storage-limit</li>
-            <li>active-until</li>
-            <li>available-until</li>
-            </ul>
+                        <p>Retrieve authorities for an <a href="https://github.com/JakubNer/overhide/blob/master/docs/identity.md">identity</a>.  Authorities are rates and limits as specified by (the <em>Authorities</em> return object)[#definition-Authorities].</p>
+            <p>If an <em>identity</em> has multiple transactions with a reumneration provider, the transactions are added to yield the best service tier.</p>
+            <p>Authorities are valid for the duration of the <a href="#security-definition-Authorization Header">security token</a>.</p>
             <p>See <a href="https://github.com/JakubNer/overhide/blob/master/docs/identity.md">identities write-up</a> for more information.</p>
             
                     </section>
             
                     
                     
+                        <section class="sw-responses">
+                                <p><span class="label label-default">application/json</span> 
+                    </p>
+                    
+                            <dl>
+                                    <dt class="sw-response-200">
+                                        200 OK
+                                    
+                                    </dt>
+                                    <dd class="sw-response-200">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <p>Authorized rates and limits are returned.</p>
+                                            
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                
+                                                <div class="col-md-6 sw-response-model">
+                                                <div  class="panel panel-definition">
+                                                    <div class="panel-body">
+                                                                <a class="json-schema-ref" href="#/definitions/Authorities">Authorities</a>
+                                                    </div>
+                                                </div></div>
+                                            
+                                            </div>                </dd>
+                                    <dt class="sw-response-401">
+                                        401 Unauthorized
+                                            <span class="swagger--global"></span> <span class="json-schema--reference"><a href="#/responses/401">#/responses/401</a></span>
+                                    
+                                    </dt>
+                                    <dd class="sw-response-401">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <p>For an endpoint protected with the <a href="#security-definition-Authorization Header">token security definition</a>, an &quot;Authorization&quot; header was not provided a valid token--as returned from the <a href="#operation--auth-authenticate-post">authenticate endpoint</a>.</p>
+                                            
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                
+                                                <div class="col-md-6 sw-response-model">
+                                            </div>
+                                            
+                                            </div>                </dd>
+                            </dl>
+                        </section>
+                        <section class="sw-request-security">
+                            <table class="table">
+                                <thead>
+                                <tr>
+                                    <th class="sw-request-security-schema"></th>
+                                    <th class="sw-request-security-scopes"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                        <tr>
+                                            <td><a href="#security-definition-Authorization Header">Authorization Header</a></td>
+                                            <td>
+                                            </td>
+                                        </tr>
+                                </tbody>
+                            </table>
+                        </section>
+                </div>
+            </div>
+        
+        <span id="path--auth-get-transaction--remuneration-key---from-address---to-address-"></span>
+            <div id="operation--auth-get-transaction--remuneration-key---from-address---to-address--get" class="swagger--panel-operation-get panel">
+                <div class="panel-heading">
+                    <div class="operation-summary">Retrieve remuneration transaction.</div>
+                    <h3 class="panel-title"><span class="operation-name">GET</span> <strong>/auth/get-transaction/{remuneration-key}/{from-address}/{to-address}</strong></h3>
+                        Tags:
+                            <a href="#tag-auth">auth</a>
+                </div>
+                <div class="panel-body">
+                    <section class="sw-operation-description">
+                        <p>Retrieve the latest remuneration transaction on <em>remuneration-key</em> from <em>from-address</em> to <em>to-address</em></p>
+            
+                    </section>
+            
+                        
+                            <section class="sw-request-body">
+                                
+                                    <p><span class="label label-default">application/json</span> 
+                        </p>
+                            </section>        
+                        <section class="sw-request-params">
+                            <table class="table">
+                                <thead>
+                                <tr>
+                                    <th class="sw-param-name"></th>
+                                    <th class="sw-param-description"></th>
+                                    <th class="sw-param-type"></th>
+                                    <th class="sw-param-data-type"></th>
+                                    <th class="sw-param-annotation"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                        <tr>
+                                            <td>
+                                                remuneration-key
+                                            </td>
+                                            <td><p>Key from remuneration-providers which contains payment(s) from the
+                                        provided <em>from-address</em> to the provided <em>to-address</em>.</p>
+                                        <p>Must be one of the remuneration provider keys from this broker&#39;s <a href="#operation--capabilities-remuneration-providers-get">capabilities</a>.</p>
+                                        </td>
+                                            <td>path</td>
+                                            <td>
+                                        <span class="json-property-type">string</span>
+                                        <span class="json-property-range" title="Value limits"></span>
+                                        
+                                            </td>
+                                            <td>
+                                                    <span class="json-property-required"></span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                from-address
+                                            </td>
+                                            <td><p>A public address from which to verify payment details (amount/date) to the <em>to-address</em>.</p>
+                                        <p>Must be an address from the remuneration provider indicated in <em>remuneration-key</em>.</p>
+                                        </td>
+                                            <td>path</td>
+                                            <td>
+                                        <span class="json-property-type">string</span>
+                                        <span class="json-property-range" title="Value limits"></span>
+                                        
+                                            </td>
+                                            <td>
+                                                    <span class="json-property-required"></span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                to-address
+                                            </td>
+                                            <td><p>The target public address to check for payment made.</p>
+                                        <p>Must be an address from the remuneration provider indicated in <em>remuneration-key</em>.</p>
+                                        <p>This could be this broker system&#39;s public payment address with
+                                        the reumneration provider (as retrieved via <a href="#definition-RemunerationProvider">remuneration provider</a>).</p>
+                                        <p>This could be any other public address furnished by the remuneration provider, e.g.
+                                        the service&#39;s public address: to check for app purchase etc.</p>
+                                        </td>
+                                            <td>path</td>
+                                            <td>
+                                        <span class="json-property-type">string</span>
+                                        <span class="json-property-range" title="Value limits"></span>
+                                        
+                                            </td>
+                                            <td>
+                                                    <span class="json-property-required"></span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                max-most-recent
+                                            </td>
+                                            <td><p>Number of most recent transactions to retrieve.</p>
+                                        </td>
+                                            <td>query</td>
+                                            <td>
+                                        <span class="json-property-type">integer</span>
+                                        <span class="json-property-range" title="Value limits"></span>
+                                        
+                                            </td>
+                                            <td>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                since
+                                            </td>
+                                            <td><p>Retrieve transactions since this date-time (inclusive) until now.</p>
+                                        <p>The date-time is a string in <a href="https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14">ISO 8601/RFC3339 format</a>.</p>
+                                        </td>
+                                            <td>query</td>
+                                            <td>
+                                        <span class="json-property-type">string</span>
+                                        <span class="json-property-range" title="Value limits"></span>
+                                        
+                                            </td>
+                                            <td>
+                                            </td>
+                                        </tr>
+                                </tbody>
+                            </table>
+                        </section>
+                    
+                        <section class="sw-responses">
+                    
+                            <dl>
+                                    <dt class="sw-response-200">
+                                        200 OK
+                                    
+                                    </dt>
+                                    <dd class="sw-response-200">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <p>List of transactions.</p>
+                                            
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                
+                                                <div class="col-md-6 sw-response-model">
+                                                <div  class="panel panel-definition">
+                                                    <div class="panel-body">
+                                                            
+                                                                            <section class="json-schema-array-items">
+                                                                                
+                                                                                <span class="json-property-type">    <a class="json-schema-ref" href="#/definitions/Transaction">Transaction</a>
+                                                                                </span>
+                                                                                <span class="json-property-range" title="Value limits"></span>
+                                                                                
+                                                                                <div class="json-inner-schema">
+                                                                                    
+                                                                                </div>
+                                                                            </section>    </div>
+                                                </div></div>
+                                            
+                                            </div>                </dd>
+                                    <dt class="sw-response-401">
+                                        401 Unauthorized
+                                            <span class="swagger--global"></span> <span class="json-schema--reference"><a href="#/responses/401">#/responses/401</a></span>
+                                    
+                                    </dt>
+                                    <dd class="sw-response-401">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <p>For an endpoint protected with the <a href="#security-definition-Authorization Header">token security definition</a>, an &quot;Authorization&quot; header was not provided a valid token--as returned from the <a href="#operation--auth-authenticate-post">authenticate endpoint</a>.</p>
+                                            
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                
+                                                <div class="col-md-6 sw-response-model">
+                                            </div>
+                                            
+                                            </div>                </dd>
+                                    <dt class="sw-response-409">
+                                        409 Conflict
+                                            <span class="swagger--global"></span> <span class="json-schema--reference"><a href="#/responses/409">#/responses/409</a></span>
+                                    
+                                    </dt>
+                                    <dd class="sw-response-409">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <p>Go play a lottery:  the generated identity conflicts with some other identity or ended up being a restricted number &lt;10000.</p>
+                                            <p><em>User-address</em> hashed with its <em>secret-phrase</em> must be unique within the system.  Another <em>user-address</em>/<em>secret-phrase</em> already in the system hashes to the same hash as the provided <em>user-address</em>/<em>secret-phrase</em>.</p>
+                                            <p>Try a different <em>secret-phrase</em>.</p>
+                                            
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                
+                                                <div class="col-md-6 sw-response-model">
+                                            </div>
+                                            
+                                            </div>                </dd>
+                            </dl>
+                        </section>
                         <section class="sw-request-security">
                             <table class="table">
                                 <thead>
@@ -536,13 +1103,27 @@ Original style from softwaremaniacs.org (c) Ivan Sagalaev <Maniac@SoftwareManiac
     <h2>Response definitions</h2>
     
     <dl id="sw-response-definitions">
-            <dt><a name="/responses/(401) UnauthorizedError"></a>(401) UnauthorizedError</dt>
+            <dt><a name="/responses/401"></a>401</dt>
             <dd>
                 <div class="row">
                     <div class="col-md-12">
-                        <p>For an endpoint protected with the <em>Token</em> security definition, an &quot;Authorization&quot;
-                header was not provided a valid token--returned from the <em>/auth/authenticate</em>
-                endpoint.</p>
+                        <p>For an endpoint protected with the <a href="#security-definition-Authorization Header">token security definition</a>, an &quot;Authorization&quot; header was not provided a valid token--as returned from the <a href="#operation--auth-authenticate-post">authenticate endpoint</a>.</p>
+                
+                    </div>
+                </div>
+                <div class="row">
+                    
+                    <div class="col-md-6 sw-response-model">
+                </div>
+                
+                </div>        </dd>
+            <dt><a name="/responses/409"></a>409</dt>
+            <dd>
+                <div class="row">
+                    <div class="col-md-12">
+                        <p>Go play a lottery:  the generated identity conflicts with some other identity or ended up being a restricted number &lt;10000.</p>
+                <p><em>User-address</em> hashed with its <em>secret-phrase</em> must be unique within the system.  Another <em>user-address</em>/<em>secret-phrase</em> already in the system hashes to the same hash as the provided <em>user-address</em>/<em>secret-phrase</em>.</p>
+                <p>Try a different <em>secret-phrase</em>.</p>
                 
                     </div>
                 </div>
@@ -558,6 +1139,134 @@ Original style from softwaremaniacs.org (c) Ivan Sagalaev <Maniac@SoftwareManiac
         <h2>Schema definitions</h2>
     
             
+                <div id="definition-Authorities" class="panel panel-definition">
+                        <div class="panel-heading">
+                                <h3 class="panel-title"><a name="/definitions/Authorities"></a>Authorities:
+                                    <span class="json-property-type">
+                <span class="json-property-type">object</span>
+                <span class="json-property-range" title="Value limits"></span>
+                
+                </span>
+                                </h3>
+                        </div>
+                    <div class="panel-body">
+                            
+                                    <section class="json-schema-properties">
+                                        <dl>
+                                                <dt data-property-name="read-rate">
+                                                    <span class="json-property-name">read-rate:</span>
+                                                    
+                                                    <span class="json-property-type">integer</span>
+                                                    <span class="json-property-range" title="Value limits"></span>
+                                                    
+                                                        <span class="json-property-required"></span>
+                                                </dt>
+                                                <dd>
+                                                    <p>Maximum amount of data allowed to be read per unit time for the provided
+                                    identity:  in bytes/hour.</p>
+                                    <p>If client&#39;s read-rate is reached within an hour, reads are throttled.
+                                    Throttling is broker implementation specific.</p>
+                                    <p>If negative, the rate is unlimited.</p>
+                                    
+                                                    <div class="json-inner-schema">
+                                                        
+                                                    </div>
+                                                </dd>
+                                                <dt data-property-name="write-rate">
+                                                    <span class="json-property-name">write-rate:</span>
+                                                    
+                                                    <span class="json-property-type">integer</span>
+                                                    <span class="json-property-range" title="Value limits"></span>
+                                                    
+                                                        <span class="json-property-required"></span>
+                                                </dt>
+                                                <dd>
+                                                    <p>Maximum amount of data allowed to be written per unit time for the provided
+                                    identity: in bytes/hour.</p>
+                                    <p>If client&#39;s write-rate is reached within an hour, writes are throttled.
+                                    Throttling is broker implementation specific.</p>
+                                    <p>If negative, the rate is unlimited.</p>
+                                    
+                                                    <div class="json-inner-schema">
+                                                        
+                                                    </div>
+                                                </dd>
+                                                <dt data-property-name="storage-used">
+                                                    <span class="json-property-name">storage-used:</span>
+                                                    
+                                                    <span class="json-property-type">integer</span>
+                                                    <span class="json-property-range" title="Value limits"></span>
+                                                    
+                                                        <span class="json-property-required"></span>
+                                                </dt>
+                                                <dd>
+                                                    <p>Amount of data in bytes stored by this <em>identity</em> on this broker system.</p>
+                                    
+                                                    <div class="json-inner-schema">
+                                                        
+                                                    </div>
+                                                </dd>
+                                                <dt data-property-name="storage-limit">
+                                                    <span class="json-property-name">storage-limit:</span>
+                                                    
+                                                    <span class="json-property-type">integer</span>
+                                                    <span class="json-property-range" title="Value limits"></span>
+                                                    
+                                                        <span class="json-property-required"></span>
+                                                </dt>
+                                                <dd>
+                                                    <p>Maximum amoun tof data in bytes that can be stored by this <em>identity</em> on this
+                                    broker system at the current subscription level.</p>
+                                    <p>If negative, storage is unlimited.</p>
+                                    
+                                                    <div class="json-inner-schema">
+                                                        
+                                                    </div>
+                                                </dd>
+                                                <dt data-property-name="active-until">
+                                                    <span class="json-property-name">active-until:</span>
+                                                    
+                                                    <span class="json-property-type">string</span>
+                                                    <span class="json-property-range" title="Value limits"></span>
+                                                    
+                                                        <span class="json-property-required"></span>
+                                                </dt>
+                                                <dd>
+                                                    <p>Date-time until when this <em>identity</em> has an &#39;active&#39; subscription at the currently
+                                    authorized level.</p>
+                                    <p>It&#39;s possible once this subscription level expires the <em>identity</em> continues to
+                                    hava a subscription at a reduced level.  A subscription level expiry indicates
+                                    some remuneration provider transaction to the broker has lapsed.  The  remuneration provider
+                                    might indicate other transactions to the broker that haven&#39;t expired.</p>
+                                    <p>The date-time is a string in <a href="https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14">ISO 8601/RFC3339 format</a>.</p>
+                                    <p>A &#39;null&#39; value indicates no expiry of current subscription level.</p>
+                                    
+                                                    <div class="json-inner-schema">
+                                                        
+                                                    </div>
+                                                </dd>
+                                                <dt data-property-name="available-until">
+                                                    <span class="json-property-name">available-until:</span>
+                                                    
+                                                    <span class="json-property-type">string</span>
+                                                    <span class="json-property-range" title="Value limits"></span>
+                                                    
+                                                        <span class="json-property-required"></span>
+                                                </dt>
+                                                <dd>
+                                                    <p>Date-time until when data belonging to this <em>identity</em> will be retained within the
+                                    broker system.</p>
+                                    <p>The date-time is a string in <a href="https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14">ISO 8601/RFC3339 format</a>.</p>
+                                    <p>A &#39;null&#39; value indicates no expiry; data retained indefinitely.</p>
+                                    
+                                                    <div class="json-inner-schema">
+                                                        
+                                                    </div>
+                                                </dd>
+                                        </dl>
+                                    </section>
+                    </div>
+                </div>        
                 <div id="definition-RemunerationProvider" class="panel panel-definition">
                         <div class="panel-heading">
                                 <h3 class="panel-title"><a name="/definitions/RemunerationProvider"></a>RemunerationProvider:
@@ -598,7 +1307,7 @@ Original style from softwaremaniacs.org (c) Ivan Sagalaev <Maniac@SoftwareManiac
                                                 <dd>
                                                     <p>This broker&#39;s specific public payment address with the reumneration
                                     provider.  This is the public address to which a subscription payment
-                                    needs to be made from a user identity.</p>
+                                    needs to be made from a user <a href="https://github.com/JakubNer/overhide/blob/master/docs/identity.md">identity</a>.</p>
                                     
                                                     <div class="json-inner-schema">
                                                         
@@ -666,6 +1375,55 @@ Original style from softwaremaniacs.org (c) Ivan Sagalaev <Maniac@SoftwareManiac
                                                     <p>Description Markdown formatted text for this remuneration tier.
                                     Can have links and other markdown directing user to more information
                                     about this remuneration provider tier.</p>
+                                    
+                                                    <div class="json-inner-schema">
+                                                        
+                                                    </div>
+                                                </dd>
+                                        </dl>
+                                    </section>
+                    </div>
+                </div>        
+                <div id="definition-Transaction" class="panel panel-definition">
+                        <div class="panel-heading">
+                                <h3 class="panel-title"><a name="/definitions/Transaction"></a>Transaction:
+                                    <span class="json-property-type">
+                <span class="json-property-type">object</span>
+                <span class="json-property-range" title="Value limits"></span>
+                
+                </span>
+                                </h3>
+                        </div>
+                    <div class="panel-body">
+                            
+                                    <section class="json-schema-properties">
+                                        <dl>
+                                                <dt data-property-name="transaction-value">
+                                                    <span class="json-property-name">transaction-value:</span>
+                                                    
+                                                    <span class="json-property-type">number</span>
+                                                    <span class="json-property-range" title="Value limits"></span>
+                                                    
+                                                        <span class="json-property-required"></span>
+                                                </dt>
+                                                <dd>
+                                                    <p>Value of the transaction.</p>
+                                    
+                                                    <div class="json-inner-schema">
+                                                        
+                                                    </div>
+                                                </dd>
+                                                <dt data-property-name="transaction-date">
+                                                    <span class="json-property-name">transaction-date:</span>
+                                                    
+                                                    <span class="json-property-type">string</span>
+                                                    <span class="json-property-range" title="Value limits"></span>
+                                                    
+                                                        <span class="json-property-required"></span>
+                                                </dt>
+                                                <dd>
+                                                    <p>Date-time timestamp of the transaction.</p>
+                                    <p>The date-time is a string in <a href="https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14">ISO 8601/RFC3339 format</a>.</p>
                                     
                                                     <div class="json-inner-schema">
                                                         

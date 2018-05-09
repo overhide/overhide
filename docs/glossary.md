@@ -87,7 +87,7 @@ The "broker"--abstracted via the broker API--stores and provides users' data.
 
 The broker is a key-value datastore with simplistic CRUD data operations.
 
-The broker doesn't enforce that the keys nor values are encrypted.  This mechanism of *override* is by convention: it's what makes sense.  A user can always verify their data is encrypted on an *overhide* broker instance.
+The broker doesn't enforce that the keys nor values are encrypted.  This mechanism of *override* is by convention: it's what makes sense.  A user can always verify their data is encrypted on an *overhide* broker system.
 
 Although the broker is a key-value store in the standard sense; the keys have an additional property of being a queue for a backchannel.
 

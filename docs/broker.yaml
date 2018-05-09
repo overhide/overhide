@@ -5,9 +5,11 @@ schemes:
   - https
 info:
   description: |
-    An API expected to be exposed by an OverHide "broker": specification of the
-    "broker API" connector in the [OverHide component
-    diagram](https://github.com/JakubNer/overhide/raw/master/docs/images/provided.png).
+    This is the API contract expected to be exposed by an OverHide "broker".  This API is represented by the green "broker API" connector in the OverHide component model:
+
+    ![OverHide component model](https://github.com/JakubNer/overhide/raw/master/docs/images/provided.png)
+
+    To load this API into another [Swagger viewer/editor](https://editor.swagger.io) find [the GitHub *Swagger 2.0* definition file](https://github.com/JakubNer/overhide/blob/master/docs/broker.yaml) and import as YAML.
   version: 1.0.0
   title: OverHide Broker API
   contact:
@@ -63,10 +65,10 @@ paths:
       parameters:
         - in: path
           name: providerKey
+          required: true
           description: |
             One of the provider keys from */capabilities/remuneration-providers*
           type: string
-          required: true
       produces:
         - application/json
       responses:
@@ -79,12 +81,49 @@ paths:
               $ref: "#/definitions/RemunerationTier"
   /auth/authenticate:
     post:
-      summary: Authenticate an identity returning a token.
+      summary: Authenticate an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) returning a token.
       description: |
-        Authenticate an identity returning a token to be used for [token
+        Authenticate an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) returning a token to be used for [token
         authentication](#security-definition-Authorization Header) in the rest of the API.
       tags:
         - auth
+      parameters:
+        - in: body
+          name: authentication
+          description: |
+            Authentication parameters.
+          schema:
+            type: object
+            required:
+              - remuneration-key
+              - secret-phase
+              - user-address
+              - secret-phrase-signed
+            properties:
+              remuneration-key:
+                type: string
+                description: |
+                  Key from remuneration-providers which contains subscription payment(s) from the
+                  provided *user-address* to this broker's *broker-address*.
+
+                  Must be one of the remuneration provider keys from this broker's [capabilities](#operation--capabilities-remuneration-providers-get).
+              secret-phase:
+                type: string
+                description: |
+                  A secret phrase for the specified user-address.  Once a user authenticates against the broker with a secret-phrase and a user-address, the secret-phrase is tied to the user-address indefinitely, unless changed by [change-credentials](#operation--auth-change-credentials-post).
+              user-address:
+                type: string
+                description: |
+                  A public user-address to verify an active subscription to this broker's broker-address.
+
+                  Must be an address for the remuneration provider indicated in *remuneration-key*.
+              secret-phrase-signed:
+                type: string
+                description: |
+                  The *secret-phrase* provided above signed with the private key corrsponding to the
+                  *user-address*.
+
+                  The signature uses Bitcoin's ECDSA curve - secp256k1.
       consumes:
         - application/json
       produces:
@@ -96,17 +135,23 @@ paths:
             OverHide broker.
           schema:
             type: string
+        402:
+          description: |
+            Payment Required -- Remuneration provider indicates insufficient transactions to the broker system to meet a
+            service tier subscription requirements.
+
+            See [subscriptions write-up](https://github.com/JakubNer/overhide/blob/master/docs/identity.md#subscriptions).
+        409:
+          $ref: "#/responses/409"
   /auth/get-authorities:
     get:
-      summary: Retrieves authorities for an identity.
+      summary: Retrieves authorities for an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
       description: |
-        Retrieve authorities for an *identity*:
+        Retrieve authorities for an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).  Authorities are rates and limits as specified by (the *Authorities* return object)[#definition-Authorities].
 
-        * read-rate
-        * write-rate
-        * storage-limit
-        * active-until
-        * available-until
+        If an *identity* has multiple transactions with a reumneration provider, the transactions are added to yield the best service tier.
+
+        Authorities are valid for the duration of the [security token](#security-definition-Authorization Header).
 
         See [identities write-up](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) for more information.
       tags:
@@ -115,7 +160,155 @@ paths:
         - Authorization Header: []
       produces:
         - application/json
+      responses:
+        200:
+          description: |
+            Authorized rates and limits are returned.
+          schema:
+            $ref: "#/definitions/Authorities"
+        401:
+           $ref: "#/responses/401"
+  /auth/change-credentials:
+    post:
+      summary: Change authentication of token's user.
+      description: |
+      tags:
+        - auth
+      parameters:
+        - in: body
+          name: new-authentication
+          description: |
+            New authentication credentials for user indicated by the *identity* in the [security header](#security-definition-Authorization Header).
+          schema:
+            type: object
+            required:
+              - new-remuneration-key
+              - new-secret-phase
+              - new-user-address
+              - new-secret-phrase-signed
+            properties:
+              new-remuneration-key:
+                type: string
+                description: |
+                  Key from remuneration-providers which contains subscription payment(s) from the
+                  provided *new-user-address* to this broker's *broker-address*.
+
+                  Must be one of the remuneration provider keys from this broker's [capabilities](#operation--capabilities-remuneration-providers-get).
+              new-secret-phase:
+                type: string
+                description: |
+                  A new secret phrase for the new user-address.  Once credentials are changed successfully; the *new-secret-phrase* is tied to the *new-user-address* indefinitely, unless changed again by [change-credentials](#operation--auth-change-credentials-post).
+              new-user-address:
+                type: string
+                description: |
+                  A public user-address to verify an active subscription to this broker's broker-address.
+
+                  Must be an address for the remuneration provider indicated in *new-remuneration-key*.
+              new-secret-phrase-signed:
+                type: string
+                description: |
+                  The *new-secret-phrase* provided above signed with the private key corrsponding to the
+                  *new-user-address*.
+
+                  The signature uses Bitcoin's ECDSA curve - secp256k1.
+      security:
+        - Authorization Header: []
+      consumes:
+        - application/json
+      responses:
+        200:
+          description: |
+            Credentials successfully changed.
+        401:
+           $ref: "#/responses/401"
+        409:
+          $ref: "#/responses/409"
+  /auth/get-transaction/{remuneration-key}/{from-address}/{to-address}:
+    get:
+      summary: Retrieve remuneration transaction.
+      description: |
+        Retrieve the latest remuneration transaction on *remuneration-key* from *from-address* to *to-address*
+      tags:
+        - auth
+      parameters:
+        - in: path
+          name: remuneration-key
+          required: true
+          description: |
+            Key from remuneration-providers which contains payment(s) from the
+            provided *from-address* to the provided *to-address*.
+
+            Must be one of the remuneration provider keys from this broker's [capabilities](#operation--capabilities-remuneration-providers-get).
+          type: string
+        - in: path
+          name: from-address
+          required: true
+          description: |
+            A public address from which to verify payment details (amount/date) to the *to-address*.
+
+            Must be an address from the remuneration provider indicated in *remuneration-key*.
+          type: string
+        - in: path
+          name: to-address
+          required: true
+          description: |
+            The target public address to check for payment made.
+
+            Must be an address from the remuneration provider indicated in *remuneration-key*.
+
+            This could be this broker system's public payment address with
+            the reumneration provider (as retrieved via [remuneration provider](#definition-RemunerationProvider)).
+
+            This could be any other public address furnished by the remuneration provider, e.g.
+            the service's public address: to check for app purchase etc.
+          type: string
+        - in: query
+          name: max-most-recent
+          required: false
+          type: integer
+          description: |
+            Number of most recent transactions to retrieve.
+        - in: query
+          name: since
+          required: false
+          type: string
+          description: |
+            Retrieve transactions since this date-time (inclusive) until now.
+
+            The date-time is a string in [ISO 8601/RFC3339 format](https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14).
+      security:
+        - Authorization Header: []
+      consumes:
+        - application/json
+      responses:
+        200:
+          description: |
+            List of transactions.
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Transaction"
+        401:
+           $ref: "#/responses/401"
+        409:
+          $ref: "#/responses/409"
 definitions:
+  Transaction:
+    type: object
+    required:
+      - transaction-value
+      - transaction-date
+    properties:
+      transaction-value:
+        type: number
+        description: |
+          Value of the transaction.
+      transaction-date:
+        type: string
+        description: |
+          Date-time timestamp of the transaction.
+
+          The date-time is a string in [ISO 8601/RFC3339 format](https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14).
   RemunerationProvider:
     type: object
     required:
@@ -132,7 +325,7 @@ definitions:
         description: |
           This broker's specific public payment address with the reumneration
           provider.  This is the public address to which a subscription payment
-          needs to be made from a user identity.
+          needs to be made from a user [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
       description-md:
         type: string
         description: |
@@ -155,12 +348,81 @@ definitions:
           Description Markdown formatted text for this remuneration tier.
           Can have links and other markdown directing user to more information
           about this remuneration provider tier.
+  Authorities:
+    type: object
+    required:
+      - read-rate
+      - write-rate
+      - storage-used
+      - storage-limit
+      - active-until
+      - available-until
+    properties:
+      read-rate:
+        type: integer
+        description: |
+          Maximum amount of data allowed to be read per unit time for the provided
+          identity:  in bytes/hour.
+
+          If client's read-rate is reached within an hour, reads are throttled.
+          Throttling is broker implementation specific.
+
+          If negative, the rate is unlimited.
+      write-rate:
+        type: integer
+        description: |
+          Maximum amount of data allowed to be written per unit time for the provided
+          identity: in bytes/hour.
+
+          If client's write-rate is reached within an hour, writes are throttled.
+          Throttling is broker implementation specific.
+
+          If negative, the rate is unlimited.
+      storage-used:
+        type: integer
+        description: |
+          Amount of data in bytes stored by this *identity* on this broker system.
+      storage-limit:
+        type: integer
+        description: |
+          Maximum amoun tof data in bytes that can be stored by this *identity* on this
+          broker system at the current subscription level.
+
+          If negative, storage is unlimited.
+      active-until:
+        type: string
+        description: |
+          Date-time until when this *identity* has an 'active' subscription at the currently
+          authorized level.
+
+          It's possible once this subscription level expires the *identity* continues to
+          hava a subscription at a reduced level.  A subscription level expiry indicates
+          some remuneration provider transaction to the broker has lapsed.  The  remuneration provider
+          might indicate other transactions to the broker that haven't expired.
+
+          The date-time is a string in [ISO 8601/RFC3339 format](https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14).
+
+          A 'null' value indicates no expiry of current subscription level.
+      available-until:
+        type: string
+        description: |
+          Date-time until when data belonging to this *identity* will be retained within the
+          broker system.
+
+          The date-time is a string in [ISO 8601/RFC3339 format](https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14).
+
+          A 'null' value indicates no expiry; data retained indefinitely.
 responses:
-  (401) UnauthorizedError:
+  401:
     description: |
-      For an endpoint protected with the *Token* security definition, an "Authorization"
-      header was not provided a valid token--returned from the */auth/authenticate*
-      endpoint.
+      For an endpoint protected with the [token security definition](#security-definition-Authorization Header), an "Authorization" header was not provided a valid token--as returned from the [authenticate endpoint](#operation--auth-authenticate-post).
+  409:
+    description: |
+      Go play a lottery:  the generated identity conflicts with some other identity or ended up being a restricted number <10000.
+
+      *User-address* hashed with its *secret-phrase* must be unique within the system.  Another *user-address*/*secret-phrase* already in the system hashes to the same hash as the provided *user-address*/*secret-phrase*.
+
+      Try a different *secret-phrase*.
 securityDefinitions:
   Authorization Header:
     type: apiKey
