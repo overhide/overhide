@@ -156,6 +156,14 @@ In *overhide.js* a *datastore-value* can be encrypted using:
 
 The encryption key used for the datastore-value is the *datastore-value-secret*.
 
+#### post & write
+
+A *datastore-key* can be written to or posted to.  
+
+Writing to a *datastore-key* sets a new *datastore-value* for that *datastore-key*.
+
+Posting to a *datastore-key* uses the *datastore-key* as a queue.  It doesn't change the *datastore-value*.  See *backchannel* below.
+
 #### key-owner
 
 Entity that created a certain *datastore-key* and therefore owns that key.

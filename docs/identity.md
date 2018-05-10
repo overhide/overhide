@@ -59,7 +59,17 @@ If the user remembers the previous *secret-phrase*, the user's original *identit
 
 If the user doesn't remember the previous *secret-phrase*, the original *identity* cannot be calculated, all *datastore-keys* owned by that *identity* are unrecoverable.
 
-#### Subscriptions
+### Authenticated Sessions
+
+When an *identity* authenticates a token is returned to the client software.  This token is valid for some time and can be used by the client to access *overhide* APIs.  
+
+If the token expires, client software must re-authenticate the *identity*.
+
+The *overhide* broker keeps an in-memory whitelist of valid tokens.  The broker doesn't keep track of mappings between tokens and *identities* or tokens and *user-addresses*.  But the token itself--exchanged between broker and client software--contains the *identity* and a hashed version of the *user-address*.  The hashing approach for the *user-address* hash is broker specific, but could likely be *broker-salt<sub>hash</sub>(user-address)*.  The token contains sufficient internal checks (hashes) to ensure the whitelisted token is unmodifiable.
+
+Providing a whitelisted token to *overhide* APIs allows them to validate ownership and write/post rights at access time.
+
+## Subscriptions
 
 *overhide* isn't concerned with the exact mechanism for subscriptions and recurring subscriptions outside of what's made available with some *remuneration API* implementation.  There is no *overhide* specific token.  Implementations of the *renumeration API* abstract different blockchains for subscription purposes.  
 
@@ -78,7 +88,7 @@ A subscribed user is a user with an "active" *identity*.  The "active" state of 
 
 *active-until* and *available-until* will be updated on authentication as per the most recent payment from *user-address* to *broker-address*.
 
-#### *secret-phrase* Security
+## *secret-phrase* Security
 
 Note that the *overhide* broker is privy to the user's *secret-phrase* during runtime.  As such it's possible the *overhide* broker can be used to expose users' *secret-phrases* such that users' data can be deleted or corrupted: the data cannot be deciphered as the *datastore-value* is encrypted by keys known only to the users themselves.  Therefore the *overhide* broker must be trusted to not give up users' *secret-phrases* as they're passed in.  In reality if an *overhide* broker implementation cannot be trusted in this situation, it likely cannot be trusted with it's underlying data storage either.  Such breaches of trust would damage an *overhide* broker's reputation because of the data-loss.
 

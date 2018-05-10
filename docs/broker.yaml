@@ -10,6 +10,8 @@ info:
     ![OverHide component model](https://github.com/JakubNer/overhide/raw/master/docs/images/provided.png)
 
     To load this API into another [Swagger viewer/editor](https://editor.swagger.io) find [the GitHub *Swagger 2.0* definition file](https://github.com/JakubNer/overhide/blob/master/docs/broker.yaml) and import as YAML.
+
+    Read this API with reference to the [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md).
   version: 1.0.0
   title: OverHide Broker API
   contact:
@@ -33,6 +35,13 @@ tags:
       done with the [authenticate endpoint](#path--auth-authenticate).
       * work with subscription details for a supported remuneration API and a
       given *identity*.
+  - name: data
+    description: |
+      Data operations:
+
+      * key-value CRUD operations
+      * backchannel queue/dequeue
+      * access metadata for data keys
 paths:
   /capabilities/remuneration-providers:
     get:
@@ -80,7 +89,7 @@ paths:
             items:
               $ref: "#/definitions/RemunerationTier"
   /auth/authenticate:
-    post:
+    put:
       summary: Authenticate an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) returning a token.
       description: |
         Authenticate an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) returning a token to be used for [token
@@ -169,7 +178,7 @@ paths:
         401:
            $ref: "#/responses/401"
   /auth/change-credentials:
-    post:
+    put:
       summary: Change authentication of token's user.
       description: |
       tags:
@@ -292,6 +301,151 @@ paths:
            $ref: "#/responses/401"
         409:
           $ref: "#/responses/409"
+  /value/{segment-key}:
+    put:
+      summary: Set value of datastore-key.
+      description: |
+        Payload contents is written as a new value into *datastore-key* (segment-key @ identity).
+
+        For the *set* to succeed the *datastore-key* (segment-key @ identity) must
+        either be brand new of already owned by authorization token owner.
+      tags:
+        - data
+      parameters:
+        - in: body
+          name: datastore-value
+          schema:
+            type: string
+        - in: path
+          name: segment-key
+          required: true
+          description: |
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+          type: string
+        - in: query
+          name: identity
+          required: false
+          description: |
+            Optional identity.  If not provided, identity is that of token owner.
+
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+          type: string
+      security:
+        - Authorization Header: []
+      consumes:
+        - application/json
+      responses:
+        200:
+          description: |
+            Value successfully set.
+    get:
+      summary: Get value of datastore-key.
+      description: |
+        Get value of *datastore-key* (segment-key @ identity).
+      tags:
+        - data
+      parameters:
+        - in: path
+          name: segment-key
+          required: true
+          description: |
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+          type: string
+        - in: query
+          name: identity
+          required: false
+          description: |
+            Optional identity.  If not provided, identity is that of token owner.
+
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+          type: string
+      security:
+        - Authorization Header: []
+      produces:
+        - application/json
+      responses:
+        200:
+          description: |
+            The value of *datastore-key* (segment-key @ identity).
+    delete:
+      summary: Delete datastore-key.
+      description: |
+        Delete *datastore-key* (segment-key @ identity).  The *datastore-key* must be
+        owned by the token owner.
+      tags:
+        - data
+      parameters:
+        - in: path
+          name: segment-key
+          required: true
+          description: |
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+          type: string
+        - in: query
+          name: identity
+          required: false
+          description: |
+            Optional identity.  If not provided, identity is that of token owner.
+
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+          type: string
+      security:
+        - Authorization Header: []
+      responses:
+        200:
+          description: |
+            The value of *datastore-key* (segment-key @ identity).
+  /settings/{segment-key}:
+    put:
+      summary: Setup settings for given datastore-key (segment-key @ identity).
+      description: |
+        Setup data and backchannel settings for given *datastore-key* (*segment-key* @ *identity*).
+      tags:
+        - data
+      parameters:
+        - in: body
+          name: datastore-value
+          schema:
+            type: object
+            required:
+              - allow-write
+              - allowed-writers
+              - allow-publish
+              - allowed-publishers
+            properties:
+              allow-write:
+                type: string
+                enum: [self, signed]
+                description: |
+                  Indicate who is allowed to write to the *datastore-key*.  Writing "self" is default.
+
+                  Value of "self" indicates only owner can write new data.
+
+                  Value of "signed" indicates *allowed-writers* property must necessairly list
+                  public keys to identify users allowed to write into *segment-key*.
+                  // TODO can a writing *identity* be mapped to a public key listed here?
+        - in: path
+          name: segment-key
+          required: true
+          description: |
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+          type: string
+        - in: query
+          name: identity
+          required: false
+          description: |
+            Optional identity.  If not provided, identity is that of token owner.
+
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+          type: string
+      security:
+        - Authorization Header: []
+      consumes:
+        - application/json
+      responses:
+        200:
+          description: |
+            Settings applied successfully.
 definitions:
   Transaction:
     type: object
