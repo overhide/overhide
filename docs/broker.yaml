@@ -3,6 +3,7 @@ host: overhide.io
 basePath: /broker
 schemes:
   - https
+  - wss
 info:
   description: |
     This is the API contract expected to be exposed by an OverHide "broker".  This API is represented by the green "broker API" connector in the OverHide component model:
@@ -12,6 +13,10 @@ info:
     To load this API into another [Swagger viewer/editor](https://editor.swagger.io) find [the GitHub *Swagger 2.0* definition file](https://github.com/JakubNer/overhide/blob/master/docs/broker.yaml) and import as YAML.
 
     Read this API with reference to the [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md).
+
+    ***
+      A note on schemes used in the API.  All operations unless explicitly indicated use the HTTPS scheme.  The [backchannel-message/../subscribe/.. operation](#operation--backchannel-message-subscribe--segment-key--get) uses the WSS scheme.
+    ***
   version: 1.0.0
   title: OverHide Broker API
   contact:
@@ -37,11 +42,13 @@ tags:
       given *identity*.
   - name: data
     description: |
-      Data operations:
-
-      * key-value CRUD operations
-      * backchannel queue/dequeue
-      * access metadata for data keys
+      Data key-value CRUD operations; modifying data values in *datastore-keys*.
+  - name: backchannel queues
+    description: |
+      Publishing messages to backchannel queues, subscribing to notifications, and de-queueing the messages.
+  - name: datastore-key settings
+    description: |
+      Setting access metadata for *datastore-keys*.
 paths:
   /capabilities/remuneration-providers:
     get:
@@ -62,7 +69,9 @@ paths:
             type: array
             items:
               $ref: "#/definitions/RemunerationProvider"
-  /capabilities/remuneration-tiers/{providerKey}:
+        429:
+          $ref: "#/responses/429"
+  /capabilities/remuneration-tiers/{remuneration-key}:
     get:
       summary: List of subscription tiers available.
       description: |
@@ -73,10 +82,10 @@ paths:
       operationId: getRemunerationTiers
       parameters:
         - in: path
-          name: providerKey
+          name: remuneration-key
           required: true
           description: |
-            One of the provider keys from */capabilities/remuneration-providers*
+            One of the remuneration provider keys from */capabilities/remuneration-providers*
           type: string
       produces:
         - application/json
@@ -88,6 +97,10 @@ paths:
             type: array
             items:
               $ref: "#/definitions/RemunerationTier"
+        400:
+          $ref: "#/responses/400"
+        429:
+          $ref: "#/responses/429"
   /auth/authenticate:
     put:
       summary: Authenticate an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) returning a token.
@@ -105,7 +118,7 @@ paths:
             type: object
             required:
               - remuneration-key
-              - secret-phase
+              - secret-phrase
               - user-address
               - secret-phrase-signed
             properties:
@@ -116,10 +129,10 @@ paths:
                   provided *user-address* to this broker's *broker-address*.
 
                   Must be one of the remuneration provider keys from this broker's [capabilities](#operation--capabilities-remuneration-providers-get).
-              secret-phase:
+              secret-phrase:
                 type: string
                 description: |
-                  A secret phrase for the specified user-address.  Once a user authenticates against the broker with a secret-phrase and a user-address, the secret-phrase is tied to the user-address indefinitely, unless changed by [change-credentials](#operation--auth-change-credentials-post).
+                  A secret phrase for the specified user-address.  Once a user authenticates against the broker with a secret-phrase and a user-address, the secret-phrase is tied to the user-address indefinitely, unless changed by [change-credentials](#operation--auth-change-credentials-put).
               user-address:
                 type: string
                 description: |
@@ -144,6 +157,8 @@ paths:
             OverHide broker.
           schema:
             type: string
+        400:
+          $ref: "#/responses/400"
         402:
           description: |
             Payment Required -- Remuneration provider indicates insufficient transactions to the broker system to meet a
@@ -152,6 +167,8 @@ paths:
             See [subscriptions write-up](https://github.com/JakubNer/overhide/blob/master/docs/identity.md#subscriptions).
         409:
           $ref: "#/responses/409"
+        429:
+          $ref: "#/responses/429"
   /auth/get-authorities:
     get:
       summary: Retrieves authorities for an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
@@ -177,6 +194,8 @@ paths:
             $ref: "#/definitions/Authorities"
         401:
            $ref: "#/responses/401"
+        429:
+          $ref: "#/responses/429"
   /auth/change-credentials:
     put:
       summary: Change authentication of token's user.
@@ -192,7 +211,7 @@ paths:
             type: object
             required:
               - new-remuneration-key
-              - new-secret-phase
+              - new-secret-phrase
               - new-user-address
               - new-secret-phrase-signed
             properties:
@@ -203,10 +222,10 @@ paths:
                   provided *new-user-address* to this broker's *broker-address*.
 
                   Must be one of the remuneration provider keys from this broker's [capabilities](#operation--capabilities-remuneration-providers-get).
-              new-secret-phase:
+              new-secret-phrase:
                 type: string
                 description: |
-                  A new secret phrase for the new user-address.  Once credentials are changed successfully; the *new-secret-phrase* is tied to the *new-user-address* indefinitely, unless changed again by [change-credentials](#operation--auth-change-credentials-post).
+                  A new secret phrase for the new user-address.  Once credentials are changed successfully; the *new-secret-phrase* is tied to the *new-user-address* indefinitely, unless changed again by [change-credentials](#operation--auth-change-credentials-put).
               new-user-address:
                 type: string
                 description: |
@@ -228,10 +247,14 @@ paths:
         200:
           description: |
             Credentials successfully changed.
+        400:
+          $ref: "#/responses/400"
         401:
            $ref: "#/responses/401"
         409:
           $ref: "#/responses/409"
+        429:
+          $ref: "#/responses/429"
   /auth/get-transaction/{remuneration-key}/{from-address}/{to-address}:
     get:
       summary: Retrieve remuneration transaction.
@@ -287,7 +310,7 @@ paths:
             The date-time is a string in [ISO 8601/RFC3339 format](https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14).
       security:
         - Authorization Header: []
-      consumes:
+      produces:
         - application/json
       responses:
         200:
@@ -297,10 +320,14 @@ paths:
             type: array
             items:
               $ref: "#/definitions/Transaction"
+        400:
+          $ref: "#/responses/400"
         401:
            $ref: "#/responses/401"
         409:
           $ref: "#/responses/409"
+        429:
+          $ref: "#/responses/429"
   /value/{segment-key}:
     put:
       summary: Set value of datastore-key.
@@ -316,6 +343,7 @@ paths:
           name: datastore-value
           schema:
             type: string
+            format: byte
         - in: path
           name: segment-key
           required: true
@@ -333,11 +361,17 @@ paths:
       security:
         - Authorization Header: []
       consumes:
-        - application/json
+        - application/octet-stream
       responses:
         200:
           description: |
             Value successfully set.
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
     get:
       summary: Get value of datastore-key.
       description: |
@@ -362,11 +396,17 @@ paths:
       security:
         - Authorization Header: []
       produces:
-        - application/json
+        - application/octet-stream
       responses:
         200:
           description: |
             The value of *datastore-key* (segment-key @ identity).
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
     delete:
       summary: Delete datastore-key.
       description: |
@@ -395,35 +435,33 @@ paths:
         200:
           description: |
             The value of *datastore-key* (segment-key @ identity).
-  /settings/{segment-key}:
-    put:
-      summary: Setup settings for given datastore-key (segment-key @ identity).
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
+  /backchannel-message/{segment-key}:
+    post:
+      summary: Enqueue a message to a given datastore-key backchannel.
       description: |
-        Setup data and backchannel settings for given *datastore-key* (*segment-key* @ *identity*).
+        Enqueue a message to a given *datastore-key* (*segment-key* @ *identity*) backchannel.
+
+        If the *datastore-key*'s *allow-publish* setting is "self", the *identity* in the authentication token must match the *datastore-key* owner.
+
+        If the *datastore-key*'s *allow-publish* setting is "signed", the author of the backchannel message is the *identity* tied ot the authorization token passed to this API.  Message author's public-key (hash) is present in the token and compared to the *allowed-publishers* list--if any--for this *datastore-key*.
+
+        If the *datastore-key*'s *allow-publish* setting is "any", the *identity* in the authentication token must simply be valid: a valid broker system user is publishing.
+
+        See the [settings getter](#operation--settings--segment-key--get) for the above settings.
       tags:
-        - data
+        - backchannel queues
       parameters:
         - in: body
-          name: datastore-value
+          name: backchannel message
           schema:
-            type: object
-            required:
-              - allow-write
-              - allowed-writers
-              - allow-publish
-              - allowed-publishers
-            properties:
-              allow-write:
-                type: string
-                enum: [self, signed]
-                description: |
-                  Indicate who is allowed to write to the *datastore-key*.  Writing "self" is default.
-
-                  Value of "self" indicates only owner can write new data.
-
-                  Value of "signed" indicates *allowed-writers* property must necessairly list
-                  public keys to identify users allowed to write into *segment-key*.
-                  // TODO can a writing *identity* be mapped to a public key listed here?
+            type: string
+            format: byte
         - in: path
           name: segment-key
           required: true
@@ -434,7 +472,191 @@ paths:
           name: identity
           required: false
           description: |
-            Optional identity.  If not provided, identity is that of token owner.
+            Optional identity.  If not provided, identity is that of token owner.
+
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+          type: string
+      security:
+        - Authorization Header: []
+      consumes:
+        - application/octet-stream
+      responses:
+        200:
+          description: |
+            Settings applied successfully.
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
+    get:
+      summary: Retrieve all messages from the backchannel at the givent datastore-key.
+      description: |
+        Retrieve messages from the backchannel at the given *datastore-key* (*segment-key* @ *identity*).
+      tags:
+        - backchannel queues
+      parameters:
+        - in: path
+          name: segment-key
+          required: true
+          description: |
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+          type: string
+        - in: query
+          name: identity
+          required: false
+          description: |
+            Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
+
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+          type: string
+      security:
+        - Authorization Header: []
+      produces:
+        - application/json
+      responses:
+        200:
+          description: |
+            Messages enqueued at *datastore-key* (segment-key @ identity) in increasing *seq-id* order.
+
+            Messages are in order of consecutivelly increasing message sequence ID (*seq-id*).  The message sequence IDs are internal system identifiers for the messages furnished by this *datastore-key*, they're unique to this *datastore-key* and consecutive.
+
+            Not all messages may be returned.  The response contains a count of messages still left with the broker system.  The *seq-id* of the most recent message returned (highest *seq-id*) plus the count of messages remaining, is the *seq-id* of most recent message left on the broker system.
+          schema:
+            type: object
+            required:
+              - remaining-count
+              - messages
+            properties:
+              remaining-count:
+                type: integer
+                description: |
+                  Count of messages still left with the broker system.
+              messages:
+                type: array
+                items:
+                  $ref: "#/definitions/Message"
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
+  /backchannel-message/{segment-key}/acknowledge/{seq-id}:
+    put:
+      summary: Acknowledge all messages up to and including seq-id for given datastore-key.
+      description: |
+        Acknowledge all messages up to and including seq-id have been handled.  All messages up to seq-id will be removed from the backchannel.
+      tags:
+        - backchannel queues
+      parameters:
+        - in: path
+          name: segment-key
+          required: true
+          description: |
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+          type: string
+        - in: path
+          name: seq-id
+          required: true
+          type: string
+          description: |
+            *seq-id* up to which--inclusive--to acknowledge backchannel processing.
+        - in: query
+          name: identity
+          required: false
+          description: |
+            Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
+
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+          type: string
+      security:
+        - Authorization Header: []
+      responses:
+        200:
+          description: |
+            Acknowledgment successful.
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
+  /backchannel-message/{segment-key}/subscribe:
+    get:
+      summary:  Owner--identified in token--subscribes to notifications of new messages in datastore-key.
+      description: |
+        Owner--identified in token--subscribes to notifications of new messages in *datastore-key* (*segment-key* @ *identity*).  Subscription doesn't send actual messages, just notification of new messages with a new *seq-id*.
+
+        Websocket (WSS scheme) subscription endpoint.
+      tags:
+        - backchannel queues
+      parameters:
+        - in: path
+          name: segment-key
+          required: true
+          description: |
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+          type: string
+        - in: query
+          name: identity
+          required: false
+          description: |
+            Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
+
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+          type: string
+      security:
+        - Authorization Query: []
+      responses:
+        default:
+          description: |
+            When this operation is first called the immediate response of this WSS subscription is either a successful or failed connection: websocket connections are left open on success and closed on failure, sans reason.
+
+            If the websocket connection is successful and remains open, the following details the possible events that will come across.
+
+            An example event stream coming across the Web socket could be:
+
+            ```
+            {
+              "type": "new-message",
+              "seq-id": 123
+            }
+            ```
+            ```
+            {
+              "type": "new-message",
+              "seq-id": 124
+            }
+            ```
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Event"
+  /settings/{segment-key}:
+    put:
+      summary: Setup settings for given datastore-key (segment-key @ identity).
+      description: |
+        Setup data and backchannel settings for given *datastore-key* (*segment-key* @ *identity*).
+      tags:
+        - datastore-key settings
+      parameters:
+        - in: body
+          name: datastore-value
+          schema:
+            $ref: "#/definitions/DatastoreKeySettings"
+        - in: path
+          name: segment-key
+          required: true
+          description: |
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+          type: string
+        - in: query
+          name: identity
+          required: false
+          description: |
+            Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
 
             See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
           type: string
@@ -446,6 +668,49 @@ paths:
         200:
           description: |
             Settings applied successfully.
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
+    get:
+      summary: Returns settings for a given datastore-key.
+      description: |
+        Returns data and backchannel settings for a given *datastore-key* (*segment-key* @ *identity*).
+      tags:
+        - datastore-key settings
+      parameters:
+        - in: path
+          name: segment-key
+          required: true
+          description: |
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+          type: string
+        - in: query
+          name: identity
+          required: false
+          description: |
+            Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
+
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+          type: string
+      security:
+        - Authorization Header: []
+      produces:
+        - application/json
+      responses:
+        200:
+          description: |
+            The value of *datastore-key* (segment-key @ identity).
+          schema:
+            $ref: "#/definitions/DatastoreKeySettings"
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
 definitions:
   Transaction:
     type: object
@@ -566,10 +831,125 @@ definitions:
           The date-time is a string in [ISO 8601/RFC3339 format](https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14).
 
           A 'null' value indicates no expiry; data retained indefinitely.
+  DatastoreKeySettings:
+    type: object
+    required:
+      - allow-write
+      - allowed-writers
+      - allow-publish
+      - allowed-publishers
+    properties:
+      allow-write:
+        type: string
+        enum: [self, signed]
+        description: |
+          Indicate who is allowed to write to the *datastore-key*.  The "self" value is default and means only owner of *segment-key* has write rights.
+
+          Value of "signed" indicates *allowed-writers* property must necessairly list public keys to identify *user-addresses* allowed to write into this *segment-key*.  Other users using this broker system attempting to write to this *segment-key* have their *authentication token* checked against the *user-addresses* in *allowed-writers* list.
+      allowed-writers:
+        type: array
+        items:
+          type: string
+        description: |
+          If *allow-write* is "self" this parameter is ignored.
+
+          If *allow-write* is "signed", this parameter is a list of public keys to identify users allowed to write data to this *datastore-key* (*segment-key* @ *identity*).
+
+          Other users using this broker system attempting to write to this *segment-key* have their *authentication token* checked against the *user-addresses* in this list.
+      allow-publish:
+        type: string
+        enum: [self, any, signed]
+        description: |
+          Indicate who is allowed to publish messages to the *datastore-key*'s backchannel'.  The "self" value is default and means only owner of *segment-key* has publish rights.
+
+          Value of "signed" indicates *allowed-publishers* property must necessairly list public keys to identify *user-addresses* allowed to publish messages into this *segment-key*.  Other users using this broker system attempting to publish messages to this *segment-key* have their *authentication token* checked against the *user-addresses* in *allowed-publishers* list.
+      allowed-publishers:
+        type: array
+        items:
+          type: string
+        description: |
+          if *allow-publish* is "self" or "any" this parameter is ignored.
+
+          If *allow-publish* is "signed", this parameter is a list of public keys to identify users allowed to publish messages to this *datastore-key* (*segment-key* @ *identity*).
+
+          Other users using this broker system attempting to publish to this *segment-key* have their *authentication token* checked against the *user-addresses* in this list.
+  Message:
+    type: object
+    required:
+      - seq-id
+      - message
+    properties:
+      seq-id:
+        type: integer
+        description: |
+          Consecutivelly increasing message sequence ID
+      message:
+        type: string
+        description: |
+          The message byte stream base64 encoded.
+  Event:
+    type: object
+    description: |
+      Events coming through the websocket connection will be extentions of this *Event* type:
+
+      * [Event--NewMessage](#definition-Event--NewMessage)
+    required:
+      - type
+    properties:
+      type:
+        type: string
+        enum: [new-message]
+  Event--NewMessage:
+    allOf:
+      - $ref: "#/definitions/Event"
+      - type: object
+        required:
+          - seq-id
+        properties:
+          seq-id:
+            type: integer
+            description: |
+              *seq-id* of most recent message left on the broker system.
 responses:
+  400:
+    description: |
+      A bad request from the client results in one or more of the following error message strings.
+
+      The message enum might be extended by broker system.
+    schema:
+      type: array
+      items:
+        type: string
+        enum:
+          - invalid remuneration-key, doesn't match broker system capabilities
+          - address incompatible with remuneration provider
+          - invalid signature
+          - invalid datastore-key requested; segment-key or identity mismatch
   401:
     description: |
-      For an endpoint protected with the [token security definition](#security-definition-Authorization Header), an "Authorization" header was not provided a valid token--as returned from the [authenticate endpoint](#operation--auth-authenticate-post).
+      For an endpoint protected with the [token security definition](#security-definition-Authorization Header), an "Authorization" header was not provided a valid token--as returned from the [authenticate endpoint](#operation--auth-authenticate-put).
+  403:
+    description: |
+      The *identity* is valid, authenticated, with proper authorizations, but:
+
+      1. the *identity* has no write or publish access to the valid *datastore-key*.
+      1. the API request would exceed rates and limits as set out within the authorities at the current subscription plan.
+
+      Results in one or more of the following error message strings.
+
+      The message enum might be extended by broker system.
+
+      Broker systems might not throw up this response when read and write rates are exceeded.  Instead a broker system might start throttling responses or responding at a lower-priority.
+    schema:
+      type: array
+      items:
+        type: string
+        enum:
+          - no write access
+          - no publish access
+          - storage limit exceeded
+          - read-rate exceeded
+          - write-rate exceeded
   409:
     description: |
       Go play a lottery:  the generated identity conflicts with some other identity or ended up being a restricted number <10000.
@@ -577,6 +957,11 @@ responses:
       *User-address* hashed with its *secret-phrase* must be unique within the system.  Another *user-address*/*secret-phrase* already in the system hashes to the same hash as the provided *user-address*/*secret-phrase*.
 
       Try a different *secret-phrase*.
+  429:
+    description: |
+      Client is calling the API too frequently.
+
+      Conditions for this response to occur are broker system dependant.
 securityDefinitions:
   Authorization Header:
     type: apiKey
@@ -586,6 +971,14 @@ securityDefinitions:
       Retrieve an authentication token using the [authentication endpoint](#path--auth-authenticate).
       The returned token must be provided in an "Authorization" header
       to API calls secured with this security definition.
+
+      The token is whitelisted by the *overhide* broker until revoked or expired (at broker's purview).  The token contains *identity* and *user-address* hashes to help with access control.  Details in the [*identity write-up*](https://github.com/JakubNer/overhide/blob/master/docs/identity.md#authenticated-sessions).
+  Authorization Query:
+    type: apiKey
+    in: query
+    name: auth
+    description: |
+      Same as the Authorization Header security scheme except token is passed in a query parameter named *auth*.
 externalDocs:
   description: OverHide documentation
   url: 'https://pages.github.com/JakubNer/overhide'

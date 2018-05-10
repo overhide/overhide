@@ -156,13 +156,15 @@ In *overhide.js* a *datastore-value* can be encrypted using:
 
 The encryption key used for the datastore-value is the *datastore-value-secret*.
 
-#### post & write
+#### publish message vs. write data
 
-A *datastore-key* can be written to or posted to.  
+A *datastore-key* can have data written to it or have messages published to it.  
 
-Writing to a *datastore-key* sets a new *datastore-value* for that *datastore-key*.
+Writing data to a *datastore-key* sets a new *datastore-value* for that *datastore-key*.
 
-Posting to a *datastore-key* uses the *datastore-key* as a queue.  It doesn't change the *datastore-value*.  See *backchannel* below.
+Publishing a message to a *datastore-key* uses the *datastore-key* as a queue.  It doesn't change the *datastore-value*.  See *backchannel* below.
+
+Consequently the data can be read from a *datastore-key* and the messages can be de-queued.
 
 #### key-owner
 
@@ -170,21 +172,21 @@ Entity that created a certain *datastore-key* and therefore owns that key.
 
 A *key-owner* has a unique *identity* in the system.
 
-The *key-owner* is the only entity that can read data posted to a *datastore-key*, see *backchannel* below.
+The *key-owner* is the only entity that can de-queue messages published to a *datastore-key*, see *backchannel* below.
 
-By default only the *key-owner* can write data to an owned *datastore-key*: notice writing data is different than posting, posting uses the *backchannel*, writing simply sets the *datastore-value*.  Other identities can be configured as "writers" against a *datastore-key* by the *key-owner*.
+By default only the *key-owner* can write data to an owned *datastore-key*: notice writing data is different than publishing, publishing uses the *backchannel*, writing simply sets the *datastore-value*.  Other identities can be configured as "writers" against a *datastore-key* by the *key-owner*.
 
 #### backchannel (queue)
 
-Each *datastore-key* can have a message posted to it; beyond just reading from it.
+Each *datastore-key* can have a message published to it for later de-queueing; beyond just writing and reading data against it.
 
-Messages posted to the *datastore-key* are enqueued in a queue.
+Messages published to the *datastore-key* are en-queued in a queue.
 
 These queues form a *backchannel* for a particular *datastore-key*.
 
-These messages can be dequeued by the *key-owner*.
+These messages can be de-queued by the *key-owner*.
 
-A *backchannel*'s publisher can be configured to be "any", "self" or "signed".  *backchannels* configured for "any" publisher allows anyone to post a message to it.  *backchannels* configured with "signed" publishers are configured with a list of public keys allowed to publish a message to the *backchannel*:  checked for signature at time of posting.  By default *backchannels* are restricted to "self":  only the *datastore-key* owner can publish:  *datastore-key* owner can always publish to the *datastore-key's* *backchannel*.
+A *backchannel*'s publisher can be configured to be "any", "self" or "signed".  *backchannels* configured for "any" publisher allows anyone to publish a message to it.  *backchannels* configured with "signed" publishers are configured with a list of public keys allowed to publish a message to the *backchannel*:  these public keys are checked against a publisher's authentication at time of publishing.  By default *backchannels* are restricted to "self":  only the *datastore-key* owner can publish:  *datastore-key* owner can always publish to the *datastore-key's* *backchannel*.
 
 In *overhide.js* all *backchannel* messages are public key encrypted to be private key decrypted by the owner.
 
@@ -206,9 +208,9 @@ In *overhide.js* the *datastore-value* is ECDSA (public key) encrypted with a *d
 
 A *user-key* owned by a *group-owner* but meant for a specific member: established between group-owner and member user to communicate user's view of group data.
 
-As an example, a *member-group-key* could be established by having a user post a subscription message to a group's *group-key* along with the user's *secrets[?]<sub>pub</sub>*.  The *group-owner* would use the *secrets[?]<sub>pub</sub>* as the *member-group-key*'s *segment-key-secret* and *datastore-value-secret*.  As such the *datastore-value* would be *secrets[?]<sub>pub</sub>* encrypted such that only the user can read it with their *secrets[?]<sub>pub</sub>⇒*.  The *segment-key* would be deterministic by both the *group-owner* and member as they both know the *segment-key-secret*.
+As an example, a *member-group-key* could be established by having a user publish a subscription message to a group's *group-key* along with the user's *secrets[?]<sub>pub</sub>*.  The *group-owner* would use the *secrets[?]<sub>pub</sub>* as the *member-group-key*'s *segment-key-secret* and *datastore-value-secret*.  As such the *datastore-value* would be *secrets[?]<sub>pub</sub>* encrypted such that only the user can read it with their *secrets[?]<sub>pub</sub>⇒*.  The *segment-key* would be deterministic by both the *group-owner* and member as they both know the *segment-key-secret*.
 
-A member user can usually post data to a *member-group-key* but the *datastore-key* is writable only by the *group-owner*: it's a view with feedback.
+A member user can usually publish messages to a *member-group-key* but the *datastore-key* is writable only by the *group-owner*: it's a view with feedback.
 
 #### delegate-key
 
