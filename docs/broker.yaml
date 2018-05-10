@@ -255,11 +255,11 @@ paths:
           $ref: "#/responses/409"
         429:
           $ref: "#/responses/429"
-  /auth/get-transaction/{remuneration-key}/{from-address}/{to-address}:
+  /auth/get-transactions/{remuneration-key}/{from-address}/{to-address}:
     get:
-      summary: Retrieve remuneration transaction.
+      summary: Retrieve remuneration transactions.
       description: |
-        Retrieve the latest remuneration transaction on *remuneration-key* from *from-address* to *to-address*
+        Retrieve the latest remuneration transactions on *remuneration-key* from *from-address* to *to-address*
       tags:
         - auth
       parameters:

@@ -1,9 +1,17 @@
 swagger: '2.0'
+host: overhide.io
+basePath: /remunerate
+schemes:
+  - https
 info:
-  description: >-
-    An API expected to be exposed by an OverHide "broker": specification of the
-    "broker API" connector in the [OverHide component
-    diagram](https://github.com/JakubNer/overhide/raw/master/docs/images/provided.png).
+  description: |
+    This is the API contract expected to be exposed by an OverHide "remuneration" provider.  This API is represented by the green "remuneration API" connector in the OverHide component model:
+
+    ![OverHide component model](https://github.com/JakubNer/overhide/raw/master/docs/images/provided.png)
+
+    To load this API into another [Swagger viewer/editor](https://editor.swagger.io) find [the GitHub *Swagger 2.0* definition file](https://github.com/JakubNer/overhide/blob/master/docs/remuneration.yaml) and import as YAML.
+
+    Read this API with reference to the [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md).
   version: 1.0.0
   title: OverHide Remuneration API
   contact:
@@ -11,29 +19,94 @@ info:
   license:
     name: MIT License
     url: 'https://pages.github.com/JakubNer/overhide/blob/master/LICENSE'
-tags:
-  - name: capabilities
-    description: Discover capabilities of the OverHide broker system.
 paths:
-  /capabilities/hash-algorithms:
+  /get-transactions/{from-address}/{to-address}:
     get:
-      summary: List of hashing algorithms supported.
-      description: ''
-      tags:
-        - capabilities
-      operationId: getHashAlgorithms
+      summary: Retrieve remuneration transactions.
+      description: |
+        Retrieve the latest remuneration transactions from *from-address* to *to-address*
+      parameters:
+        - in: path
+          name: from-address
+          required: true
+          description: |
+            A public address from which to verify payment details (amount/date) to the *to-address*.
+          type: string
+        - in: path
+          name: to-address
+          required: true
+          description: |
+            The target public address to check for payment made.
+          type: string
+        - in: query
+          name: max-most-recent
+          required: false
+          type: integer
+          description: |
+            Number of most recent transactions to retrieve.
+        - in: query
+          name: since
+          required: false
+          type: string
+          description: |
+            Retrieve transactions since this date-time (inclusive) until now.
+
+            The date-time is a string in [ISO 8601/RFC3339 format](https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14).
+      security:
+        - BasicAuth: []
+      produces:
+        - application/json
       responses:
         200:
-          description: List of supported hashing algorithms.
+          description: |
+            List of transactions.
           schema:
-            $ref: "#/definitions/HashingAlgorithms"
+            type: array
+            items:
+              $ref: "#/definitions/Transaction"
+        400:
+          $ref: "#/responses/400"
+        401:
+        429:
+          $ref: "#/responses/429"
 definitions:
-  HashingAlgorithms:
-    type: array
-    items:
-      type: string
-      enum:
-        - SHA256
+  Transaction:
+    type: object
+    required:
+      - transaction-value
+      - transaction-date
+    properties:
+      transaction-value:
+        type: number
+        description: |
+          Value of the transaction.
+      transaction-date:
+        type: string
+        description: |
+          Date-time timestamp of the transaction.
+
+          The date-time is a string in [ISO 8601/RFC3339 format](https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14).
+responses:
+  400:
+    description: |
+      A bad request from the client results in one or more of the following error message strings.
+
+      The message enum might be extended by remuneration provider.
+    schema:
+      type: array
+      items:
+        type: string
+        enum:
+          - address incompatible
+          - invalid signature
+  429:
+    description: |
+      Client is calling the API too frequently.
+
+      Conditions for this response to occur are remuneration provider dependant.
+securityDefinitions:
+  BasicAuth:
+    type: basic
 externalDocs:
   description: OverHide documentation
   url: 'https://pages.github.com/JakubNer/overhide'
