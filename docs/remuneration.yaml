@@ -5,15 +5,15 @@ schemes:
   - https
 info:
   description: |
-    This is the API contract expected to be exposed by an OverHide "remuneration" provider.  This API is represented by the green "remuneration API" connector in the OverHide component model:
+    This is the API contract expected to be exposed by an overhide "remuneration" provider.  This API is represented by the green "remuneration API" connector in the overhide component model:
 
-    ![OverHide component model](https://github.com/JakubNer/overhide/raw/master/docs/images/provided.png)
+    ![overhide component model](https://github.com/JakubNer/overhide/raw/master/docs/images/provided.png)
 
     To load this API into another [Swagger viewer/editor](https://editor.swagger.io) find [the GitHub *Swagger 2.0* definition file](https://github.com/JakubNer/overhide/blob/master/docs/remuneration.yaml) and import as YAML.
 
     Read this API with reference to the [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md).
   version: 1.0.0
-  title: OverHide Remuneration API
+  title: overhide Remuneration API
   contact:
     email: info@overhide.io
   license:
@@ -108,5 +108,5 @@ securityDefinitions:
   BasicAuth:
     type: basic
 externalDocs:
-  description: OverHide documentation
+  description: overhide documentation
   url: 'https://pages.github.com/JakubNer/overhide'

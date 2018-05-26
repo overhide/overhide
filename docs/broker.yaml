@@ -6,9 +6,9 @@ schemes:
   - wss
 info:
   description: |
-    This is the API contract expected to be exposed by an OverHide "broker".  This API is represented by the green "broker API" connector in the OverHide component model:
+    This is the API contract expected to be exposed by an overhide "broker".  This API is represented by the green "broker API" connector in the overhide component model:
 
-    ![OverHide component model](https://github.com/JakubNer/overhide/raw/master/docs/images/provided.png)
+    ![overhide component model](https://github.com/JakubNer/overhide/raw/master/docs/images/provided.png)
 
     To load this API into another [Swagger viewer/editor](https://editor.swagger.io) find [the GitHub *Swagger 2.0* definition file](https://github.com/JakubNer/overhide/blob/master/docs/broker.yaml) and import as YAML.
 
@@ -18,7 +18,7 @@ info:
       A note on schemes used in the API.  All operations unless explicitly indicated use the HTTPS scheme.  The [backchannel-message/../subscribe/.. operation](#operation--backchannel-message-subscribe--segment-key--get) uses the WSS scheme.
     ***
   version: 1.0.0
-  title: OverHide Broker API
+  title: Overhide Broker API
   contact:
     email: info@overhide.io
   license:
@@ -27,7 +27,7 @@ info:
 tags:
   - name: capabilities
     description: |
-      Discover capabilities of the OverHide broker system.
+      Discover capabilities of the overhide broker system.
       * subscription providers
       * subscription tiers
   - name: auth
@@ -49,6 +49,11 @@ tags:
   - name: datastore-key settings
     description: |
       Setting access metadata for *datastore-keys*.
+  - name: import/export
+    description: |
+      Batch import and export of all user's data and messages.
+
+      Envisioned use cases include backup and broker transfer.
 paths:
   /capabilities/remuneration-providers:
     get:
@@ -154,7 +159,7 @@ paths:
         200:
           description: |
             Authentication token is returned to be used in subsequent calls into
-            OverHide broker.
+            overhide broker.
           schema:
             type: string
         400:
@@ -711,6 +716,74 @@ paths:
           $ref: "#/responses/403"
         429:
           $ref: "#/responses/429"
+  /all-data:
+    put:
+      summary: Set all user's data on the broker system to the provided payload.
+      description: |
+        All of the user's data with caller's *identity* is wiped and reset to the payload.
+
+        If transferring a *segment-key* with a public restricted identity (0 .. 9999), if the
+        *segment-key* already exists at provided identity for a different *owner*, the message
+        call fails with a 400 -- "datastore-key ownership conflict; segment-key @ identity already reserved".
+      tags:
+        - import/export
+      parameters:
+        - in: body
+          name: import-export-payload
+          schema:
+            $ref: "#/definitions/ImportExportPayload"
+      security:
+        - Authorization Header: []
+      consumes:
+        - application/json
+      responses:
+        200:
+          description: |
+            Data successfully set.
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
+    get:
+      summary: Get all user's data from the broker system.
+      description: |
+        Get all of the caller's data, based on *identity* passed in.
+      tags:
+        - import/export
+      security:
+        - Authorization Header: []
+      produces:
+        - application/json
+      responses:
+        200:
+          name: import-export-payload
+          $ref: "#/definitions/ImportExportPayload"
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
+    delete:
+      summary: Delete all user's data on the broker system.
+      description: |
+        Delete all user's data on the broker system, based on *identity* passed in.
+      tags:
+        - import/export
+      security:
+        - Authorization Header: []
+      responses:
+        200:
+          description: |
+            If all data is deleted.
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
 definitions:
   Transaction:
     type: object
@@ -910,6 +983,88 @@ definitions:
             type: integer
             description: |
               *seq-id* of most recent message left on the broker system.
+  ImportExportPayload:
+    type: object
+    required:
+      - settings
+      - values
+      - messages
+    properties:
+      settings:
+        type: array
+        items:
+          type: object
+          description: |
+            Settings for datastore-key to transfer.
+          required:
+            - segment-key
+            - settings
+          properties:
+            segment-key:
+              type: string
+              description: |
+                See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+            identity:
+              type: string
+              description: |
+                Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
+
+                See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+            settings:
+              $ref: "#/definitions/DatastoreKeySettings"
+      values:
+        type: array
+        items:
+          type: object
+          description: |
+            Datastore values to transfer.
+          required:
+            - segment-key
+            - bytes
+          properties:
+            segment-key:
+              type: string
+              description: |
+                See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+            identity:
+              type: string
+              description: |
+                Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
+
+                See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+            bytes:
+              type: string
+              description: |
+                The data byte stream base64 encoded.
+      messages:
+        type: array
+        items:
+          type: object
+          description: |
+            All messages from the backchannel at the givent datastore-key
+
+            Messages enqueued at *datastore-key* (segment-key @ identity) in increasing *seq-id* order.
+
+            Messages are in order of consecutivelly increasing message sequence ID (*seq-id*).  The message sequence IDs are internal system identifiers for the messages furnished by this *datastore-key*, they're unique to this *datastore-key* and consecutive.
+          required:
+            - segment-key
+            - messages
+          properties:
+            segment-key:
+              type: string
+              description: |
+                See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+            identity:
+              type: string
+              description: |
+                Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
+
+                See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+            messages:
+              type: array
+              items:
+                $ref: "#/definitions/Message"
+
 responses:
   400:
     description: |
@@ -925,6 +1080,7 @@ responses:
           - address incompatible with remuneration provider
           - invalid signature
           - invalid datastore-key requested; segment-key or identity mismatch
+          - datastore-key ownership conflict; segment-key @ identity already reserved
   401:
     description: |
       For an endpoint protected with the [token security definition](#security-definition-Authorization Header), an "Authorization" header was not provided a valid token--as returned from the [authenticate endpoint](#operation--auth-authenticate-put).
@@ -980,5 +1136,5 @@ securityDefinitions:
     description: |
       Same as the Authorization Header security scheme except token is passed in a query parameter named *auth*.
 externalDocs:
-  description: OverHide documentation
+  description: overhide documentation
   url: 'https://pages.github.com/JakubNer/overhide'
