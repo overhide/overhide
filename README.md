@@ -29,7 +29,7 @@ Note that the model below shows a browser with *overhide*'s' *overhide.js* JavaS
 ![components](docs/images/provided.png)
 
 * a user interfaces with an Ethereum blockchain using their *wallet* browser extension--external to *overhide*--to pay service and broker subscriptions
-* a user interfaces with a *keyring* to keep cohesive a mapping of which blockchain key pairs (from the wallet) and which *overhide* broker are to be used for a give app (service)
+* a user interfaces with a *keyring* to keep a cohesive mapping of which blockchain key pairs (from the wallet) and which *overhide* broker are to be used for a given app (service)
 * both the *wallet* and the *keyring* extensions are decoupled from the app (service)
 * the *wallet* leverages Ethereum's *web3* JavaScript library making it available to any in-browser app, service, or tool
 * the *keyring* leverages the *overhide.js* client code making it available to any in-browser app, service, or tool
