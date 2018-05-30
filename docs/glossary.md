@@ -81,6 +81,47 @@ Secrets can be per user, per service, per group, whatever the domain calls for.
 
 *overhide.js* promotes the use of such secrets via the concept of a "keyring": instead of user generated pass-phrases.
 
+#### wallet
+
+A store of key-pairs to prove identity, work-with transactions, and access funds on a blockchain.  
+
+A wallet contains public keys that are the external account addresses on a blockchain.
+
+It also contains private keys used to sign transactions on behalf of the public keys--accounts.
+
+*overhide* examples are envisioned to coexist with software wallets--something akin to *MetaMask* for Ethereum--which are browser extensions injecting JavaScript (*web3.js*) blockchain access to Web applications running with appropriate permissions in said browser.
+
+#### keybiner
+
+A *keybiner* is a collection of *keyrings*.  A *keyring* is mapping of assymetric key-pairs to a particular *overhide* broker system, for a particular *service*.  I.e. a *keyring* is a set of keys for a particular purpose grouped together.
+
+An application will repetativelly access a particular *overhide* broker instance with a particular blockchain public key (address) for identification.  The corresponding blockchain private key is also needed on-hand--only in-browser--for signatures.  For convenience, better user experience, better application flow, it's desirable to store a mapping of all these identifiers and tokens on the client machine, e.g. in the client browser.  All these identifiers and tokens for a single purpose comprise a *keyring*.  Multiple such *keyrings* are stored in the client's *keybiner*.
+
+The assymetric key-pairs in *keyrings* include public blockchain address keys and their private signing keys, as well as any additional keys the application may want to keep track of.  The additional keys are described above in the *secrets* section, and are usually generated using a mnemonic.
+
+In terms of Web applications in a browser--a *keybiner* is a browser extension that uses *localstorage* to store *keyrings* and injects a JavaScript library to make the *keyrings* accessible to said Web applications; provided they're running with appropriate permissions in said browser.  The injected *keybiner* JavaScript library is *overhide.js*.
+
+Considering a Web application will use a *keybiner* injected *overhide.js* to encrypt *keyrings* in the browser's *localstorage*--these *keyrings* are tied to a particular application--and for demonstration purposes may look like the following:
+
+```
+  'keybiner': ['keyring1':{
+                 'brokerUrl':'..',
+                 'keys': [
+                  {'private':'..',
+                   'public':'..'
+                  },
+                  ...
+                 ]
+               },
+               'keyring2':{..},
+               ...
+               'keyringN':{..}]
+```
+
+Each *keyring* has an alias; "keyring1", "keyring2", "keyringN".  These can be thought of as login names in traditional login schemes.  The *overhide.js* library exposed by *keybiner* provides utilities to symmetrically encrypt each *keyring*.  When a user provides the appropriate passphrase to decrypt a keyring (a login), access to the broker mapping and all the stored keys is granted.  From this point forward the application has all the information it needs to synchronize with the specified *overhide* instance ('brokerUrl').  Hence the alias and the symmetric passphrase are the access credentials--and they're never sent over the wire.
+
+To setup a new *keyring*--let's say in a new browser on a new computer--the user needs to remember their *overhide* broker system ('brokerUrl', likely dictated by the app, a UI dropdown), blockchain keys (likely using a *wallet*), and optinally a mnemonic for other *secrets*--if additional secrets are required by the app.
+
 #### broker
 
 The "broker"--abstracted via the broker API--stores and provides users' data.
@@ -91,7 +132,7 @@ The broker doesn't enforce that the keys nor values are encrypted.  This mechani
 
 Although the broker is a key-value store in the standard sense; the keys have an additional property of being a queue for a backchannel.
 
-#### overhide.js (keyring library)
+#### overhide.js (*keyring* library)
 
 Software library, dependency for services communicating to a *broker*.  Takes care of establishing identity, hashing and ciphering domain keys and values for *broker* datastore to persist.
 
