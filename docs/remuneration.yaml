@@ -69,6 +69,46 @@ paths:
         401:
         429:
           $ref: "#/responses/429"
+  /is-signature-valid:
+    get:
+      summary: Check signature.
+      description: |
+        Check if provided signature corresponds to the provided address, resolved to the provided message.
+      parameters:
+        - in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - signature
+              - message
+              - address
+            properties:
+              signature:
+                type: string
+                description: |
+                  base64 encoded signature to verify
+              message:
+                type: string
+                description: |
+                  base64 encoded message that's signed for the address
+              address:
+                type: string
+                description: |
+                  the address (public key) of signature
+      security:
+        - BasicAuth: []
+      produces:
+        - application/json
+      responses:
+        200:
+          description: |
+            Signature is valid.
+        400:
+          $ref: "#/responses/400"
+        401:
+        429:
+          $ref: "#/responses/429"
 definitions:
   Transaction:
     type: object

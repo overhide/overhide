@@ -477,7 +477,7 @@ paths:
           name: identity
           required: false
           description: |
-            Optional identity.  If not provided, identity is that of token owner.
+            Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
 
             See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
           type: string
@@ -758,7 +758,6 @@ paths:
         - application/json
       responses:
         200:
-          name: import-export-payload
           $ref: "#/definitions/ImportExportPayload"
         400:
           $ref: "#/responses/400"
@@ -922,7 +921,21 @@ definitions:
       allowed-writers:
         type: array
         items:
-          type: string
+          type: object
+          required:
+            - address
+            - remuneration-key
+          properties:
+            address:
+              type: string
+              description: |
+                public key (address) identifying user allowed to write data
+            remuneration-key:
+              type: string
+              description: |
+                One of the remuneration provider keys from /capabilities/remuneration-providers
+
+                The provided address corresponds to one of the remuneration providers, define it.
         description: |
           If *allow-write* is "self" this parameter is ignored.
 
@@ -939,7 +952,21 @@ definitions:
       allowed-publishers:
         type: array
         items:
-          type: string
+          type: object
+          required:
+            - address
+            - remuneration-key
+          properties:
+            address:
+              type: string
+              description: |
+                public key (address) identifying user allowed to publish
+            remuneration-key:
+              type: string
+              description: |
+                One of the remuneration provider keys from /capabilities/remuneration-providers
+
+                The provided address corresponds to one of the remuneration providers, define it.
         description: |
           if *allow-publish* is "self" or "any" this parameter is ignored.
 
