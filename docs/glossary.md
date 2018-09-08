@@ -93,7 +93,7 @@ It also contains private keys used to sign transactions on behalf of the public 
 
 #### keybiner
 
-A *keybiner* is a collection of *keyrings*.  A *keyring* is mapping of assymetric key-pairs to a particular *overhide* broker system, for a particular *service*.  I.e. a *keyring* is a set of keys for a particular purpose grouped together.
+A *keybiner* is a collection of *keyrings*.  A *keyring* is a mapping of assymetric key-pairs to a particular *overhide* broker system, for a particular *service*.  I.e. a *keyring* is a set of keys for a particular purpose grouped together.
 
 An application will repetativelly access a particular *overhide* broker instance with a particular blockchain public key (address) for identification.  The corresponding blockchain private key is also needed on-hand--only in-browser--for signatures.  For convenience, better user experience, better application flow, it's desirable to store a mapping of all these identifiers and tokens on the client machine, e.g. in the client browser.  All these identifiers and tokens for a single purpose comprise a *keyring*.  Multiple such *keyrings* are stored in the client's *keybiner*.
 
