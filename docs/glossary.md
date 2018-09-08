@@ -266,7 +266,7 @@ A type of a *datastore-key* used to convey a value to a group: some *group-owner
 
 Since the *datastore-value* needs to be group readable, the *datastore-value-secret* is a public key made available to the group.  Specifically *group-key<sub>pub</sub>* denotes a group-owner's public key used for the *datastore-value-secret*.
 
-In *overhide.js* the *datastore-value* is ECDSA (public key) encrypted with a *datastore-value-secret* that's shared with the group.  This is one of the *secter[?]<sub>pub</sub>* BIP39 keys.  The same key is used for the *segment-key-secret* to salt and encrypt the *segment-key*.
+In *overhide.js* the *datastore-value* is ECDSA (public key) encrypted with a *datastore-value-secret* that's shared with the group.  This is one of the *secrets[?]<sub>pub</sub>* keys.  The same key is used for the *segment-key-secret* to salt and encrypt the *segment-key*.
 
 #### member-group-key
 
