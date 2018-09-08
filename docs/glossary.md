@@ -32,8 +32,8 @@ If *x-key* is a private key, then this is the corresponding public key.  E.g. *s
 
 In this write-up F(*x-key<sub>sym</sub>*) is context specific:
 
-* *x-key<sub>sym</sub>(plaintext)* means *x-key<sub>sym</sub>* encrypts plaintext into cyphertext.
-* *x-key<sub>sym</sub>(cyphertext)* means *x-key<sub>sym</sub>* decrypts cyphertext into plaintext.
+* *x-key<sub>sym</sub>*(plaintext) means *x-key<sub>sym</sub>* encrypts plaintext into cyphertext.
+* *x-key<sub>sym</sub>*(cyphertext) means *x-key<sub>sym</sub>* decrypts cyphertext into plaintext.
 
 #### salt<sub>hash</sub>(payload)
 
