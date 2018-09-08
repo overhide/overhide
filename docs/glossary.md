@@ -111,7 +111,8 @@ Considering a Web application will use a *keybiner* injected *overhide.js* to en
                    'public':'..'
                   },
                   ...
-                 ]
+                 ],
+                 'mnemonic':'..'                 
                },
                'keyring2':{..},
                ...
