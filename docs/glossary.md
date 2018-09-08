@@ -30,6 +30,11 @@ If *x-key* is a private key, then this is the corresponding public key.  E.g. *s
 
 *x-key* is used as a key for symmetric encryption/decryption.
 
+In this write-up F(*x-key<sub>sym</sub>*) is context specific:
+
+* *x-key<sub>sym</sub>(plaintext)* means *x-key<sub>sym</sub>* encrypts plaintext into cyphertext.
+* *x-key<sub>sym</sub>(cyphertext)* means *x-key<sub>sym</sub>* decrypts cyphertext into plaintext.
+
 #### salt<sub>hash</sub>(payload)
 
 Hash of *payload* with provided *salt*.
@@ -149,15 +154,32 @@ These domain human readable keys are referred to as *domain-keys* in our write-u
 
 A key used to salt and encrypt the *segment-key*.
 
-In *overhide.js* this is either the private key or public address from one of the *secrets* used as a salt and a symmetric key when producing a *segment-key*.  As such in *overhide.js* a *segment-key-secret* is necessarily 32 bytes long.  If a byte stream longer than 32 bytes is used as a *segment-key-secret* it is truncated to the last 32 bytes.
+In *overhide.js* this is either the private key or public address from one of the *secrets*: *secrets[?]<sub>pub|priv</sub>*.  It's used as a salt and a symmetric key when producing a *segment-key*.  As such in *overhide.js* a *segment-key-secret* is necessarily 32 bytes long.  If a byte stream longer than 32 bytes is used as a *segment-key-secret* it is truncated to the last 32 bytes.
 
 #### segment-key
 
 In *overhide* the *segment-key* is a function of the domain-key limited to 128 bytes.
 
-In *overhide.js* a *segment-key* is a 128 bytes long using a 32 byte long *segment-key-secret*.  The *segment-key* is derived by *sement-key-secret<sub>hash</sub>(domain-key)◠segment-key-secret<sub>sym</sub>(domain-key')*: a SHA256 hash of the *domain-key*, salted with *segment-key-secret* for the first 32 bytes, followed by 96 bytes of AES256 ciphertext.   The *domain-key'* must necessarily be 79 bytes long, as such *domain-key'* is *domain-key* that's PKCS7 padded.
+In *overhide.js* a *segment-key* is a 128 bytes long using a 32 byte long *segment-key-secret*.  The *segment-key* is derived by *sement-key-secret<sub>hash</sub>*(*domain-key*)◠*segment-key-secret<sub>sym</sub>*(*domain-key'*): a SHA256 hash of the *domain-key*, salted with *segment-key-secret* for the first 32 bytes, followed by 96 bytes of AES256 ciphertext.   The *domain-key'* must necessarily be 79 bytes long, as such *domain-key'* is *domain-key* that's PKCS7 padded.
 
-Note the important property that the *domain-key* is decipherable from the *segment-key*:  *crypto-key<sub>sym</sub>* applied against the tail bytes (length - 32 bytes).
+Note the important property that the *domain-key* is decipherable from the *segment-key*:  *segment-key-secret<sub>sym</sub>* applied against the tail bytes (length - 32 bytes).
+
+To recap, in *overhide.js*:
+
+* *segment-key-secret* := *secrets[?]<sub>pub|priv</sub>*
+* *segment-key-secret*.length == 32 bytes
+* *domain-key* := '..' // some text, makes sense in domain
+* *domain-key'* := *domain-key* PKCS7 padded
+* *domain-key'*.length == 79 bytes
+* *segment-key*[0..31] := *sement-key-secret<sub>hash</sub>(domain-key)* // uses SHA256
+* *segment-key*[32..127] := *segment-key-secret<sub>sym</sub>(domain-key')* // uses AES256
+* *domain-key'* == *segment-key-secret<sub>sym</sub>*(*segment-key*[32..127])
+* *domain-key* == *domain-key'* sans padding
+
+Therefore: 
+
+* *domain-key* == F(*segment-key*, *segment-key-secret*)
+* *segment-key* == F(*domain-key*, *segment-key-secret*)
 
 #### datastore-key
 
