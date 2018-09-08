@@ -91,7 +91,7 @@ It also contains private keys used to sign transactions on behalf of the public 
 
 *overhide* examples are envisioned to coexist with software wallets--something akin to *MetaMask* for Ethereum--which are browser extensions injecting JavaScript (*web3.js*) blockchain access to Web applications running with appropriate permissions in said browser.
 
-#### keybiner
+#### keybiner & keyrings
 
 A *keybiner* is a collection of *keyrings*.  A *keyring* is a mapping of assymetric key-pairs to a particular *overhide* broker system, for a particular *service*.  I.e. a *keyring* is a set of keys for a particular purpose grouped together.
 
