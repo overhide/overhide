@@ -250,7 +250,7 @@ These queues form a *backchannel* for a particular *datastore-key*.
 
 These messages can be de-queued by the *key-owner*.
 
-A *backchannel*'s publisher can be configured to be "any", "self" or "signed".  *backchannels* configured for "any" publisher allows anyone to publish a message to it.  *backchannels* configured with "signed" publishers are configured with a list of public keys allowed to publish a message to the *backchannel*:  these public keys are checked against a publisher's authentication at time of publishing.  By default *backchannels* are restricted to "self":  only the *datastore-key* owner can publish:  *datastore-key* owner can always publish to the *datastore-key's* *backchannel*.
+A *backchannel*'s publisher can be configured to be "any", "self" or "signed".  A *backchannel* configured for "any" publisher allows anyone to publish a message to it.  A *backchannel* configured with "signed" publishers is configured with a list of public keys allowed to publish a message to the *backchannel*:  these public keys are checked against a publisher's authentication at time of publishing.  By default *backchannels* are restricted to "self":  only the *datastore-key* owner can publish:  *datastore-key* owner can always publish to the *datastore-key's* *backchannel*.
 
 In *overhide.js* all *backchannel* messages are public key encrypted to be private key decrypted by the owner.
 
