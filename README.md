@@ -24,15 +24,15 @@ A "user" could be a person who wants to own all the data used by the "service" a
 
 For reference, below is a sample model of the above mentioned components.  In green are the artifacts documented by this repository.
 
-Note that the model below shows a browser with *overhide's* *overhide.js* JavaScript client as part of a [*keybiner*](docs/glossary.md#keybiner), a [*wallet*](docs/glossary.md#wallet) using Ethereum's *web3.js*, and an *Ethereum blockchain*.  This is but one model of possible access patterns, just for demonstration purposes.  There is nothing precluding a service or tooling written in any language from using the APIs directly, going against another blockchain stack, or a completely different remuneration mechanism altogether (as long as it implements *remuneration API*).
+Note that the model below shows a browser with *overhide's* *overhide.js* JavaScript client as part of a [*keybiner*](docs/glossary.md#keybiner--keyrings), a [*wallet*](docs/glossary.md#wallet) using Ethereum's *web3.js*, and an *Ethereum blockchain*.  This is but one model of possible access patterns, just for demonstration purposes.  There is nothing precluding a service or tooling written in any language from using the APIs directly, going against another blockchain stack, or a completely different remuneration mechanism altogether (as long as it implements *remuneration API*).
 
 ![components](docs/images/provided.png)
 
 * a user interfaces with an Ethereum blockchain using their [*wallet*](docs/glossary.md#wallet) browser extension--external to *overhide*--to pay service and broker subscriptions
-* a user interfaces with a [*keybiner*](docs/glossary.md#keybiner) to keep a cohesive mapping of which blockchain key pairs (from the [*wallet*](docs/glossary.md#wallet)) and which *overhide* broker are to be used for a given app (service)
-* both the [*wallet*](docs/glossary.md#wallet) and the [*keybiner*](docs/glossary.md#keybiner) extensions are decoupled from the app (service)
+* a user interfaces with a [*keybiner*](docs/glossary.md#keybiner--keyrings) to keep a cohesive mapping of which blockchain key pairs (from the [*wallet*](docs/glossary.md#wallet)) and which *overhide* broker are to be used for a given app (service)
+* both the [*wallet*](docs/glossary.md#wallet) and the [*keybiner*](docs/glossary.md#keybiner--keyrings) extensions are decoupled from the app (service)
 * the [*wallet*](docs/glossary.md#wallet) leverages Ethereum's *web3* JavaScript library making it available to any in-browser app, service, or tool
-* the [*keybiner*](docs/glossary.md#keybiner) leverages the *overhide.js* client code making it available to any in-browser app, service, or tool
+* the [*keybiner*](docs/glossary.md#keybiner--keyrings) leverages the *overhide.js* client code making it available to any in-browser app, service, or tool
 * a user uses the Web app and persists data with *overhide*
 * a user uses some "tooling" to import/export their data on their own terms, external to the application.
 * both the application service and tooling use the "client library" to interface with an *overhide* broker
@@ -59,13 +59,13 @@ Note that the model below shows a browser with *overhide's* *overhide.js* JavaSc
 ### Benefits to User
 
 * user owns their data
-* overhide.js/[*keybiner*](docs/glossary.md#keybiner) secures user's data client side--secured before leaves the browser
+* overhide.js/[*keybiner*](docs/glossary.md#keybiner--keyrings) secures user's data client side--secured before leaves the browser
 * user can validate security of their data: user has transparency into *overhide* broker to validate encryption by service
 * user has the option to treat their online data like any other local computer application data; back it up, export, import, move providers.  
    * depending on service, user might have flexibility to choose own *overhide* broker
 * user continues to have all the availability and reliability benefits of storing data in the cloud/on-prem server
-* user owns their passwords: store them in a browser [*keybiner*](docs/glossary.md#keybiner) extension
-   * security and recovery as rich as the [*keybiner*](docs/glossary.md#keybiner) allows
+* user owns their passwords: store them in a browser [*keybiner*](docs/glossary.md#keybiner--keyrings) extension
+   * security and recovery as rich as the [*keybiner*](docs/glossary.md#keybiner--keyrings) allows
 
 ### Expected Use Cases
 
@@ -96,7 +96,7 @@ This [overhide.js JavaScript client library](https://github.com/JakubNer/overhid
 
 By convention this library is to be provided in the global context via an `overhide` object.
 
-An instance of this object could be made available to app/service code running in a browser via a [*keybiner*](docs/glossary.md#keybiner) browser extension--similar to what *MetaMask* does with *web3.js* in *Chrome*.  This setup effectively removes the need to trust every app/service developer; just the "keybiner" needs to be trusted.
+An instance of this object could be made available to app/service code running in a browser via a [*keybiner*](docs/glossary.md#keybiner--keyrings) browser extension--similar to what *MetaMask* does with *web3.js* in *Chrome*.  This setup effectively removes the need to trust every app/service developer; just the "keybiner" needs to be trusted.
 
 ## [Sample Use Cases](docs/usecases.md)
 
