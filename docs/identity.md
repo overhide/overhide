@@ -28,8 +28,10 @@ Tracking *user-address* by *identity'* ensures only a single *secret-phrase* is 
 
 Specifically:
 
-   * *datastore-key* maps to *user-address<sub>hash</sub>(secret-phrase)*: *identity* is a hash of *secret-phrase* salted with *user-address*.
-   * *user-address* maps to *broker-salt<sub>hash</sub>(secret-phrase)*: *identity'* is a hash of *secret-phrase* salted with some *overhide* broker specific salt.
+   * *identity* := *user-address<sub>hash</sub>(secret-phrase)* // hash of *secret-phrase* salted with *user-address*
+   * *identity'* := *broker-salt<sub>hash</sub>(secret-phrase)* // hash of *secret-phrase* salted with some *overhide* broker specific salt
+   * *datastore-key* maps to *identity* 
+   * *user-address* maps to *identity'*
 
 ## Identity Authority
 
