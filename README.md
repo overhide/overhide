@@ -4,7 +4,7 @@
 
 ## About
 
-At it's core *overhide* is solving a people problem.  Consider an app developer who wants to create something, but doesn't want to front time, money, resources, into infrastructure to support the solution.  Further consider a user who wants to use said service, but doesn't want to worry about who they're trusting with their data and information.  Although both likely want the ease of centralized hubs for discovery--e.g. app stores--they might not want the burden of maintaining some centralized relationship: another account/login/network.
+At it's core *overhide* is solving a people problem.  Consider an app developer who wants to create something, but doesn't want to front time, money, resources, into infrastructure to support the solution.  Further consider a user who wants to use said service, but doesn't want to worry about who they're trusting with their data and information.  Although both likely want the ease of centralized hubs for discovery, they might not want the burden of maintaining some centralized relationship: another account/login/network.
 
 For certain solutions--*overhide* isn't universally applicable--we want to free the app developer from the standard deployment model and free the user from trusting yet another provider.
 
@@ -24,7 +24,7 @@ A "user" could be a person who wants to own all the data used by the "service" a
 
 For reference, below is a sample model of the above mentioned components.  In green are the artifacts documented by this repository.
 
-Note that the model below shows a browser with *overhide*'s' *overhide.js* JavaScript client as part of a [*keybiner*](docs/glossary.md#keybiner), a [*wallet*](docs/glossary.md#wallet) using Ethereum's *web3.js*, and an *Ethereum blockchain*.  This is but one model of possible access patterns, just for demonstration purposes.  There is nothing precluding a service or tooling written in any language from using the APIs directly, going against another blockchain stack, or a completely different remuneration mechanism altogether (as long as it implements *remuneration API*).
+Note that the model below shows a browser with *overhide's* *overhide.js* JavaScript client as part of a [*keybiner*](docs/glossary.md#keybiner), a [*wallet*](docs/glossary.md#wallet) using Ethereum's *web3.js*, and an *Ethereum blockchain*.  This is but one model of possible access patterns, just for demonstration purposes.  There is nothing precluding a service or tooling written in any language from using the APIs directly, going against another blockchain stack, or a completely different remuneration mechanism altogether (as long as it implements *remuneration API*).
 
 ![components](docs/images/provided.png)
 

@@ -30,6 +30,11 @@ If *x-key* is a private key, then this is the corresponding public key.  E.g. *s
 
 *x-key* is used as a key for symmetric encryption/decryption.
 
+In this write-up F(*x-key<sub>sym</sub>*) is context specific:
+
+* *x-key<sub>sym</sub>*(plaintext) means *x-key<sub>sym</sub>* encrypts plaintext into cyphertext.
+* *x-key<sub>sym</sub>*(cyphertext) means *x-key<sub>sym</sub>* decrypts cyphertext into plaintext.
+
 #### salt<sub>hash</sub>(payload)
 
 Hash of *payload* with provided *salt*.
@@ -91,9 +96,9 @@ It also contains private keys used to sign transactions on behalf of the public 
 
 *overhide* examples are envisioned to coexist with software wallets--something akin to *MetaMask* for Ethereum--which are browser extensions injecting JavaScript (*web3.js*) blockchain access to Web applications running with appropriate permissions in said browser.
 
-#### keybiner
+#### keybiner & keyrings
 
-A *keybiner* is a collection of *keyrings*.  A *keyring* is mapping of assymetric key-pairs to a particular *overhide* broker system, for a particular *service*.  I.e. a *keyring* is a set of keys for a particular purpose grouped together.
+A *keybiner* is a collection of *keyrings*.  A *keyring* is a mapping of assymetric key-pairs to a particular *overhide* broker system, for a particular *service*.  I.e. a *keyring* is a set of keys for a particular purpose grouped together.
 
 An application will repetativelly access a particular *overhide* broker instance with a particular blockchain public key (address) for identification.  The corresponding blockchain private key is also needed on-hand--only in-browser--for signatures.  For convenience, better user experience, better application flow, it's desirable to store a mapping of all these identifiers and tokens on the client machine, e.g. in the client browser.  All these identifiers and tokens for a single purpose comprise a *keyring*.  Multiple such *keyrings* are stored in the client's *keybiner*.
 
@@ -111,7 +116,8 @@ Considering a Web application will use a *keybiner* injected *overhide.js* to en
                    'public':'..'
                   },
                   ...
-                 ]
+                 ],
+                 'mnemonic':'..'                 
                },
                'keyring2':{..},
                ...
@@ -148,15 +154,32 @@ These domain human readable keys are referred to as *domain-keys* in our write-u
 
 A key used to salt and encrypt the *segment-key*.
 
-In *overhide.js* this is either the private key or public address from one of the *secrets* used as a salt and a symmetric key when producing a *segment-key*.  As such in *overhide.js* a *segment-key-secret* is necessarily 32 bytes long.  If a byte stream longer than 32 bytes is used as a *segment-key-secret* it is truncated to the last 32 bytes.
+In *overhide.js* this is either the private key or public address from one of the *secrets*: *secrets[?]<sub>pub|priv</sub>*.  It's used as a salt and a symmetric key when producing a *segment-key*.  As such in *overhide.js* a *segment-key-secret* is necessarily 32 bytes long.  If a byte stream longer than 32 bytes is used as a *segment-key-secret* it is truncated to the last 32 bytes.
 
 #### segment-key
 
 In *overhide* the *segment-key* is a function of the domain-key limited to 128 bytes.
 
-In *overhide.js* a *segment-key* is a 128 bytes long using a 32 byte long *segment-key-secret*.  The *segment-key* is derived by *sement-key-secret<sub>hash</sub>(domain-key)◠segment-key-secret<sub>sym</sub>(domain-key')*: a SHA256 hash of the *domain-key*, salted with *segment-key-secret* for the first 32 bytes, followed by 96 bytes of AES256 ciphertext.   The *domain-key'* must necessarily be 79 bytes long, as such *domain-key'* is *domain-key* that's PKCS7 padded.
+In *overhide.js* a *segment-key* is a 128 bytes long using a 32 byte long *segment-key-secret*.  The *segment-key* is derived by *sement-key-secret<sub>hash</sub>*(*domain-key*)◠*segment-key-secret<sub>sym</sub>*(*domain-key'*): a SHA256 hash of the *domain-key*, salted with *segment-key-secret* for the first 32 bytes, followed by 96 bytes of AES256 ciphertext.   The *domain-key'* must necessarily be 79 bytes long, as such *domain-key'* is *domain-key* that's PKCS7 padded.
 
-Note the important property that the *domain-key* is decipherable from the *segment-key*:  *crypto-key<sub>sym</sub>* applied against the tail bytes (length - 32 bytes).
+Note the important property that the *domain-key* is decipherable from the *segment-key*:  *segment-key-secret<sub>sym</sub>* applied against the tail bytes (length - 32 bytes).
+
+To recap, in *overhide.js*:
+
+* *segment-key-secret* := *secrets[?]<sub>pub|priv</sub>*
+* *segment-key-secret*.length == 32 bytes
+* *domain-key* := '..' // some text, makes sense in domain
+* *domain-key'* := *domain-key* PKCS7 padded
+* *domain-key'*.length == 79 bytes
+* *segment-key*[0..31] := *sement-key-secret<sub>hash</sub>(domain-key)* // uses SHA256
+* *segment-key*[32..127] := *segment-key-secret<sub>sym</sub>(domain-key')* // uses AES256
+* *domain-key'* == *segment-key-secret<sub>sym</sub>*(*segment-key*[32..127])
+* *domain-key* == *domain-key'* sans padding
+
+Therefore: 
+
+* *domain-key* == F(*segment-key*, *segment-key-secret*)
+* *segment-key* == F(*domain-key*, *segment-key-secret*)
 
 #### datastore-key
 
@@ -227,7 +250,7 @@ These queues form a *backchannel* for a particular *datastore-key*.
 
 These messages can be de-queued by the *key-owner*.
 
-A *backchannel*'s publisher can be configured to be "any", "self" or "signed".  *backchannels* configured for "any" publisher allows anyone to publish a message to it.  *backchannels* configured with "signed" publishers are configured with a list of public keys allowed to publish a message to the *backchannel*:  these public keys are checked against a publisher's authentication at time of publishing.  By default *backchannels* are restricted to "self":  only the *datastore-key* owner can publish:  *datastore-key* owner can always publish to the *datastore-key's* *backchannel*.
+A *backchannel*'s publisher can be configured to be "any", "self" or "signed".  A *backchannel* configured for "any" publisher allows anyone to publish a message to it.  A *backchannel* configured with "signed" publishers is configured with a list of public keys allowed to publish a message to the *backchannel*:  these public keys are checked against a publisher's authentication at time of publishing.  By default *backchannels* are restricted to "self":  only the *datastore-key* owner can publish:  *datastore-key* owner can always publish to the *datastore-key's* *backchannel*.
 
 In *overhide.js* all *backchannel* messages are public key encrypted to be private key decrypted by the owner.
 
@@ -243,7 +266,7 @@ A type of a *datastore-key* used to convey a value to a group: some *group-owner
 
 Since the *datastore-value* needs to be group readable, the *datastore-value-secret* is a public key made available to the group.  Specifically *group-key<sub>pub</sub>* denotes a group-owner's public key used for the *datastore-value-secret*.
 
-In *overhide.js* the *datastore-value* is ECDSA (public key) encrypted with a *datastore-value-secret* that's shared with the group.  This is one of the *secter[?]<sub>pub</sub>* BIP39 keys.  The same key is used for the *segment-key-secret* to salt and encrypt the *segment-key*.
+In *overhide.js* the *datastore-value* is ECDSA (public key) encrypted with a *datastore-value-secret* that's shared with the group.  This is one of the *secrets[?]<sub>pub</sub>* keys.  The same key is used for the *segment-key-secret* to salt and encrypt the *segment-key*.
 
 #### member-group-key
 
