@@ -5,7 +5,9 @@
     "bootprint": "1.0.2",
     "bootprint-openapi": "1.1.0",
     "html-inline": "1.2.0",
-    "npm-watch": "0.3.0"
+    "npm-watch": "0.3.0",
+    "markdown-to-html": "0.0.13",
+    "replace-in-file": "3.4.2"
   },
   "watch": {
     "build:broker": "docs/broker.yaml",
@@ -14,9 +16,31 @@
   "scripts": {
     "build:broker": "bootprint openapi docs/broker.yaml docs/.generated/broker",
     "build:remuneration": "bootprint openapi docs/remuneration.yaml docs/.generated/remuneration",
+
+    "mangle-for-local:md2html": "github-markdown README.md -h -s docs/styles/github.css > readme.html & github-markdown docs/glossary.md -h -s styles/github.css > docs/glossary.html & github-markdown docs/identity.md -h -s styles/github.css > docs/identity.html",        
+    "mangle-for-local:github2local1": "replace-in-file /https:\\/\\/github.com\\/JakubNer\\/overhide\\/blob\\/master/g ../../.. docs/.generated/**/index.html --isRegex",
+    "mangle-for-local:github2local2": "replace-in-file /https:\\/\\/github.com\\/JakubNer\\/overhide\\/raw\\/master/g ../../.. docs/.generated/**/index.html --isRegex",
+    "mangle-for-local:github2local3": "replace-in-file /https:\\/\\/pages.github.com\\/JakubNer\\/overhide/g ../readme.html docs/.generated/**/index.html --isRegex",
+    "mangle-for-local:github2local": "npm run mangle-for-local:github2local1 & npm run mangle-for-local:github2local2 & npm run mangle-for-local:github2local3",
+    "mangle-for-local:link-md2html1": "replace-in-file /\\.md/g .html readme.html --isRegex",
+    "mangle-for-local:link-md2html2": "replace-in-file /\\.md/g .html docs/glossary.html --isRegex",
+    "mangle-for-local:link-md2html3": "replace-in-file /\\.md/g .html docs/identity.html --isRegex",
+    "mangle-for-local:link-md2html4": "replace-in-file /\\.md/g .html docs/.generated/**/index.html --isRegex",
+    "mangle-for-local:link-md2html5": "replace-in-file /id=\\\"user-content-/g id=\\\" readme.html --isRegex",
+    "mangle-for-local:link-md2html6": "replace-in-file /id=\\\"user-content-/g id=\\\" docs/glossary.html --isRegex",
+    "mangle-for-local:link-md2html7": "replace-in-file /id=\\\"user-content-/g id=\\\" docs/identity.html --isRegex",
+    "mangle-for-local:link-md2html": "npm run mangle-for-local:link-md2html1 & npm run mangle-for-local:link-md2html2 & npm run mangle-for-local:link-md2html3 & npm run mangle-for-local:link-md2html4  & npm run mangle-for-local:link-md2html5  & npm run mangle-for-local:link-md2html6  & npm run mangle-for-local:link-md2html7",
+    "mangle-for-local": "npm run mangle-for-local:md2html & npm run mangle-for-local:github2local & npm run mangle-for-local:link-md2html",
+    "mangle-for-local:after-pack1": "replace-in-file /href=\\\"..\\/..\\/../g href=\\\".. docs/broker.html --isRegex",
+    "mangle-for-local:after-pack2": "replace-in-file /href=\\\"..\\/..\\/../g href=\\\".. docs/remuneration.html --isRegex",
+    "mangle-for-local:after-pack": "npm run mangle-for-local:after-pack1 & npm run mangle-for-local:after-pack2",
+
     "pack:broker": "html-inline docs/.generated/broker/index.html > docs/broker.html",
     "pack:remuneration": "html-inline docs/.generated/remuneration/index.html > docs/remuneration.html",
-    "all": "npm run build:broker & npm run build:remuneration & npm run pack:broker & npm run pack:remuneration",
-    "watch": "npm-watch"
+
+    "watch": "npm-watch",
+
+    "all-for-local-html": "npm run build:broker & npm run build:remuneration & npm run mangle-for-local & npm run pack:broker & npm run pack:remuneration & npm run mangle-for-local:after-pack",
+    "all-for-github": "npm run build:broker & npm run build:remuneration & npm run pack:broker & npm run pack:remuneration"
   }
 }
