@@ -24,18 +24,21 @@ A "user" could be a person who wants to own all the data used by the "service" a
 
 For reference, below is a sample model of the above mentioned components.  In green are the artifacts documented by this repository.
 
-Note that the model below shows a browser with *overhide's* *overhide.js* JavaScript client as part of a [*keybiner*](docs/glossary.md#keybiner--keyrings), a [*wallet*](docs/glossary.md#wallet) using Ethereum's *web3.js*, and an *Ethereum blockchain*.  This is but one model of possible access patterns, just for demonstration purposes.  There is nothing precluding a service or tooling written in any language from using the APIs directly, going against another blockchain stack, or a completely different remuneration mechanism altogether (as long as it implements *remuneration API*).
+Note that the model below shows a browser with *overhide's* *overhide.js* JavaScript client as part of a [*keybiner*](docs/glossary.md#keybiner--keyrings), a [*wallet*](docs/glossary.md#wallet) using Ethereum's *web3.js*, an *Ethereum blockchain*, and [*IPFS*](https://ipfs.io/) for persistence.  This is but one model of possible implementation patterns; it is the reference model.  There is nothing precluding a service or tooling written in any language from using the APIs directly, going against another blockchain stack, or a completely different remuneration mechanism altogether (as long as it implements *remuneration API*).
 
 ![components](docs/images/provided.png)
 
-* a user interfaces with an Ethereum blockchain using their [*wallet*](docs/glossary.md#wallet) browser extension--external to *overhide*--to pay service and broker subscriptions
+* a user interfaces with an Ethereum blockchain using their [*wallet*](docs/glossary.md#wallet) browser extension--external to *overhide*--to pay service and broker subscriptions; the app (service) likely facilitates with a cohesive UX wrapper.
 * a user interfaces with a [*keybiner*](docs/glossary.md#keybiner--keyrings) to keep a cohesive mapping of which blockchain key pairs (from the [*wallet*](docs/glossary.md#wallet)) and which *overhide* broker are to be used for a given app (service)
 * both the [*wallet*](docs/glossary.md#wallet) and the [*keybiner*](docs/glossary.md#keybiner--keyrings) extensions are decoupled from the app (service)
 * the [*wallet*](docs/glossary.md#wallet) leverages Ethereum's *web3* JavaScript library making it available to any in-browser app, service, or tool
 * the [*keybiner*](docs/glossary.md#keybiner--keyrings) leverages the *overhide.js* client code making it available to any in-browser app, service, or tool
 * a user uses the Web app and persists data with *overhide*
-* a user uses some "tooling" to import/export their data on their own terms, external to the application.
-* both the application service and tooling use the "client library" to interface with an *overhide* broker
+* the *overhide* broker uses [*IPFS*](https://ipfs.io/) for distributed persistence of the data
+* the user data's structure in [*IPFS*](https://ipfs.io/) is openly specified and accessible to user with external [*IPFS*](https://ipfs.io/) *tooling*
+* the user has flexibility to point the app (service) to another [*IPFS*](https://ipfs.io/) compatible *overhide* broker to access their data
+* the user has flexibility to use external "tooling" to import/export their data to a completelly different implementation of an *overhide* broker, non-[*IPFS*](https://ipfs.io/)
+* both the app (service) and tooling use the *overhide.js* "client library" to interface with an *overhide* broker
 
 ### Qualities of *overhide*
 
@@ -43,8 +46,9 @@ Note that the model below shows a browser with *overhide's* *overhide.js* JavaSc
    * broker API for data storage
    * remuneration API to enable payment of brokerage and service subscriptions
    * client library to promote decoupling of trust
-* as available and reliable as the technology stack implementing the specification
+* as available and reliable as the technology stack implementing the specification; the [reference implementation](https://github.com/JakubNer/overhide-broker) is geared to be both
 * provides ability to remunerate brokerage and service provider via blockchain: pseudonymous subscription fees
+* quasi-decentralized, *overhide* broker is centralized via DNS for *Web 2.0* stacks, but broker can be easily switched out when failover need arises. 
 
 ### Benefits to Service
 
@@ -81,6 +85,10 @@ Please refer to the [glossary](docs/glossary.md) to get comfortable with terms a
 ## [Identity](docs/identity.md)
 
 Aim of *overhide* is to keep data private.  Anonymity is an important part of privacy.  See how [*overhide* leverages pseudonymous identity](docs/identity.md) to remunerate brokers.
+
+## [Data Decentralization](docs/decentralization.md)
+
+A core value of *overhide* is to decentralize user data.  Although the level of decentralization is broker implementation specific, see how [the *overhide* reference implementation accomplishes data decentralization](docs/decentralization.md).
 
 ## [Broker API](docs/broker.html)
 

@@ -178,7 +178,7 @@ paths:
     get:
       summary: Retrieves authorities for an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
       description: |
-        Retrieve authorities for an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).  Authorities are rates and limits as specified by (the *Authorities* return object)[#definition-Authorities].
+        Retrieve authorities for an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).  Authorities are rates and limits as specified by [the *Authorities* return object](#definition-Authorities).
 
         If an *identity* has multiple transactions with a reumneration provider, the transactions are added to yield the best service tier.
 
@@ -725,6 +725,9 @@ paths:
         If transferring a *segment-key* with a public restricted identity (0 .. 9999), if the
         *segment-key* already exists at provided identity for a different *owner*, the message
         call fails with a 400 -- "datastore-key ownership conflict; segment-key @ identity already reserved".
+
+        If the payload is malformated and cannot be imported the message call fails with a 
+        400 -- "cannot process input", followed by additional optional verbiage.
       tags:
         - import/export
       parameters:
@@ -732,6 +735,58 @@ paths:
           name: import-export-payload
           schema:
             $ref: "#/definitions/ImportExportPayload"
+      security:
+        - Authorization Header: []
+      consumes:
+        - application/json
+      responses:
+        200:
+          description: |
+            Data successfully set.
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
+    post:
+      summary: Set all user's data on the broker system from the provided peer-id.
+      description: |
+        All of the user's data with caller's *identity* is wiped and reset to data available at the 
+        same *identity* on another broker.  The exporting broker is identified by the provided
+        *peer-id*.  Both brokers must be able to exchange data on the network as identified by *type-key*.
+
+        The reciprocal of this setter is the [peer-ids getter](#operation--peer-ids-get) to be called
+        against the source broker instance.
+
+        If transferring a *segment-key* with a public restricted identity (0 .. 9999), if the
+        *segment-key* already exists at provided identity for a different *owner*, the message
+        call fails with a 400 -- "datastore-key ownership conflict; segment-key @ identity already reserved".
+
+        If the *type-key* requested is not supported by this broker system the message call fails with
+        a 400 -- "invalid type-key, doesn't match broker system capabilities".
+
+        If the *peer-id* cannot be reached or in otherwise unavailable the message call fails with a 
+        400 -- "cannot reach peer".
+
+        If the payload from the other broker is malformated and cannot be imported the message call fails 
+        with a 400 -- "cannot process input", followed by additional optional verbiage.
+      tags:
+        - import/export
+      parameters:
+        - in: path
+          name: type-key
+          required: true
+          description: |
+            A *type-key* as per [enumertion](#definition-PeerId).
+          type: string
+        - in: path
+          name: peer-id
+          required: true
+          description: |
+            A *peer-id* on the *type-key* network of the source of import data.  Retrieve this using
+            [peer-ids getter](#operation--peer-ids-get) on the exporting broker instance.
+          type: string
       security:
         - Authorization Header: []
       consumes:
@@ -783,7 +838,57 @@ paths:
           $ref: "#/responses/403"
         429:
           $ref: "#/responses/429"
+  /peer-ids:
+    get:
+      summary: Retrieve this broker's peer-ids.
+      description: |
+        Returns the *peer-ids* of this broker; allows other brokers to identify this broker
+        as source of import data. Useful in cases when this broker's data could be imported directly 
+        by another broker--through whatever transports available to both this broker and the importing
+        broker.
+
+        The reciprocal of this getter is the [all-data import POST](#operation--all-data-post).
+      tags:
+        - import/export
+      security:
+        - Authorization Header: []
+      produces:
+        - application/json
+      responses:
+        200:
+          description: |
+            List of *type-key*, *peer-id* pairs.  Each *peer-id* is mapped to a *type-key*.  
+            A *type-key* identifies the type of peer network the *peer-id* is for.  
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/PeerId"
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"  
 definitions:
+  PeerId:
+    type: object
+    required:
+      - type-key
+      - peer-id
+    properties:
+      type-key:
+        type: string
+        enum: [ipns-ri]
+        description: |
+          Identifies the network this peer ID is for.
+
+          Type      | Notes
+          ---       | ---
+          ipns-ri   | An [*overhide* reference implementation](https://github.com/JakubNer/overhide-broker) peer as per [using IPNS](https://github.com/JakubNer/overhide/blob/master/docs/decentralization.md)
+      peer-id:
+        type: string
+        description: |
+          The peer identifier for given network.
   Transaction:
     type: object
     required:
@@ -1108,6 +1213,9 @@ responses:
           - invalid signature
           - invalid datastore-key requested; segment-key or identity mismatch
           - datastore-key ownership conflict; segment-key @ identity already reserved
+          - invalid type-key, doesn't match broker system capabilities
+          - cannot reach peer
+          - cannot process input
   401:
     description: |
       For an endpoint protected with the [token security definition](#security-definition-Authorization Header), an "Authorization" header was not provided a valid token--as returned from the [authenticate endpoint](#operation--auth-authenticate-put).
