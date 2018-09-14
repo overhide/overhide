@@ -102,7 +102,9 @@ A *keybiner* is a collection of *keyrings*.  A *keyring* is a mapping of assymet
 
 An application will repetativelly access a particular *overhide* broker instance with a particular blockchain public key (address) for identification.  The corresponding blockchain private key is also needed on-hand--only in-browser--for signatures.  For convenience, better user experience, better application flow, it's desirable to store a mapping of all these identifiers and tokens on the client machine, e.g. in the client browser.  All these identifiers and tokens for a single purpose comprise a *keyring*.  Multiple such *keyrings* are stored in the client's *keybiner*.
 
-The assymetric key-pairs in *keyrings* include public blockchain address keys and their private signing keys, as well as any additional keys the application may want to keep track of.  The additional keys are described above in the *secrets* section, and are usually generated using a mnemonic.
+The assymetric key-pairs in *keyrings* include public blockchain address keys and references to their private signing keys, as well as any additional keys the application may want to keep track of.  The additional keys are described above in the *secrets* section, and are usually generated using a mnemonic.
+
+It's unlikely the private signing keys of a public blockchain will be made available to the *keybiner*, they will be kept in the user's *wallets*.  As such the *keyrings* may not store the keys themselves, but references to the keys in their particular *wallet*.
 
 In terms of Web applications in a browser--a *keybiner* is a browser extension that uses *localstorage* to store *keyrings* and injects a JavaScript library to make the *keyrings* accessible to said Web applications; provided they're running with appropriate permissions in said browser.  The injected *keybiner* JavaScript library is *overhide.js*.
 
@@ -112,7 +114,7 @@ Considering a Web application will use a *keybiner* injected *overhide.js* to en
   'keybiner': ['keyring1':{
                  'brokerUrl':'..',
                  'keys': [
-                  {'private':'..',
+                  {'privateOrRef':'..',
                    'public':'..'
                   },
                   ...
@@ -126,7 +128,7 @@ Considering a Web application will use a *keybiner* injected *overhide.js* to en
 
 Each *keyring* has an alias; "keyring1", "keyring2", "keyringN".  These can be thought of as login names in traditional login schemes.  The *overhide.js* library exposed by *keybiner* provides utilities to symmetrically encrypt each *keyring*.  When a user provides the appropriate passphrase to decrypt a keyring (a login), access to the broker mapping and all the stored keys is granted.  From this point forward the application has all the information it needs to synchronize with the specified *overhide* instance ('brokerUrl').  Hence the alias and the symmetric passphrase are the access credentials--and they're never sent over the wire.
 
-To setup a new *keyring*--let's say in a new browser on a new computer--the user needs to remember their *overhide* broker system ('brokerUrl', likely dictated by the app, a UI dropdown), blockchain keys (likely using a *wallet*), and optinally a mnemonic for other *secrets*--if additional secrets are required by the app.
+To setup a new *keyring*--let's say in a new browser on a new computer--the user needs to remember their *overhide* broker system ('brokerUrl', likely dictated by the app, a UI dropdown), blockchain keys (likely using a *wallet*), and optionally a mnemonic for other *secrets*--if additional secrets are required by the app.
 
 #### broker
 
@@ -138,11 +140,11 @@ The broker doesn't enforce that the keys nor values are encrypted.  This mechani
 
 Although the broker is a key-value store in the standard sense; the keys have an additional property of being a queue for a backchannel.
 
-#### overhide.js (*keyring* library)
+#### [overhide.js](overhide.js.md)
 
-Software library, dependency for services communicating to a *broker*.  Takes care of establishing identity, hashing and ciphering domain keys and values for *broker* datastore to persist.
+Software library, dependency for services communicating to a *broker* and ledgers.  Takes care of establishing identity, hashing and ciphering domain keys and values for *broker* datastore to persist.
 
-Some definitions here pertain to this specific reference implementation.
+Some definitions here pertain to [this](overhide.js.md) specific reference implementation.
 
 #### domain-key
 
