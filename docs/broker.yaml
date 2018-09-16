@@ -750,14 +750,15 @@ paths:
         429:
           $ref: "#/responses/429"
     post:
-      summary: Set all user's data on the broker system from the provided peer-id.
+      summary: Set all user's data on the broker system from the provided GUID referencing data on a connected persistence network.
       description: |
         All of the user's data with caller's *identity* is wiped and reset to data available at the 
-        same *identity* on another broker.  The exporting broker is identified by the provided
-        *peer-id*.  Both brokers must be able to exchange data on the network as identified by *type-key*.
+        same *identity* on the specificed persistence network.  The network data is identified by the provided
+        *GUID*.  The broker must be able to exchange data on the network that's identified by *type-key*.
 
-        The reciprocal of this setter is the [peer-ids getter](#operation--peer-ids-get) to be called
-        against the source broker instance.
+        The reciprocal of this setter is the [*GUIDs* getter](#operation--guids-get) to be called
+        against the source broker instance.  The source broker is a broker currently furnishing the data to 
+        the network.
 
         If transferring a *segment-key* with a public restricted identity (0 .. 9999), if the
         *segment-key* already exists at provided identity for a different *owner*, the message
@@ -766,8 +767,8 @@ paths:
         If the *type-key* requested is not supported by this broker system the message call fails with
         a 400 -- "invalid type-key, doesn't match broker system capabilities".
 
-        If the *peer-id* cannot be reached or in otherwise unavailable the message call fails with a 
-        400 -- "cannot reach peer".
+        If data from the remote *GUID* cannot be extracted or in otherwise unavailable the message call fails with a 
+        400 -- "cannot reach data".
 
         If the payload from the other broker is malformated and cannot be imported the message call fails 
         with a 400 -- "cannot process input", followed by additional optional verbiage.
@@ -778,14 +779,14 @@ paths:
           name: type-key
           required: true
           description: |
-            A *type-key* as per [enumertion](#definition-PeerId).
+            A *type-key* as per [enumertion](#definition-GUID).
           type: string
         - in: path
-          name: peer-id
+          name: guid
           required: true
           description: |
-            A *peer-id* on the *type-key* network of the source of import data.  Retrieve this using
-            [peer-ids getter](#operation--peer-ids-get) on the exporting broker instance.
+            A *GUID* on the *type-key* network of the source of import data.  Retrieve this using
+            [*GUIDs* getter](#operation--guids-get) on the exporting broker instance.
           type: string
       security:
         - Authorization Header: []
@@ -838,14 +839,12 @@ paths:
           $ref: "#/responses/403"
         429:
           $ref: "#/responses/429"
-  /peer-ids:
+  /guids:
     get:
-      summary: Retrieve this broker's peer-ids.
+      summary: Retrieve GUIDs to user's data on connected persistence networks.
       description: |
-        Returns the *peer-ids* of this broker; allows other brokers to identify this broker
-        as source of import data. Useful in cases when this broker's data could be imported directly 
-        by another broker--through whatever transports available to both this broker and the importing
-        broker.
+        Returns the *GUIDs* pointing to persisted data for the *identity*.  This broker must be the owner of whatever
+        private metadata is necessary to furnish data to the persistence network at said *GUID*. 
 
         The reciprocal of this getter is the [all-data import POST](#operation--all-data-post).
       tags:
@@ -857,12 +856,12 @@ paths:
       responses:
         200:
           description: |
-            List of *type-key*, *peer-id* pairs.  Each *peer-id* is mapped to a *type-key*.  
-            A *type-key* identifies the type of peer network the *peer-id* is for.  
+            List of *type-key*, *GUID* pairs.  Each *GUID* is mapped to a *type-key*.  
+            A *type-key* identifies the type of persistence network the *GUID* is for.  
           schema:
             type: array
             items:
-              $ref: "#/definitions/PeerId"
+              $ref: "#/definitions/GUID"
         400:
           $ref: "#/responses/400"
         403:
@@ -870,25 +869,27 @@ paths:
         429:
           $ref: "#/responses/429"  
 definitions:
-  PeerId:
+  GUID:
     type: object
+    description: |
+      *Globally Unique ID* -- An identifier globally unique on a particular network.
     required:
       - type-key
-      - peer-id
+      - guid
     properties:
       type-key:
         type: string
         enum: [ipns-ri]
         description: |
-          Identifies the network this peer ID is for.
+          Identifies the network this *GUID* is for.
 
           Type      | Notes
           ---       | ---
-          ipns-ri   | An [*overhide* reference implementation](https://github.com/JakubNer/overhide-broker) peer as per [using IPNS](https://github.com/JakubNer/overhide/blob/master/docs/decentralization.md)
-      peer-id:
+          ipns-ri   | An [*overhide* reference implementation](https://github.com/JakubNer/overhide-broker) GUID as per [using IPNS](https://github.com/JakubNer/overhide/blob/master/docs/decentralization.md).  `guid`  value will be in the format `<IPNS name>:<private-key>`, where `<IPNS name>` is the public hash visible to all, `<private-key>` must not be shared, it's included to share with other brokers to enable their custody of *identities* data.
+      guid:
         type: string
         description: |
-          The peer identifier for given network.
+          The identifier for given network.
   Transaction:
     type: object
     required:
@@ -1214,7 +1215,7 @@ responses:
           - invalid datastore-key requested; segment-key or identity mismatch
           - datastore-key ownership conflict; segment-key @ identity already reserved
           - invalid type-key, doesn't match broker system capabilities
-          - cannot reach peer
+          - cannot reach data
           - cannot process input
   401:
     description: |
