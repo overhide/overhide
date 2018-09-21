@@ -34,7 +34,8 @@ tags:
     description: |
       Authentication, authorization, and credential management:
 
-      * authenticate providing an [access token](#security-definition-Authorization Header).
+      * authenticate providing an [access token](#security-definition-Authorization Header): authenticate subscribers of 
+        the system and invitees of subscribers of the system.
       * work with  authority levels.
       * change *identity* credentials.  Setting *identity* for the first time is
       done with the [authenticate endpoint](#path--auth-authenticate).
@@ -46,6 +47,13 @@ tags:
   - name: backchannel queues
     description: |
       Publishing messages to backchannel queues, subscribing to notifications, and de-queueing the messages.
+  - name: delegate
+    description: |
+      Delegate data in a *segment-key* is data qualified by an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) that is different from the owner.
+
+      Each delegate keeps their data completely separate from other delegates under the same *segment-key*.
+
+      Delegates may be alloted delegated *backchannel-queues*:  these are qualified via *delegate* query parameters on [the backchannel endpoints](#tag-backchannel-queues)
   - name: datastore-key settings
     description: |
       Setting access metadata for *datastore-keys*.
@@ -199,6 +207,100 @@ paths:
             $ref: "#/definitions/Authorities"
         401:
            $ref: "#/responses/401"
+        429:
+          $ref: "#/responses/429"
+  /auth/bounce:
+    put:
+      summary: Authenticate an invitee's user-address for payment to a subscriber's user-address.
+      description: |
+        An invitee into the system must have a transaction--on a supported remuneration-provider--to a subscriber of the system.  
+
+        The inviting subscriber must expose their *user-address* and a *shared-phrase* that's used to hash their *user-address*
+        into an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).  The *shared-phrase* is equivalent to the
+        *secret-phrase* passed into the [authenticate endpoint](#operation--auth-authenticate-put): except it's not kept secret by the 
+        inviting user.  This is necessary to authorize the invitee to the inviting subscriber, and to ensure the inviting subscriber's 
+        *user-address* does in fact hash to the desired indentity: we don't want to just pass the inviting subscriber's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md),
+        we want to calculate it.
+
+        Returns an "invitee" token to be used for [token authentication](#security-definition-Authorization Header) in the rest of the API.
+
+        The *invitee-user-address*  hashed by *invitee-secret-phrase* is the invitee's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md)
+        for the purposes of [write/publish permissions](#definition-DatastoreKeySettings) on *segment-keys*.
+      tags:
+        - auth
+      parameters:
+        - in: body
+          name: authentication
+          description: |
+            Authentication parameters.
+          schema:
+            type: object
+            required:
+              - remuneration-key
+              - shared-phrase
+              - inviter-user-address
+              - invitee-secret-phrase
+              - invitee-user-address
+              - invitee-secret-phrase-signed
+            properties:
+              remuneration-key:
+                type: string
+                description: |
+                  Key from remuneration-providers which contains subscription payment(s) from the
+                  provided *user-address* to this broker's *broker-address*.
+
+                  Must be one of the remuneration provider keys from this broker's [capabilities](#operation--capabilities-remuneration-providers-get).
+              shared-phrase:
+                type: string
+                description: |
+                  A shared phrase by the inviter to the invitee for the specified inviter-user-address.  The *shared-phrase* and the *inviter-user-address*
+                  must compute to an authorized [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) on the system.  This is
+                  the identity inviting the invitee.
+              inviter-user-address:
+                type: string
+                description: |
+                  A public user-address to verify an active subscription to this broker's broker-address.
+
+                  Must be an address for the remuneration provider indicated in *remuneration-key*.
+
+                  Used in combination with *shared-phrase*, see *shared-phrase* above.
+              invitee-secret-phrase:
+                type: string
+                description: |
+                  A secret phrase for the specified *invitee-user-address*.
+              invitee-user-address:
+                type: string
+                description: |
+                  A public user-address to verify an active subscription to the above *inviter-user-address*.
+
+                  Must be an address for the remuneration provider indicated in *remuneration-key*.
+              invitee-secret-phrase-signed:
+                type: string
+                description: |
+                  The *invitee-secret-phrase* provided above signed with the private key corrsponding to the
+                  *invitee-user-address*.
+
+                  The signature uses Bitcoin's ECDSA curve - secp256k1.
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        200:
+          description: |
+            Invitee authentication token is returned to be used in subsequent calls into
+            overhide broker.
+          schema:
+            type: string
+        400:
+          $ref: "#/responses/400"
+        402:
+          description: |
+            Payment Required -- Remuneration provider indicates no transactions exist between the user addresses in parameters.
+
+            See [subscriptions write-up](https://github.com/JakubNer/overhide/blob/master/docs/identity.md#subscriptions).
+        409:
+          $ref: "#/responses/409"
         429:
           $ref: "#/responses/429"
   /auth/change-credentials:
@@ -481,6 +583,16 @@ paths:
 
             See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
           type: string
+        - in: query
+          name: delegate
+          required: false
+          description: |
+            Qualifies that this backchannel message is meant for a [delegate](#tag-delegate) of *segment-key*.  The value is the delegate's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
+
+            If this parameter is present, the *identity* query parameter is mandatory.  The *segment-key*
+            from the path and this *identity* from the query constitute the *datstore-key*.
+
+            The *delegate* must satisfy [settings on the *segment-key*](#definition-DatastoreKeySettings) to publish mesages.
       security:
         - Authorization Header: []
       consumes:
@@ -516,6 +628,16 @@ paths:
 
             See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
           type: string
+        - in: query
+          name: delegate
+          required: false
+          description: |
+            Qualifies that the messages are to be retrieved for a [delegate](#tag-delegate) of *segment-key*.  The value is the delegate's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
+
+            If this parameter is present, the *identity* query parameter is mandatory.  The *segment-key*
+            from the path and this *identity* from the query constitute the *datstore-key*.
+
+            Only the *delegate* may retrieve these qualified mesages.
       security:
         - Authorization Header: []
       produces:
@@ -576,6 +698,16 @@ paths:
 
             See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
           type: string
+        - in: query
+          name: delegate
+          required: false
+          description: |
+            Qualifies that this acknowledgment is meant for a [delegate](#tag-delegate) of *segment-key*.  The value is the delegate's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
+
+            If this parameter is present, the *identity* query parameter is mandatory.  The *segment-key*
+            from the path and this *identity* from the query constitute the *datstore-key*.
+
+            Only the *delegate* may acknowledge these qualified mesages.
       security:
         - Authorization Header: []
       responses:
@@ -612,6 +744,16 @@ paths:
 
             See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
           type: string
+        - in: query
+          name: delegate
+          required: false
+          description: |
+            Qualifies that this subscription is meant for a [delegate](#tag-delegate) of *segment-key*.  The value is the delegate's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
+
+            If this parameter is present, the *identity* query parameter is mandatory.  The *segment-key*
+            from the path and this *identity* from the query constitute the *datstore-key*.
+
+            Only the *delegate* may subscribe to these qualified mesages.
       security:
         - Authorization Query: []
       responses:
@@ -639,6 +781,194 @@ paths:
             type: array
             items:
               $ref: "#/definitions/Event"
+  /delegate-value/{segment-key}/{identity}:
+    put:
+      summary: A delegate sets their specific value under this datastore-key.
+      description: |
+        Payload contents is written as a new value into *datastore-key* (segment-key @ identity) qualified by the caller's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).  
+        
+        This call requires two identities:  the *segment-key* and [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from the path constitute the *datastore-key*.  The [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from the [authorization header](#security-definition-Authorization Header)
+        is used to qualify the data stored at the *segment-key*: this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is the delegate.
+
+        For the *set* to succeed the *datastore-key* (segment-key @ identity) must exist and be owned by the [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md)
+        from the path.
+
+        A delegate can only write their value to this *segment-key* [settings on *segment-key* permitting](#definition-DatastoreKeySettings).  Only the delegate identified can write data.  The *settings* are solely to identify who the delegates can be.
+      tags:
+        - delegate
+      parameters:
+        - in: body
+          name: datastore-value
+          schema:
+            type: string
+            format: byte
+        - in: path
+          name: segment-key
+          required: true
+          description: |
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+          type: string
+        - in: path
+          name: identity
+          required: true
+          description: |
+            Required identity of *segment-key* owner--[authorization header](#security-definition-Authorization Header) [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is used for qualifying the delegate.
+
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+          type: string
+      security:
+        - Authorization Header: []
+      consumes:
+        - application/octet-stream
+      responses:
+        200:
+          description: |
+            Value successfully set.
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
+    get:
+      summary: A delegate retrieves their specific value under this datastore-key.
+      description: |
+        Retrieve contents from *datastore-key* (segment-key @ identity) qualified by the caller's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).  
+
+        This call requires two identities:  the *segment-key* and [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from the path constitute the *datastore-key*.  The [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from the [authorization header](#security-definition-Authorization Header)
+        is used to qualify the data stored at the *segment-key*: this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is the delegate.        
+      tags:
+        - delegate
+      parameters:
+        - in: path
+          name: segment-key
+          required: true
+          description: |
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+          type: string
+        - in: path
+          name: identity
+          required: true
+          description: |
+            Required identity of *segment-key* owner--[authorization header](#security-definition-Authorization Header) [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is used for qualifying the delegate.
+
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+          type: string
+      security:
+        - Authorization Header: []
+      produces:
+        - application/octet-stream
+      responses:
+        200:
+          description: |
+            The value of *datastore-key* (segment-key @ identity).
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
+    delete:
+      summary: A delegate deletes their specific data under this datastore-key.
+      description: |
+        Delete delegate's data filed under the *datastore-key* (segment-key @ identity).  
+
+        This call requires two identities:  the *segment-key* and [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from the path constitute 
+        the *datastore-key*.  The [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from the [authorization header](#security-definition-Authorization Header)
+        is used to qualify the data stored at the *segment-key*: this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is the delegate.
+
+        The *datastore-key* must be owned by the in-path [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
+      tags:
+        - delegate
+      parameters:
+        - in: path
+          name: segment-key
+          required: true
+          description: |
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+          type: string
+        - in: path
+          name: identity
+          required: true
+          description: |
+            Required identity of *segment-key* owner--[authorization header](#security-definition-Authorization Header) [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is used for qualifying the delegate.
+
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+          type: string
+      security:
+        - Authorization Header: []
+      responses:
+        200:
+          description: |
+            The value of *datastore-key* (segment-key @ identity).
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
+  /delegate-values/{segment-key}/{identity}:
+    get:
+      summary: Retrieves all delegate data under segment-key as map of delegate identities to content.
+      description: |
+        Retrieve all delegate data under *datastore-key* (segment-key @ identity) as map of delegate
+        identities to content.
+
+        The *segment-key* and [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from the path constitute the *datastore-key*.
+      tags:
+        - delegate
+      parameters:
+        - in: path
+          name: segment-key
+          required: true
+          description: |
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+          type: string
+        - in: path
+          name: identity
+          required: true
+          description: |
+            Required identity of *segment-key* owner.
+
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+          type: string
+        - in: query
+          name: page
+          required: false
+          description: |
+            Indicate the page # of the data to retrieve.
+      security:
+        - Authorization Header: []
+      produces:
+        - application/json
+      responses:
+        200:
+          description: |
+            List of all delegate data under the *datastore-key*.
+
+            Key-value pairs where the key is the delegate [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) and the value is the base64 content of the delegate-data.
+
+            ```
+              {
+                'page': #,
+                'pages': #,                
+                '<delegate1>':'...',
+                '<delegate2>':'...',
+                ...
+                '<delegateN>':'...'
+              }
+            ```
+
+            The results are paginated:
+
+            * *pages* indicates the total number of data pages available to retrieve.  
+            * *page* indicates this result's page # out of *pages*.
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
   /settings/{segment-key}:
     put:
       summary: Setup settings for given datastore-key (segment-key @ identity).
@@ -1016,57 +1346,117 @@ definitions:
       - allowed-writers
       - allow-publish
       - allowed-publishers
+      - allow-delegation
+      - allowed-delegates
+      - entry-fee
+      - limit-bytes
+      - limit-bytes-per-second
+      - delegate-data-ttl-seconds
     properties:
       allow-write:
         type: string
-        enum: [self, signed]
+        enum: [self, signed, invitee]
         description: |
           Indicate who is allowed to write to the *datastore-key*.  The "self" value is default and means only owner of *segment-key* has write rights.
 
-          Value of "signed" indicates *allowed-writers* property must necessairly list public keys to identify *user-addresses* allowed to write into this *segment-key*.  Other users using this broker system attempting to write to this *segment-key* have their *authentication token* checked against the *user-addresses* in *allowed-writers* list.
+          Value of "signed" indicates *allowed-writers* property must necessairly list [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) allowed to write into this *segment-key*.  
+          Other users using this broker system attempting to write to this *segment-key* have their *authentication token* checked against 
+          the [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) in *allowed-writers* list.  These could be real authenticated
+          broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](operation--auth-bounce-put).
+
+          Value of "invitee" indicates an invitee of this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is allowed to write, see
+          the [bounce endpoint](#operation--auth-bounce-put): no *allowed-writers* check.
       allowed-writers:
         type: array
         items:
           type: object
           required:
-            - address
-            - remuneration-key
+            - identity
           properties:
-            address:
+            identity:
               type: string
               description: |
-                public key (address) identifying user allowed to write data
-            remuneration-key:
-              type: string
-              description: |
-                One of the remuneration provider keys from /capabilities/remuneration-providers
-
-                The provided address corresponds to one of the remuneration providers, define it.
+                [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) identifying user allowed to write data.
         description: |
           If *allow-write* is "self" this parameter is ignored.
 
-          If *allow-write* is "signed", this parameter is a list of public keys to identify users allowed to write data to this *datastore-key* (*segment-key* @ *identity*).
+          If *allow-write* is "signed", this parameter is a list of [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) to identify users allowed to write data to this *datastore-key* (*segment-key* @ *identity*).
+          These could be real authenticated broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](operation--auth-bounce-put). 
 
-          Other users using this broker system attempting to write to this *segment-key* have their *authentication token* checked against the *user-addresses* in this list.
+          Other users using this broker system attempting to write to this *segment-key* have their *authentication token* checked against the [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) in this list.
       allow-publish:
         type: string
-        enum: [self, any, signed]
+        enum: [self, any, signed, invitee]
         description: |
           Indicate who is allowed to publish messages to the *datastore-key*'s backchannel'.  The "self" value is default and means only owner of *segment-key* has publish rights.
 
-          Value of "signed" indicates *allowed-publishers* property must necessairly list public keys to identify *user-addresses* allowed to publish messages into this *segment-key*.  Other users using this broker system attempting to publish messages to this *segment-key* have their *authentication token* checked against the *user-addresses* in *allowed-publishers* list.
+          Value of "signed" indicates *allowed-publishers* property must necessairly list [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) allowed to publish messages into this *segment-key*.  
+          Other users using this broker system attempting to publish to this *segment-key* have their *authentication token* checked against 
+          the [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) in *allowed-publishers* list.  These could be real authenticated
+          broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](operation--auth-bounce-put).
+
+          Value of "invitee" indicates an invitee of this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is allowed to publish, see
+          the [bounce endpoint](#operation--auth-bounce-put).
       allowed-publishers:
         type: array
         items:
           type: object
           required:
-            - address
-            - remuneration-key
+            - identity
           properties:
-            address:
+            identity:
               type: string
               description: |
-                public key (address) identifying user allowed to publish
+                [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) identifying user allowed to write data.
+        description: |
+          if *allow-publish* is "self" or "any" this parameter is ignored.
+
+          If *allow-publish* is "signed", this parameter is a list of [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) to identify users allowed to publish messages to this *datastore-key* (*segment-key* @ *identity*).
+          These could be real authenticated broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](operation--auth-bounce-put).
+
+          Other users using this broker system attempting to publish to this *segment-key* have their *authentication token* checked against the [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) in this list.
+      allow-delegation:
+        type: string
+        enum: [none, any, signed, invitee]
+        description: |
+          Indicate who is allowed to [write data](#tag-delegate) to this *segment-key* as a delegate
+          and who's allowed to work with delegate-qualified backchannels on this *segment-key*:  it's
+          the same group.
+
+          Value of "signed" indicates *allowed-delegates* property must necessairly list [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) allowed to act as delegates for this *segment-key*.  Delegates attempting to use this *segment-key* have their [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) checked against the *allowed-delegates* list.
+
+          Value of "invitee" indicates an invitee of this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) are allowed to be delegates, see
+          the [bounce endpoint](#operation--auth-bounce-put).
+      allowed-delegates:
+        type: array
+        items:
+          type: object
+          required:
+            - identity
+          properties:
+            identity:
+              type: string
+              description: |
+                [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) identifying user allowed to become delegates.
+        description: |
+          if *allow-delegation* is "none" or "any" this parameter is ignored.
+
+          If *allow-delegation* is "signed", this parameter is a list of [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) to identify users allowed to be delegates for this *datastore-key* (*segment-key* @ *identity*).
+          These could be real authenticated broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](operation--auth-bounce-put).
+
+          Delegates attempting to use this *segment-key* have their *authentication token* checked against the [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) in this list.  
+      entry-fee:
+        type: array
+        items:
+          type: object
+          required:
+            - value
+            - remuneration-key
+          properties:
+            value:
+              type: number
+              description: |
+                Amount of currency--as per *remuneration-key* required to be able to write/publish to this *segment-key*.
             remuneration-key:
               type: string
               description: |
@@ -1074,11 +1464,22 @@ definitions:
 
                 The provided address corresponds to one of the remuneration providers, define it.
         description: |
-          if *allow-publish* is "self" or "any" this parameter is ignored.
+          if *allow-publish* or *allow-write* is "self", "any", "signed" this parameter is ignored.
 
-          If *allow-publish* is "signed", this parameter is a list of public keys to identify users allowed to publish messages to this *datastore-key* (*segment-key* @ *identity*).
-
-          Other users using this broker system attempting to publish to this *segment-key* have their *authentication token* checked against the *user-addresses* in this list.
+          If *allow-publish* or *allow-write* is "invitee", this parameter the minimum remuneration value required to be able to write the write/publish operations
+          on this *segment-key*.
+      limit-bytes:
+        type: number
+        description: |
+          Maximum number of bytes of total content a user, other than 'self', is allowed to write or publish to this *segment-key*.
+      limit-bytes-per-second:
+        type: number
+        description: |
+          Maximum number of bytes/second a user, other than 'self', is allowed to write or publish to this *segment-key*.
+      delegate-data-ttl-seconds:
+        type: number
+        description: |
+          Time-to-live--in seconds--of [delegate data](#tag-delegate) before it is elegible for cleanup.  Refreshed on any activity on the *segment-key* qualified by the delegate.  
   Message:
     type: object
     required:
@@ -1227,6 +1628,8 @@ responses:
       1. the *identity* has no write or publish access to the valid *datastore-key*.
       1. the API request would exceed rates and limits as set out within the authorities at the current subscription plan.
 
+      Errors equally apply to "inviee" *identities*.
+
       Results in one or more of the following error message strings.
 
       The message enum might be extended by broker system.
@@ -1260,11 +1663,16 @@ securityDefinitions:
     in: header
     name: Authorization
     description: |
-      Retrieve an authentication token using the [authentication endpoint](#path--auth-authenticate).
-      The returned token must be provided in an "Authorization" header
-      to API calls secured with this security definition.
+      Provides an authentication token as retrieved with either the [authentication endpoint](#path--auth-authenticate)
+      or the [invitee bouncer endpoint](#path--auth-bounce).
 
-      The token is whitelisted by the *overhide* broker until revoked or expired (at broker's purview).  The token contains *identity* and *user-address* hashes to help with access control.  Details in the [*identity write-up*](https://github.com/JakubNer/overhide/blob/master/docs/identity.md#authenticated-sessions).
+      The token returned by either call must be provided in an "Authorization" header to API calls secured with this security definition.
+
+      The tokens are whitelisted by the *overhide* broker until revoked or expired (at broker's purview).  
+      
+      The token contains the *identity*--hashed in implementation specific ways--to help with access control for the rest of the API.  
+      
+      Details in the [*identity write-up*](https://github.com/JakubNer/overhide/blob/master/docs/identity.md#authenticated-sessions).
   Authorization Query:
     type: apiKey
     in: query

@@ -286,6 +286,12 @@ The *delegate-key* allows services where the service user isn't forced to partic
 
 Note that use of a *delegate-key* undermines the user's ownership of their own data.  The benefit is that a service using *overhide* is not forcing the user to participate in owning their data.  The risk is that the user doesn't own their data.
 
+#### delegate qualification
+
+Data and backchannel message queues can be qualified with a delegate *identity*.  The qualification indicates that the data is actually segmented by delegate.
+
+This means multiple delegates my write into a *datastore-key* and not clobber the other's delegate's data.  The non-delegated data is also left untouched.
+
 #### user-address
 
 When dealing with *identity*, this is a public address of a user.  Likely a blockchain public address (hash):  a user's *blockchain<sub>pub</sub>* key.
@@ -307,3 +313,11 @@ When dealing with *identity*, this is a public address of some service provider 
 A recent enough transaction from a *user-address* to a *service-address* indicates a subscription to the service.
 
 A service provider could issue different public addresses for different tiers of service.
+
+#### invitee
+
+A user who does not subscribe to the broker instance but does subscribe to a service furnishing data on the broker instance.
+
+The service does pay subscription fees to the broker.
+
+The service may allow some *datastore-keys* to be written to or published to by the invitee.
