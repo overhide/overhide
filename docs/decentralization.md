@@ -4,11 +4,11 @@ The [*overhide* broker reference implementation](https://github.com/JakubNer/ove
 
 However, since this core value is implementation specific, not every *overhide* broker may keep user data decentralized.  If an implementation of an *overhide* broker does not openly decentralize user data, the user can always leverage tooling that uses the [import/export functionality of *overhide* broker APIs](broker.html#tag-import-export) to extract all user data and do with it as the user pleases.  That's a contractual obligation on a proper *overhide* broker implementation.
 
-![import/export only /* show one overhide broker being used to export data to a browser and being pushed into another broker */](images/import-export.gif) 
+![import/export only](images/import-export.gif) 
 
 The [import/export functionality](broker.html#tag-import-export) may prove to be a somewhat cumbersome failover mechanism.  The intent of *overhide* is to go as far as possible to bring decentralization to our apps, with the hope that one day the broker is completely out of the picture and only *overhide.js* remains as a library, not a client shim. 
 
-![overhide.js as library /* show colored lines from broker to blockchain and ipfs flying into browser and becoming colored dots in there, as browser talks directly to blockchain and ipfs */](images/oh-js-as-lib.gif) 
+![overhide.js as library](images/oh-js-as-lib.gif) 
 
 ## Overview of [*overhide* Reference Implementation](https://github.com/JakubNer/overhide-broker) and [*IPFS*](https://ipfs.io/)
 
@@ -32,24 +32,40 @@ As each user modifies their data, the broker updates [*IPFS*](https://ipfs.io/),
 
 #### Data as Files
 
-A broker writes data to local files under *//repo/[identity](identity.md)/* with [*segment-keys*](glossary.md#segment-key) for file names.
+A broker writes data to local files under *//repo/[<identity>](identity.md)/[<segment-key>](glossary.md#segment-key)/[<identity>](identity.md).  All of a user's owned content is under their *//repo/[<identity>](identity.md)/* subfolder.  The data itself sits in the file named with [identity](identity.md) as file name.  This is to distinguish the owner's data from [delegate data](broker.html#tag-delegate).
 
-This data is navigable via [*IPNS*](https://docs.ipfs.io/guides/concepts/ipns/) by dereferencing *GUID/[*segment-key*](glossary.md#segment-key)* where *GUID* is the [*identities*](identity.md) [*IPNS*](https://docs.ipfs.io/guides/concepts/ipns/) public-key hash.
+This data is navigable via [*IPNS*](https://docs.ipfs.io/guides/concepts/ipns/) by dereferencing *<GUID>/[<segment-key>](glossary.md#segment-key)/[<identity>](identity.md)* where *GUID* is the [*identities*](identity.md) [*IPNS*](https://docs.ipfs.io/guides/concepts/ipns/) public-key hash.
+
+The data is encrypted in a [usage specific way](glossary.md#datastore-value-secret).
+
+#### Delegate Data as Files
+
+[Delegate data](broker.html#tag-delegate) resides in *//repo/[<owner-identity>](identity.md)/[<segment-key>](glossary.md#segment-key)/[<delegate-identity>](identity.md).  The *owner-identity* subfolder is the [identity](identity.md) of the owner of the referenced [*segment-key*](glossary.md#segment-key).  The *delegate-identity* file contains the [delegate data](broker.html#tag-delegate) and is named with the delegate's [identity](identity.md) as file name.
+
+The delegage data is navigable via [*IPNS*](https://docs.ipfs.io/guides/concepts/ipns/) by dereferencing *<GUID>/[<segment-key>](glossary.md#segment-key)/[<delegate-identity>](identity.md)*.
 
 The data is encrypted in a [usage specific way](glossary.md#datastore-value-secret).
 
 #### [Messages](glossary.md#backchannel-queue) as Files
 
-All backchannel queues for an identity are filed under *//repo/[identity](identity.md)/backchannel/* with the [*segment-key*](glossary.md#segment-key) of the queue as file name.
+All backchannel queues for an identity are filed under *//repo/[<identity>](identity.md)/[<segment-key>](glossary.md#segment-key)/backchannel/[<identity>](identity.md).  The queue is stored as a file with [identity](identity.md) as the file name.  This is to distinguish the owner's backchannel from [delegate's backchannels](broker.html#tag-delegate).
 
-Each queue is navigable via [*IPNS*](https://docs.ipfs.io/guides/concepts/ipns/) by dereferencing *GUID/backchannel/[*segment-key*](glossary.md#segment-key)*.
+Each queue is navigable via [*IPNS*](https://docs.ipfs.io/guides/concepts/ipns/) by dereferencing *<GUID>/[<segment-key>](glossary.md#segment-key)/backchannel/[<identity>](identity.md)*.
+
+The messages are encrypted in a [usage specific way](glossary.md#datastore-value-secret), decipherable by recipient upon receipt.
+
+#### Delegate [Messages](glossary.md#backchannel-queue) as Files
+
+Delegate's messages are filed under *//repo/[<owner-identity>](identity.md)/[<segment-key>](glossary.md#segment-key)/backchannel/[<delegate-identity>](identity.md).  The *owner-identity* subfolder is the [identity](identity.md) of the owner of the referenced [*segment-key*](glossary.md#segment-key).  The *delegate-identity* file contains the [delegate backchannel queue](broker.html#tag-delegate) and is named with the delegate's [identity](identity.md) as file name.
+
+Each queue is navigable via [*IPNS*](https://docs.ipfs.io/guides/concepts/ipns/) by dereferencing *<GUID>/[<segment-key>](glossary.md#segment-key)/backchannel/[<delegate-identity>](identity.md)*.
 
 The messages are encrypted in a [usage specific way](glossary.md#datastore-value-secret), decipherable by recipient upon receipt.
 
 #### Access Metadata as Files
 
-Metadata for a specific [*segment-key*](glossary.md#segment-key) lives under *//repo/[*identity*](identity.md)/metadata/* with [*segment-key*](glossary.md#segment-key) as file name.
+Metadata for a specific [*segment-key*](glossary.md#segment-key) lives under *//repo/[<identity>](identity.md)/[<segment-key>](glossary.md#segment-key)/.metadata* file.
 
-Each queue is navigable via [*IPNS*](https://docs.ipfs.io/guides/concepts/ipns/) by dereferencing *GUID/metadata/[*segment-key*](glossary.md#segment-key)*.
+Each queue is navigable via [*IPNS*](https://docs.ipfs.io/guides/concepts/ipns/) by dereferencing *<GUID>/[<segment-key>](glossary.md#segment-key)/.metadata*.
 
 This file is not meant for consumption by the user, but by *overhide* systems; these files are plain-text with pseudonymous content.
