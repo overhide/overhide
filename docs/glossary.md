@@ -112,23 +112,27 @@ Considering a Web application will use a *keybiner* injected *overhide.js* to en
 
 ```
   'keybiner': ['keyring1':{
-                 'brokerUrl':'..',
-                 'keys': [
-                  {'privateOrRef':'..',
-                   'public':'..'
+                  <tag>: {                  
+                    'brokerUrl':'..',
+                    'keys': [
+                      {'privateOrRef':'..',
+                      'public':'..'
+                      },
+                      ...
+                    ],
+                    'mnemonic':'..',
+                    'format':'..'
                   },
-                  ...
-                 ],
-                 'mnemonic':'..'                 
+                  <tag>: {..}
                },
                'keyring2':{..},
                ...
                'keyringN':{..}]
 ```
 
-Each *keyring* has an alias; "keyring1", "keyring2", "keyringN".  These can be thought of as login names in traditional login schemes.  The *overhide.js* library exposed by *keybiner* provides utilities to symmetrically encrypt each *keyring*.  When a user provides the appropriate passphrase to decrypt a keyring (a login), access to the broker mapping and all the stored keys is granted.  From this point forward the application has all the information it needs to synchronize with the specified *overhide* instance ('brokerUrl').  Hence the alias and the symmetric passphrase are the access credentials--and they're never sent over the wire.
+Each *keyring* has an alias; "keyring1", "keyring2", "keyringN".  These can be thought of as login names in traditional login schemes.  The *overhide.js* library exposed by *keybiner* provides utilities to symmetrically encrypt each *keyring*.  When a user provides the appropriate passphrase to decrypt a keyring (a login), access to the broker mapping and all the stored keys is granted.  Hence the alias and the symmetric passphrase are the access credentials--and they're never sent over the wire.  From this point forward the application has all the information it needs to synchronize with the specified *overhide* instance ('brokerUrl').  The application can access tagged sets of keys.  The keys may or may not be for a broker--the 'brokerUrl' is optional--the 'format' dictates implementation specific metadata about the keys.  
 
-To setup a new *keyring*--let's say in a new browser on a new computer--the user needs to remember their *overhide* broker system ('brokerUrl', likely dictated by the app, a UI dropdown), blockchain keys (likely using a *wallet*), and optionally a mnemonic for other *secrets*--if additional secrets are required by the app.
+Each *keyring* can be exported or re-setup from scratch--it's a convenience store to aid end-user experience.  An end-user can export their *keyring* as an encrypted payload, transfer to another *keybiner* running in another browser, import, provide passphrase, done.  To setup a new *keyring* from scratch--let's say in a new browser on a new computer--the end-user needs to remember their *overhide* broker system ('brokerUrl', likely dictated by the app, a UI dropdown), blockchain keys (likely using a *wallet*), and optionally a mnemonic for other *secrets*--if additional secrets are required by the app.
 
 #### broker
 
