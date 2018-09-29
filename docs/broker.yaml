@@ -231,9 +231,13 @@ paths:
           $ref: "#/responses/429"
   /auth/bounce:
     put:
-      summary: Authenticate an invitee's user-address for payment to a subscriber's user-address.
+      summary: Authenticate an invitee's user-address as a guest of a subscriber's user-address.
       description: |
-        An invitee into the system must have a transaction--on a supported remuneration-provider--to a subscriber of the system.  
+        Authenticate an invitee's user-address as a guest of a subscriber's user-address.
+
+        An invitee into the system must provide a valid address on an [accepted remuneration provider](#operation--capabilities-remuneration-providers-get).  An invitee must prove ownership of said valid address.
+
+        Transactions--on a supported remuneration-provider--from the *invitee-user-address* to the provided *inviter-user-address* are part of the state of the returned access token by this call.  The *inviter* may set [fee expectations](#definition-DatastoreKeySettings) on *segment-keys*.  If fees paid are expected, the *invitee* must necessairly have transacted with the *inviter*.
 
         The inviting subscriber must expose their *user-address* and a *shared-phrase* that's used to hash their *user-address*
         into an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).  The *shared-phrase* is equivalent to the
@@ -295,9 +299,9 @@ paths:
               invitee-user-address:
                 type: string
                 description: |
-                  A public user-address to verify an active subscription to the above *inviter-user-address*.
+                  A public user-address, must be an address for the remuneration provider indicated in *remuneration-key*.
 
-                  Must be an address for the remuneration provider indicated in *remuneration-key*.
+                  Transactions from this address to *inviter-user-address* are stored in the returned access token to [check fees](#definition-DatastoreKeySettings) on invitee-accessed *segment-keys*.
               invitee-secret-phrase-signed:
                 type: string
                 description: |
@@ -1061,7 +1065,7 @@ paths:
         
         If the *shunt* query parameter is not specified, subscription doesn't send actual message content, just notification of new messages with a new *seq-id*.
 
-        If the *shunt* query parameter is specified, full message content is sent via subscription.  The messages do not have to be [acknowledged](#operation-acknowledge-WIRE) if the use-case is that of best effort message delivery without explicitly [introspecting the queue](#operation-fetch-messages-WIRE).
+        If the *shunt* query parameter is specified, full message content is sent via subscription.  Unless the *auto-acknowledge* flag is set, the messages do have to be explicitly [acknowledged](#operation-acknowledge-WIRE) to clear the backchannel queue.  Failure to acknowledge messages with *auto-acknowledge* off and [limit-bytes set](#definition-DatastoreKeySettings) may lead to a full backchannel queue and dropped messages; not forwarded to these live subscriptions.
       tags:
         - backchannel queues
       parameters:
@@ -1141,11 +1145,10 @@ paths:
                 description: |
                   A byte of flags.  
 
-                  0x1 is the "shunt" flag:
-
-                  If `false`, subscription doesn't send actual message content, just notification of new messages with a new *seq-id*.
-
-                  If `true`, full message content is sent via subscription.  The messages do not have to be [acknowledged](#operation-acknowledge-WIRE) if the use-case is that of best effort message delivery without explicitly [introspecting the queue](#operation-fetch-messages-WIRE).
+                  | *value* | *name* | *description* |
+                  | --- | --- | --- |
+                  | 0x1 | shunt | `false`: subscription doesn't send actual message content, just notification of new messages with a new *seq-id*.  `true`: full message content is sent via subscription. |
+                  | 0x2 | auto-acknowledge | `false`: explicit acknowledgment via [acknowledge](#operation-acknowledge-WIRE) call required.  `true`: messages are auto-acknowledged, not queued.  This falg only applies in conjunction with the *shunt* flag |                  
       consumes:
         - application/octet-stream
       produces:
@@ -2080,12 +2083,19 @@ definitions:
           type: object
           required:
             - value
+            - since
             - remuneration-key
           properties:
             value:
               type: number
               description: |
                 Amount of currency--as per *remuneration-key* required to be able to write/publish to this *segment-key*.
+            since:
+              type: string
+              description: |
+                The remuneration *value* must accumulate in transactions since this date-time (inclusive) until now.
+
+                The date-time is a string in [ISO 8601/RFC3339 format](https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14).
             remuneration-key:
               type: string
               description: |
@@ -2096,15 +2106,29 @@ definitions:
           if *allow-publish* or *allow-write* is "self", "any", "signed" this parameter is ignored.
 
           If *allow-publish* or *allow-write* is "invitee", this parameter the minimum remuneration value required to be able to write the write/publish operations
-          on this *segment-key*.
+          on this *segment-key*.      
       limit-bytes:
         type: number
         description: |
-          Maximum number of bytes of total content a user, other than 'self', is allowed to write or publish to this *segment-key*.
+          Maximum number of bytes of total content allowed for this *segment-key* (if not delegated) or per delegate of this *segment-key* (if delegated).  This includes the written value as well as all published messages.  If the *segment-key* has delegates, the value is per delegate:  the actual limit is multiplied by the number of delegates.
+      overlimit-publish-action:
+        type: string
+        description: |
+          What should the system do if *limit-bytes* is exceeded on a message publish?  Allowed values:
+
+          | *key* | *description* |
+          | ---   | ---  |
+          | "reject" | reject the message publish with error |
+          | "drop-newest" | publish the message but drop newest messages to make space |
+          | "drop-oldest" | publish the message but drop oldest messages to make space |
       limit-bytes-per-second:
         type: number
         description: |
-          Maximum number of bytes/second a user, other than 'self', is allowed to write or publish to this *segment-key*.
+          Maximum number of bytes/second a user, other than the owner, is allowed to write or publish to this *segment-key*.
+      limit-delegates:
+        type: number
+        description: |
+          Number of delegates allowed for the *segment-key*.
       delegate-data-ttl-seconds:
         type: number
         description: |

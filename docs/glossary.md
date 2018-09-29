@@ -320,8 +320,10 @@ A service provider could issue different public addresses for different tiers of
 
 #### invitee
 
-A user who does not subscribe to the broker instance but does subscribe to a service furnishing data on the broker instance.
+A user who does not subscribe to the broker instance but likely subscribes to a service furnishing data on the broker instance.
 
-The service does pay subscription fees to the broker.
+An invitee is always invited to interact with a broker on behalf of an actual broker subscriber.  The service does pay subscription fees to the broker.
 
-The service may allow some *datastore-keys* to be written to or published to by the invitee.
+An invitee is authenticated as owning a valid address on an accepted remuneration provider.  
+
+The service may allow some *datastore-keys* to be written to or published to by the invitee.  The service may restrict access to its *segment-keys* pending sufficient transactions from the invitee address to the service address.
