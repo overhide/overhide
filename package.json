@@ -35,9 +35,10 @@
     "mangle-for-local:link-md2html11": "replace-in-file /id=\\\"user-content-/g id=\\\" docs/decentralization.html --isRegex",
     "mangle-for-local:link-md2html": "npm run mangle-for-local:link-md2html1 & npm run mangle-for-local:link-md2html2 & npm run mangle-for-local:link-md2html3 & npm run mangle-for-local:link-md2html4  & npm run mangle-for-local:link-md2html5  & npm run mangle-for-local:link-md2html6  & npm run mangle-for-local:link-md2html7 & npm run mangle-for-local:link-md2html8 & npm run mangle-for-local:link-md2html9 & npm run mangle-for-local:link-md2html10 & npm run mangle-for-local:link-md2html11",
     "mangle-for-local": "npm run mangle-for-local:md2html & npm run mangle-for-local:github2local & npm run mangle-for-local:link-md2html",
-    "mangle-for-local:after-pack1": "replace-in-file /href=\\\"..\\/..\\/../g href=\\\".. docs/broker.html --isRegex",
-    "mangle-for-local:after-pack2": "replace-in-file /href=\\\"..\\/..\\/../g href=\\\".. docs/remuneration.html --isRegex",
-    "mangle-for-local:after-pack": "npm run mangle-for-local:after-pack1 & npm run mangle-for-local:after-pack2",
+    "mangle-for-local:after-pack1": "replace-in-file /options/gi WIRE docs/broker.html --isRegex",
+    "mangle-for-local:after-pack2": "replace-in-file /href=\\\"..\\/..\\/../g href=\\\".. docs/broker.html --isRegex",
+    "mangle-for-local:after-pack3": "replace-in-file /href=\\\"..\\/..\\/../g href=\\\".. docs/remuneration.html --isRegex",
+    "mangle-for-local:after-pack": "npm run mangle-for-local:after-pack1 & npm run mangle-for-local:after-pack2 & npm run mangle-for-local:after-pack3",
 
     "pack:broker": "html-inline docs/.generated/broker/index.html > docs/broker.html",
     "pack:remuneration": "html-inline docs/.generated/remuneration/index.html > docs/remuneration.html",

@@ -10,12 +10,30 @@ info:
 
     ![overhide component model](https://github.com/JakubNer/overhide/raw/master/docs/images/provided.png)
 
-    To load this API into another [Swagger viewer/editor](https://editor.swagger.io) find [the GitHub *Swagger 2.0* definition file](https://github.com/JakubNer/overhide/blob/master/docs/broker.yaml) and import as YAML.
-
     Read this API with reference to the [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md).
 
     ***
-      A note on schemes used in the API.  All operations unless explicitly indicated use the HTTPS scheme.  The [backchannel-message/../subscribe/.. operation](#operation--backchannel-message-subscribe--segment-key--get) uses the WSS scheme.
+      A note on schemes used in the API.  
+      
+      Operations *GET*, *PUT*, *POST*, *DELETE* use the HTTPS scheme.  These endpoints should be understood as standard REST requests.  These configuration/discovery exchanges involve text parameters on the URL line and text/numeric payloads in the JSON representation.  They have URL encoded parameters on the URL line and use BASE64 encoding for some JSON attributes.  The BASE64 encoding is explicitly stated.
+
+      Operations *WIRE* are WebSocket events that use a custom wire protocol.  The SSL secured WebSockets connection is to the same address as the HTTPS connection.  
+    ***
+      A note on the wire-protocol payload notation.  
+      
+      WSS event exchanged payloads are comprised of compact byte streams.  In the documentation payloads with compact byte streams are described as descriptors in the following format:
+
+      | *syntax *    | *bytes* | *value* |
+      | ---          | ---     | ---     |
+      | foo          | 2       |         |
+      | bar          | 1       | N       |
+      | for i in N { |         |         |
+      |   baz        | 4       |         |
+      | }            |         | ``      |
+              
+      The above indicates that the first 3 bytes are followed by a loop of 4 byte words.  The number of iteration is specified by bits 16-23.
+
+      All numeric values greater than a byte are sent in network order, big-endian format.  The *foo* above is 2-bytes wide, the first byte having the most significant bits.
     ***
   version: 1.0.0
   title: Overhide Broker API
@@ -145,6 +163,8 @@ paths:
               secret-phrase:
                 type: string
                 description: |
+                  BASE64 encoded.
+
                   A secret phrase for the specified user-address.  Once a user authenticates against the broker with a secret-phrase and a user-address, the secret-phrase is tied to the user-address indefinitely, unless changed by [change-credentials](#operation--auth-change-credentials-put).
               user-address:
                 type: string
@@ -253,6 +273,8 @@ paths:
               shared-phrase:
                 type: string
                 description: |
+                  BASE64 Encoded.
+
                   A shared phrase by the inviter to the invitee for the specified inviter-user-address.  The *shared-phrase* and the *inviter-user-address*
                   must compute to an authorized [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) on the system.  This is
                   the identity inviting the invitee.
@@ -267,6 +289,8 @@ paths:
               invitee-secret-phrase:
                 type: string
                 description: |
+                  BASE64 Encoded.
+
                   A secret phrase for the specified *invitee-user-address*.
               invitee-user-address:
                 type: string
@@ -332,6 +356,8 @@ paths:
               new-secret-phrase:
                 type: string
                 description: |
+                  BASE64 Encoded.
+
                   A new secret phrase for the new user-address.  Once credentials are changed successfully; the *new-secret-phrase* is tied to the *new-user-address* indefinitely, unless changed again by [change-credentials](#operation--auth-change-credentials-put).
               new-user-address:
                 type: string
@@ -435,8 +461,8 @@ paths:
           $ref: "#/responses/409"
         429:
           $ref: "#/responses/429"
-  /value/{segment-key}:
-    put:
+  set data:
+    options:
       summary: Set value of datastore-key.
       description: |
         Payload contents is written as a new value into *datastore-key* (segment-key @ identity).
@@ -447,74 +473,163 @@ paths:
         - data
       parameters:
         - in: body
-          name: datastore-value
-          schema:
-            type: string
-            format: byte
-        - in: path
-          name: segment-key
-          required: true
+          name: payload
           description: |
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
-          type: string
-        - in: query
-          name: identity
-          required: false
-          description: |
-            Optional identity.  If not provided, identity is that of token owner.
 
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
-          type: string
-      security:
-        - Authorization Header: []
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | req-id          | 8       |         |
+            | len             | 8       | SL + IL + length(payload) + 3 |
+            | opcode          | 1       | 0x01    |
+            | segment-key-len | 1       | SL == length(segment-key) |
+            | segment-key     | SL      |         |
+            | identity-len    | 1       | IL == length(identity) |
+            | identity        | IL      |         |
+            | payload         | *       | ``      |
+          schema:
+            type: object
+            required:
+              - req-id
+              - len
+              - opcode
+              - segment-key-len
+              - segment-key
+              - identity-len
+              - payload
+            properties:
+              req-id:
+                type: number
+                description: |
+                  Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
+              len:
+                type: bytes
+                description: |
+                  Number of bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + length(payload) + 11.
+              opcode:                  
+                type: bytes
+                description: |
+                  Operation code.
+              segment-key-len:
+                type: number
+                description: |
+                  Number of bytes for *segment-key*.
+              segment-key:
+                type: bytes
+                description: |
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+              identity-len:
+                type: number
+                description: |
+                  Number of bytes for *identity*.
+              identity:
+                type: bytes
+                description: |
+                  Optional identity.  If not provided, identity is that of token owner.
+
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+              payload:
+                type: bytes
+                description: |
+                  The payload byte-stream.
       consumes:
         - application/octet-stream
+      produces:
+        - application/octet-stream
+      security:
+        - Authorization WSS: []
       responses:
-        200:
+        RESPONSE:
+          $ref: "#/responses/WIRE"
+        code == 200:
           description: |
-            Value successfully set.
-        400:
+            Success.  Empty.
+        code == 400:
           $ref: "#/responses/400"
-        403:
+        code == 403:
           $ref: "#/responses/403"
-        429:
+        code == 429:
           $ref: "#/responses/429"
-    get:
+  get data:
+    options:
       summary: Get value of datastore-key.
       description: |
         Get value of *datastore-key* (segment-key @ identity).
       tags:
         - data
       parameters:
-        - in: path
-          name: segment-key
-          required: true
+        - in: body
+          name: payload
           description: |
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
-          type: string
-        - in: query
-          name: identity
-          required: false
-          description: |
-            Optional identity.  If not provided, identity is that of token owner.
 
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
-          type: string
-      security:
-        - Authorization Header: []
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | req-id          | 8       |         |            
+            | len             | 8       | SL + IL + 3 |
+            | opcode          | 1       | 0x02    |
+            | segment-key-len | 1       | SL == length(segment-key) |
+            | segment-key     | SL      |         |
+            | identity-len    | 1       | IL == length(identity) |
+            | identity        | IL      | ``      |
+          schema:
+            type: object
+            required:
+              - req-id
+              - len
+              - opcode
+              - segment-key-len
+              - segment-key
+              - identity-len
+            properties:
+              req-id:
+                type: number
+                description: |
+                  Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
+              len:
+                type: bytes
+                description: |
+                  Number of bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + 11.
+              opcode:                  
+                type: bytes
+                description: |
+                  Operation code.
+              segment-key-len:
+                type: number
+                description: |
+                  Number of bytes for *segment-key*.
+              segment-key:
+                type: bytes
+                description: |
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+              identity-len:
+                type: number
+                description: |
+                  Number of bytes for *identity*.
+              identity:
+                type: bytes
+                description: |
+                  Optional identity.  If not provided, identity is that of token owner.
+
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+      consumes:
+        - application/octet-stream
       produces:
         - application/octet-stream
+      security:
+        - Authorization WSS: []
       responses:
-        200:
+        RESPONSE:
+          $ref: "#/responses/WIRE"
+        code == 200:
           description: |
             The value of *datastore-key* (segment-key @ identity).
-        400:
+        code == 400:
           $ref: "#/responses/400"
-        403:
+        code == 403:
           $ref: "#/responses/403"
-        429:
+        code == 429:
           $ref: "#/responses/429"
-    delete:
+  delete data:
+    options:
       summary: Delete datastore-key.
       description: |
         Delete *datastore-key* (segment-key @ identity).  The *datastore-key* must be
@@ -522,34 +637,79 @@ paths:
       tags:
         - data
       parameters:
-        - in: path
-          name: segment-key
-          required: true
+        - in: body
+          name: payload
           description: |
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
-          type: string
-        - in: query
-          name: identity
-          required: false
-          description: |
-            Optional identity.  If not provided, identity is that of token owner.
 
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
-          type: string
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | req-id          | 8       |         |
+            | len             | 8       | SL + IL + 3 |
+            | opcode          | 1       | 0x03    |
+            | segment-key-len | 1       | SL == length(segment-key) |
+            | segment-key     | SL      |         |
+            | identity-len    | 1       | IL == length(identity) |
+            | identity        | IL      | ``      |
+          schema:
+            type: object
+            required:
+              - req-id
+              - len
+              - opcode
+              - segment-key-len
+              - segment-key
+              - identity-len
+            properties:
+              req-id:
+                type: number
+                description: |
+                  Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
+              len:
+                type: bytes
+                description: |
+                  Number of bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + length(payload) + 11.
+              opcode:                  
+                type: bytes
+                description: |
+                  Operation code.
+              segment-key-len:
+                type: number
+                description: |
+                  Number of bytes for *segment-key*.
+              segment-key:
+                type: bytes
+                description: |
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+              identity-len:
+                type: number
+                description: |
+                  Number of bytes for *identity*.
+              identity:
+                type: bytes
+                description: |
+                  Optional identity.  If not provided, identity is that of token owner.
+
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+      consumes:
+        - application/octet-stream
+      produces:
+        - application/octet-stream
       security:
-        - Authorization Header: []
+        - Authorization WSS: []
       responses:
-        200:
+        RESPONSE:
+          $ref: "#/responses/WIRE"
+        code == 200:
           description: |
-            The value of *datastore-key* (segment-key @ identity).
-        400:
+            Success.  Empty.
+        code == 400:
           $ref: "#/responses/400"
-        403:
+        code == 403:
           $ref: "#/responses/403"
-        429:
+        code == 429:
           $ref: "#/responses/429"
-  /backchannel-message/{segment-key}:
-    post:
+  post message:
+    options:
       summary: Enqueue a message to a given datastore-key backchannel.
       description: |
         Enqueue a message to a given *datastore-key* (*segment-key* @ *identity*) backchannel.
@@ -565,224 +725,484 @@ paths:
         - backchannel queues
       parameters:
         - in: body
-          name: backchannel message
+          name: payload
+          description: |
+
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | req-id          | 8       |         |
+            | len             | 8       | SL + IL + DL + length(payload) + 4 |
+            | opcode          | 1       | 0x04    |
+            | segment-key-len | 1       | SL == length(segment-key) |
+            | segment-key     | SL      |         |
+            | identity-len    | 1       | IL == length(identity) |
+            | identity        | IL      |         |
+            | delegate-len    | 1       | DL == length(delegate) |
+            | delegate        | DL      |         |
+            | payload         | *       | ``      |
           schema:
-            type: string
-            format: byte
-        - in: path
-          name: segment-key
-          required: true
-          description: |
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
-          type: string
-        - in: query
-          name: identity
-          required: false
-          description: |
-            Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
+            type: object
+            required:
+              - req-id
+              - len
+              - opcode
+              - segment-key-len
+              - segment-key
+              - identity-len
+              - delegate-len
+              - payload
+            properties:
+              req-id:
+                type: number
+                description: |
+                  Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
+              len:
+                type: bytes
+                description: |
+                  Number of bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + length(payload) + 11.
+              opcode:                  
+                type: bytes
+                description: |
+                  Operation code.
+              segment-key-len:
+                type: number
+                description: |
+                  Number of bytes for *segment-key*.
+              segment-key:
+                type: bytes
+                description: |
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+              identity-len:
+                type: number
+                description: |
+                  Number of bytes for *identity*.
+              identity:
+                type: bytes
+                description: |
+                  Optional identity.  If provided, must be complimentary to the *delegate* parameter, glob '*', or one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
 
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
-          type: string
-        - in: query
-          name: delegate
-          required: false
-          description: |
-            Qualifies that this backchannel message is meant for a [delegate](#tag-delegate) of *segment-key*.  The value is the delegate's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
+                  The '*' glob value means the message is posted to all delegates:  it's enqueued on all their queues.
 
-            If this parameter is present, the *identity* query parameter is mandatory.  The *segment-key*
-            from the path and this *identity* from the query constitute the *datstore-key*.
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+              delegate-len:
+                type: number
+                description: |
+                  Number of bytes for *delegate*.
+              delegate:
+                type: bytes
+                description: |
+                  Qualifies that this backchannel message is meant for a [delegate](#tag-delegate) of *segment-key*.  The value is the delegate's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
 
-            The *delegate* must satisfy [settings on the *segment-key*](#definition-DatastoreKeySettings) to publish mesages.
-      security:
-        - Authorization Header: []
+                  If this parameter is present, the *identity* query parameter is mandatory.  The *segment-key*
+                  from the path and this *identity* from the query constitute the *datstore-key*.
+
+                  The *delegate* must satisfy [settings on the *segment-key*](#definition-DatastoreKeySettings) to publish mesages.
+              payload:
+                type: bytes
+                description: |
+                  The payload byte-stream.
       consumes:
         - application/octet-stream
+      produces:
+        - application/octet-stream
+      security:
+        - Authorization WSS: []
       responses:
-        200:
+        RESPONSE:
+          $ref: "#/responses/WIRE"
+        code == 200:
           description: |
-            Settings applied successfully.
-        400:
+            Success.  Empty.
+        code == 400:
           $ref: "#/responses/400"
-        403:
+        code == 403:
           $ref: "#/responses/403"
-        429:
+        code == 429:
           $ref: "#/responses/429"
-    get:
+  fetch messages:
+    options:
       summary: Retrieve all messages from the backchannel at the givent datastore-key.
       description: |
         Retrieve messages from the backchannel at the given *datastore-key* (*segment-key* @ *identity*).
       tags:
         - backchannel queues
       parameters:
-        - in: path
-          name: segment-key
-          required: true
+        - in: body
+          name: payload
           description: |
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
-          type: string
-        - in: query
-          name: identity
-          required: false
-          description: |
-            Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
 
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
-          type: string
-        - in: query
-          name: delegate
-          required: false
-          description: |
-            Qualifies that the messages are to be retrieved for a [delegate](#tag-delegate) of *segment-key*.  The value is the delegate's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | req-id          | 8       |         |
+            | len             | 8       | SL + IL + DL + 4 |
+            | opcode          | 1       | 0x05    |
+            | segment-key-len | 1       | SL == length(segment-key) |
+            | segment-key     | SL      |         |
+            | identity-len    | 1       | IL == length(identity) |
+            | identity        | IL      |         |
+            | delegate-len    | 1       | DL == length(delegate) |
+            | delegate        | DL      | ``      |
+          schema:
+            type: object
+            required:
+              - req-id
+              - len
+              - opcode
+              - segment-key-len
+              - segment-key
+              - identity-len
+              - delegate-len
+            properties:
+              req-id:
+                type: number
+                description: |
+                  Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
+              len:
+                type: bytes
+                description: |
+                  Number of bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + length(payload) + 11.
+              opcode:                  
+                type: bytes
+                description: |
+                  Operation code.
+              segment-key-len:
+                type: number
+                description: |
+                  Number of bytes for *segment-key*.
+              segment-key:
+                type: bytes
+                description: |
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+              identity-len:
+                type: number
+                description: |
+                  Number of bytes for *identity*.
+              identity:
+                type: bytes
+                description: |
+                  Optional identity.  If provided, must be complimentary to the *delegate* parameter or one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
 
-            If this parameter is present, the *identity* query parameter is mandatory.  The *segment-key*
-            from the path and this *identity* from the query constitute the *datstore-key*.
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+              delegate-len:
+                type: number
+                description: |
+                  Number of bytes for *delegate*.
+              delegate:
+                type: bytes
+                description: |
+                  Qualifies that the messages are to be retrieved for a [delegate](#tag-delegate) of *segment-key*.  The value is the delegate's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
 
-            Only the *delegate* may retrieve these qualified mesages.
-      security:
-        - Authorization Header: []
+                  If this parameter is present, the *identity* query parameter is mandatory.  The *segment-key*
+                  from the path and this *identity* from the query constitute the *datstore-key*.
+
+                  Only the *delegate* may retrieve these qualified mesages.
+      consumes:
+        - application/octet-stream
       produces:
-        - application/json
+        - application/octet-stream
+      security:
+        - Authorization WSS: []
       responses:
-        200:
+        RESPONSE:
+          $ref: "#/responses/WIRE"
+        code == 200:
           description: |
             Messages enqueued at *datastore-key* (segment-key @ identity) in increasing *seq-id* order.
 
             Messages are in order of consecutivelly increasing message sequence ID (*seq-id*).  The message sequence IDs are internal system identifiers for the messages furnished by this *datastore-key*, they're unique to this *datastore-key* and consecutive.
 
             Not all messages may be returned.  The response contains a count of messages still left with the broker system.  The *seq-id* of the most recent message returned (highest *seq-id*) plus the count of messages remaining, is the *seq-id* of most recent message left on the broker system.
+
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | remaining-count | 4       |         |
+            | loop {          |         |         |
+            |   seq-id        | 4       |         |
+            |   message-len   | 8       | ML = length(message) |
+            |   message       | *       |         |
+            | }               |         | ``      |
+
           schema:
             type: object
             required:
               - remaining-count
-              - messages
+              - seq-id
+              - message-len
+              - message
             properties:
               remaining-count:
                 type: integer
                 description: |
                   Count of messages still left with the broker system.
-              messages:
-                type: array
-                items:
-                  $ref: "#/definitions/Message"
-        400:
+            seq-id:
+              type: number
+              description: |
+                Consecutivelly increasing message sequence ID        
+            message-len:
+              type: number
+              description: |
+                Number of bytes for *message*.
+            message:
+              type: bytes
+              description: |
+                The message byte stream value.
+        code == 400:
           $ref: "#/responses/400"
-        403:
+        code == 403:
           $ref: "#/responses/403"
-        429:
+        code == 429:
           $ref: "#/responses/429"
-  /backchannel-message/{segment-key}/acknowledge/{seq-id}:
-    put:
+  acknowledge:
+    options:
       summary: Acknowledge all messages up to and including seq-id for given datastore-key.
       description: |
         Acknowledge all messages up to and including seq-id have been handled.  All messages up to seq-id will be removed from the backchannel.
       tags:
         - backchannel queues
       parameters:
-        - in: path
-          name: segment-key
-          required: true
+        - in: body
+          name: payload
           description: |
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
-          type: string
-        - in: path
-          name: seq-id
-          required: true
-          type: string
-          description: |
-            *seq-id* up to which--inclusive--to acknowledge backchannel processing.
-        - in: query
-          name: identity
-          required: false
-          description: |
-            Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
 
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
-          type: string
-        - in: query
-          name: delegate
-          required: false
-          description: |
-            Qualifies that this acknowledgment is meant for a [delegate](#tag-delegate) of *segment-key*.  The value is the delegate's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | req-id          | 8       |         |            
+            | len             | 8       | SL + IL + DL + 8 |
+            | opcode          | 1       | 0x06    |
+            | segment-key-len | 1       | SL == length(segment-key) |
+            | segment-key     | SL      |         |
+            | identity-len    | 1       | IL == length(identity) |
+            | identity        | IL      |         |
+            | delegate-len    | 1       | DL == length(delegate) |
+            | delegate        | DL      |         |
+            | seq-id          | 4       | ``      |
+          schema:
+            type: object
+            required:
+              - req-id
+              - len
+              - opcode
+              - segment-key-len
+              - segment-key
+              - identity-len
+              - delegate-len
+              - seq-id
+            properties:
+              req-id:
+                type: number
+                description: |
+                  Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
+              len:
+                type: bytes
+                description: |
+                  Number of bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + length(payload) + 11.
+              opcode:                  
+                type: bytes
+                description: |
+                  Operation code.
+              segment-key-len:
+                type: number
+                description: |
+                  Number of bytes for *segment-key*.
+              segment-key:
+                type: bytes
+                description: |
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+              identity-len:
+                type: number
+                description: |
+                  Number of bytes for *identity*.
+              identity:
+                type: bytes
+                description: |
+                  Optional identity.  If provided, must be complimentary to the *delegate* parameter or one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
 
-            If this parameter is present, the *identity* query parameter is mandatory.  The *segment-key*
-            from the path and this *identity* from the query constitute the *datstore-key*.
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+              delegate-len:
+                type: number
+                description: |
+                  Number of bytes for *delegate*.
+              delegate:
+                type: bytes
+                description: |
+                  Qualifies that this acknowledgment is meant for a [delegate](#tag-delegate) of *segment-key*.  The value is the delegate's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
 
-            Only the *delegate* may acknowledge these qualified mesages.
+                  If this parameter is present, the *identity* query parameter is mandatory.  The *segment-key*
+                  from the path and this *identity* from the query constitute the *datstore-key*.
+
+                  Only the *delegate* may acknowledge these qualified mesages.
+              seq-id:
+                type: number
+                description: |
+                  *seq-id* up to which--inclusive--to acknowledge backchannel processing.
+      consumes:
+        - application/octet-stream
+      produces:
+        - application/octet-stream
       security:
-        - Authorization Header: []
+        - Authorization WSS: []
       responses:
-        200:
+        RESPONSE:
+          $ref: "#/responses/WIRE"
+        code == 200:
           description: |
-            Acknowledgment successful.
-        400:
+            Success.  Empty.
+        code == 400:
           $ref: "#/responses/400"
-        403:
+        code == 403:
           $ref: "#/responses/403"
-        429:
+        code == 429:
           $ref: "#/responses/429"
-  /backchannel-message/{segment-key}/subscribe:
-    get:
+  subscribe:
+    options:
       summary:  Owner--identified in token--subscribes to notifications of new messages in datastore-key.
       description: |
-        Owner--identified in token--subscribes to notifications of new messages in *datastore-key* (*segment-key* @ *identity*).  Subscription doesn't send actual messages, just notification of new messages with a new *seq-id*.
+        Owner--identified in token--subscribes to notifications of new messages in *datastore-key* (*segment-key* @ *identity*).  
+        
+        If the *shunt* query parameter is not specified, subscription doesn't send actual message content, just notification of new messages with a new *seq-id*.
 
-        Websocket (WSS scheme) subscription endpoint.
+        If the *shunt* query parameter is specified, full message content is sent via subscription.  The messages do not have to be [acknowledged](#operation-acknowledge-WIRE) if the use-case is that of best effort message delivery without explicitly [introspecting the queue](#operation-fetch-messages-WIRE).
       tags:
         - backchannel queues
       parameters:
-        - in: path
-          name: segment-key
-          required: true
+        - in: body
+          name: payload
           description: |
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
-          type: string
-        - in: query
-          name: identity
-          required: false
-          description: |
-            Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
 
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
-          type: string
-        - in: query
-          name: delegate
-          required: false
-          description: |
-            Qualifies that this subscription is meant for a [delegate](#tag-delegate) of *segment-key*.  The value is the delegate's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
-
-            If this parameter is present, the *identity* query parameter is mandatory.  The *segment-key*
-            from the path and this *identity* from the query constitute the *datstore-key*.
-
-            Only the *delegate* may subscribe to these qualified mesages.
-      security:
-        - Authorization Query: []
-      responses:
-        default:
-          description: |
-            When this operation is first called the immediate response of this WSS subscription is either a successful or failed connection: websocket connections are left open on success and closed on failure, sans reason.
-
-            If the websocket connection is successful and remains open, the following details the possible events that will come across.
-
-            An example event stream coming across the Web socket could be:
-
-            ```
-            {
-              "type": "new-message",
-              "seq-id": 123
-            }
-            ```
-            ```
-            {
-              "type": "new-message",
-              "seq-id": 124
-            }
-            ```
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | req-id          | 8       |         |
+            | len             | 8       | SL + IL + DL + 5 |
+            | opcode          | 1       | 0x07    |
+            | segment-key-len | 1       | SL == length(segment-key) |
+            | segment-key     | SL      |         |
+            | identity-len    | 1       | IL == length(identity) |
+            | identity        | IL      |         |
+            | delegate-len    | 1       | DL == length(delegate) |
+            | delegate        | DL      |         |
+            | flags           | 1       | ``      |
           schema:
-            type: array
-            items:
-              $ref: "#/definitions/Event"
-  /delegate-value/{segment-key}/{identity}:
-    put:
+            type: object
+            required:
+              - req-id
+              - len
+              - opcode
+              - segment-key-len
+              - segment-key
+              - identity-len
+              - delegate-len
+              - payload
+            properties:
+              req-id:
+                type: number
+                description: |
+                  Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
+              len:
+                type: bytes
+                description: |
+                  Number of bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + length(payload) + 11.
+              opcode:                  
+                type: bytes
+                description: |
+                  Operation code.
+              segment-key-len:
+                type: number
+                description: |
+                  Number of bytes for *segment-key*.
+              segment-key:
+                type: bytes
+                description: |
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+              identity-len:
+                type: number
+                description: |
+                  Number of bytes for *identity*.
+              identity:
+                type: bytes
+                description: |
+                  Optional identity.  If provided, must be complimentary to the *delegate* parameter or one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
+
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+              delegate-len:
+                type: number
+                description: |
+                  Number of bytes for *delegate*.
+              delegate:
+                type: bytes
+                description: |
+                  Qualifies that this subscription is meant for a [delegate](#tag-delegate) of *segment-key*.  The value is the delegate's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
+
+                  If this parameter is present, the *identity* query parameter is mandatory.  The *segment-key*
+                  from the path and this *identity* from the query constitute the *datstore-key*.
+
+                  Only the *delegate* may subscribe to these qualified mesages.
+              flags:
+                type: bytes
+                description: |
+                  A byte of flags.  
+
+                  0x1 is the "shunt" flag:
+
+                  If `false`, subscription doesn't send actual message content, just notification of new messages with a new *seq-id*.
+
+                  If `true`, full message content is sent via subscription.  The messages do not have to be [acknowledged](#operation-acknowledge-WIRE) if the use-case is that of best effort message delivery without explicitly [introspecting the queue](#operation-fetch-messages-WIRE).
+      consumes:
+        - application/octet-stream
+      produces:
+        - application/octet-stream
+      security:
+        - Authorization WSS: []
+      responses:
+        RESPONSE:
+          $ref: "#/responses/WIRE"
+        code == 222:
+          description: |
+            For as long as the connection remains opened, all *datastore-keys*--subscribed to using this *subscribe* request--may emit 222 responses.
+
+            The following details the possible messages that will come across.
+
+            An example event stream coming across the Web socket for a *non-shunt* subscription:
+
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | loop {          |         |         |
+            |   seq-id        | 4       |         |
+            | }               |         | ``      |
+
+            The events stream are just *seq-id*s to be retrieved via [the getter](#operation-fetch-messages-WIRE).
+
+            An example event stream coming across the Web scoket for a *shunt* subscription:
+
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | loop {          |         |         |
+            |   seq-id        | 4       |         |
+            |   message-len   | 8       | ML = length(message) |
+            |   message       | *       |         |
+            | }               |         | ``      |
+
+          schema:
+            type: object
+            required:
+              - seq-id
+              - message-len
+              - message
+            properties:
+              seq-id:
+                type: number
+                description: |
+                  Consecutivelly increasing message sequence ID        
+              message-len:
+                type: number
+                description: |
+                  Number of bytes for *message*.
+              message:
+                type: bytes
+                description: |
+                  The message byte stream value.
+
+  set delegate data:
+    options:
       summary: A delegate sets their specific value under this datastore-key.
       description: |
         Payload contents is written as a new value into *datastore-key* (segment-key @ identity) qualified by the caller's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).  
@@ -798,39 +1218,84 @@ paths:
         - delegate
       parameters:
         - in: body
-          name: datastore-value
-          schema:
-            type: string
-            format: byte
-        - in: path
-          name: segment-key
-          required: true
+          name: payload
           description: |
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
-          type: string
-        - in: path
-          name: identity
-          required: true
-          description: |
-            Required identity of *segment-key* owner--[authorization header](#security-definition-Authorization Header) [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is used for qualifying the delegate.
 
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
-          type: string
-      security:
-        - Authorization Header: []
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | req-id          | 8       |         |
+            | len             | 8       | SL + IL + length(payload) + 3 |
+            | opcode          | 1       | 0x08    |
+            | segment-key-len | 1       | SL == length(segment-key) |
+            | segment-key     | SL      |         |
+            | identity-len    | 1       | IL == length(identity) |
+            | identity        | IL      |         |
+            | payload         | *       | ``      |
+          schema:
+            type: object
+            required:
+              - req-id
+              - len
+              - opcode
+              - segment-key-len
+              - segment-key
+              - identity-len
+              - payload
+            properties:
+              req-id:
+                type: number
+                description: |
+                  Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
+              len:
+                type: bytes
+                description: |
+                  Number of bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + length(payload) + 11.
+              opcode:                  
+                type: bytes
+                description: |
+                  Operation code.
+              segment-key-len:
+                type: number
+                description: |
+                  Number of bytes for *segment-key*.
+              segment-key:
+                type: bytes
+                description: |
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+              identity-len:
+                type: number
+                description: |
+                  Number of bytes for *identity*.
+              identity:
+                type: bytes
+                description: |
+                  Required identity of *segment-key* owner--[authorization header](#security-definition-Authorization Header) [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is used for qualifying the delegate.
+
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+              payload:
+                type: bytes
+                description: |
+                  The payload byte-stream.
       consumes:
         - application/octet-stream
+      produces:
+        - application/octet-stream
+      security:
+        - Authorization WSS: []
       responses:
-        200:
+        RESPONSE:
+          $ref: "#/responses/WIRE"
+        code == 200:
           description: |
             Value successfully set.
-        400:
+        code == 400:
           $ref: "#/responses/400"
-        403:
+        code == 403:
           $ref: "#/responses/403"
-        429:
+        code == 429:
           $ref: "#/responses/429"
-    get:
+  get delegate data:
+    options:
       summary: A delegate retrieves their specific value under this datastore-key.
       description: |
         Retrieve contents from *datastore-key* (segment-key @ identity) qualified by the caller's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).  
@@ -840,35 +1305,79 @@ paths:
       tags:
         - delegate
       parameters:
-        - in: path
-          name: segment-key
-          required: true
+        - in: body
+          name: payload
           description: |
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
-          type: string
-        - in: path
-          name: identity
-          required: true
-          description: |
-            Required identity of *segment-key* owner--[authorization header](#security-definition-Authorization Header) [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is used for qualifying the delegate.
 
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
-          type: string
-      security:
-        - Authorization Header: []
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | req-id          | 8       |         |
+            | len             | 8       | SL + IL + 3 |
+            | opcode          | 1       | 0x09    |
+            | segment-key-len | 1       | SL == length(segment-key) |
+            | segment-key     | SL      |         |
+            | identity-len    | 1       | IL == length(identity) |
+            | identity        | IL      | ``      |
+          schema:
+            type: object
+            required:
+              - req-id
+              - len
+              - opcode
+              - segment-key-len
+              - segment-key
+              - identity-len
+            properties:
+              req-id:
+                type: number
+                description: |
+                  Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
+              len:
+                type: bytes
+                description: |
+                  Number of bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + length(payload) + 11.
+              opcode:                  
+                type: bytes
+                description: |
+                  Operation code.
+              segment-key-len:
+                type: number
+                description: |
+                  Number of bytes for *segment-key*.
+              segment-key:
+                type: bytes
+                description: |
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+              identity-len:
+                type: number
+                description: |
+                  Number of bytes for *identity*.
+              identity:
+                type: bytes
+                description: |
+                  Required identity of *segment-key* owner--[authorization header](#security-definition-Authorization Header) [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is used for qualifying the delegate.
+
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+      consumes:
+        - application/octet-stream
       produces:
         - application/octet-stream
+      security:
+        - Authorization WSS: []
       responses:
-        200:
+        RESPONSE:
+          $ref: "#/responses/WIRE"
+        code == 200:
           description: |
             The value of *datastore-key* (segment-key @ identity).
-        400:
+        code == 400:
           $ref: "#/responses/400"
-        403:
+        code == 403:
           $ref: "#/responses/403"
-        429:
+        code == 429:
           $ref: "#/responses/429"
-    delete:
+  delete delegate data:
+    options:
       summary: A delegate deletes their specific data under this datastore-key.
       description: |
         Delete delegate's data filed under the *datastore-key* (segment-key @ identity).  
@@ -881,34 +1390,80 @@ paths:
       tags:
         - delegate
       parameters:
-        - in: path
-          name: segment-key
-          required: true
+        - in: body
+          name: payload
           description: |
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
-          type: string
-        - in: path
-          name: identity
-          required: true
-          description: |
-            Required identity of *segment-key* owner--[authorization header](#security-definition-Authorization Header) [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is used for qualifying the delegate.
 
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
-          type: string
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | req-id          | 8       |         |
+            | len             | 8       | SL + IL + 3 |
+            | opcode          | 1       | 0x0A    |
+            | segment-key-len | 1       | SL == length(segment-key) |
+            | segment-key     | SL      |         |
+            | identity-len    | 1       | IL == length(identity) |
+            | identity        | IL      | ``      |
+          schema:
+            type: object
+            required:
+              - req-id
+              - len
+              - opcode
+              - segment-key-len
+              - segment-key
+              - identity-len
+            properties:
+              req-id:
+                type: number
+                description: |
+                  Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
+              len:
+                type: bytes
+                description: |
+                  Number of bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + length(payload) + 11.
+              opcode:                  
+                type: bytes
+                description: |
+                  Operation code.
+              segment-key-len:
+                type: number
+                description: |
+                  Number of bytes for *segment-key*.
+              segment-key:
+                type: bytes
+                description: |
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+              identity-len:
+                type: number
+                description: |
+                  Number of bytes for *identity*.
+              identity:
+                type: bytes
+                description: |
+                  Required identity of *segment-key* owner--[authorization header](#security-definition-Authorization Header) [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is used for qualifying the delegate.
+
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+      consumes:
+        - application/octet-stream
+      produces:
+        - application/octet-stream
       security:
-        - Authorization Header: []
+        - Authorization WSS: []
       responses:
-        200:
+        RESPONSE:
+          $ref: "#/responses/WIRE"
+        code == 200:
           description: |
-            The value of *datastore-key* (segment-key @ identity).
-        400:
+            Success.  Empty.
+        code == 400:
           $ref: "#/responses/400"
-        403:
+        code == 403:
           $ref: "#/responses/403"
-        429:
+        code == 429:
           $ref: "#/responses/429"
-  /delegate-values/{segment-key}/{identity}:
-    get:
+  
+  get all delegate values:
+    options:
       summary: Retrieves all delegate data under segment-key as map of delegate identities to content.
       description: |
         Retrieve all delegate data under *datastore-key* (segment-key @ identity) as map of delegate
@@ -918,56 +1473,130 @@ paths:
       tags:
         - delegate
       parameters:
-        - in: path
-          name: segment-key
-          required: true
+        - in: body
+          name: payload
           description: |
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
-          type: string
-        - in: path
-          name: identity
-          required: true
-          description: |
-            Required identity of *segment-key* owner.
 
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
-          type: string
-        - in: query
-          name: page
-          required: false
-          description: |
-            Indicate the page # of the data to retrieve.
-      security:
-        - Authorization Header: []
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | req-id          | 8       |         |
+            | len             | 8       | SL + IL + 11 |
+            | opcode          | 1       | 0x0B    |
+            | segment-key-len | 1       | SL == length(segment-key) |
+            | segment-key     | SL      |         |
+            | identity-len    | 1       | IL == length(identity) |
+            | identity        | IL      |         |
+            | page            | 8       | ``      |
+          schema:
+            type: object
+            required:
+              - req-id
+              - len
+              - opcode
+              - segment-key-len
+              - segment-key
+              - identity-len
+              - page
+            properties:
+              req-id:
+                type: number
+                description: |
+                  Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
+              len:
+                type: bytes
+                description: |
+                  Number of bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + length(payload) + 11.
+              opcode:                  
+                type: bytes
+                description: |
+                  Operation code.
+              segment-key-len:
+                type: number
+                description: |
+                  Number of bytes for *segment-key*.
+              segment-key:
+                type: bytes
+                description: |
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+              identity-len:
+                type: number
+                description: |
+                  Number of bytes for *identity*.
+              identity:
+                type: bytes
+                description: |
+                  Required identity of *segment-key* owner.
+
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+              page:
+                type: number
+                description: |
+                  Indicate the page # of the data to retrieve.
+      consumes:
+        - application/octet-stream
       produces:
-        - application/json
+        - application/octet-stream
+      security:
+        - Authorization WSS: []
       responses:
-        200:
+        RESPONSE:
+          $ref: "#/responses/WIRE"
+        code == 200:
           description: |
             List of all delegate data under the *datastore-key*.
 
-            Key-value pairs where the key is the delegate [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) and the value is the base64 content of the delegate-data.
+            The results are paginated; see *page* parameter of request.
 
-            ```
-              {
-                'page': #,
-                'pages': #,                
-                '<delegate1>':'...',
-                '<delegate2>':'...',
-                ...
-                '<delegateN>':'...'
-              }
-            ```
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | page            | 8       |         |
+            | pages           | 8       |         |
+            | loop {          |         |         |
+            |   delegate-len  | 1       | DL == length(delegate) |
+            |   delegate      | DL      |         |
+            |   message-len   | 8       | ML = length(message) |
+            |   message       | *       |         |
+            | }               |         | ``      |
 
-            The results are paginated:
-
-            * *pages* indicates the total number of data pages available to retrieve.  
-            * *page* indicates this result's page # out of *pages*.
-        400:
+          schema:
+            type: object
+            required:
+              - page
+              - pages
+              - delegate-len
+              - delegate
+              - message-len
+              - message
+            properties:
+              page:
+                type: number
+                description: |
+                  Indicates this result's page # out of *pages*.   
+              pages:
+                type: number
+                description: |
+                  Indicates the total number of data pages available to retrieve.  
+              delegate-len:
+                type: number
+                description: |
+                  Number of bytes for *delegate*.
+              delegate:
+                type: bytes
+                description: |
+                  Qualifies which [delegate](#tag-delegate) of *segment-key* this message corresponds to.  The value is the delegate's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
+              message-len:
+                type: number
+                description: |
+                  Number of bytes for *message*.
+              message:
+                type: bytes
+                description: |
+                  The message byte stream value.
+        code == 400:
           $ref: "#/responses/400"
-        403:
+        code == 403:
           $ref: "#/responses/403"
-        429:
+        code == 429:
           $ref: "#/responses/429"
   /settings/{segment-key}:
     put:
@@ -1362,7 +1991,7 @@ definitions:
           Value of "signed" indicates *allowed-writers* property must necessairly list [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) allowed to write into this *segment-key*.  
           Other users using this broker system attempting to write to this *segment-key* have their *authentication token* checked against 
           the [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) in *allowed-writers* list.  These could be real authenticated
-          broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](operation--auth-bounce-put).
+          broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](#operation--auth-bounce-put).
 
           Value of "invitee" indicates an invitee of this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is allowed to write, see
           the [bounce endpoint](#operation--auth-bounce-put): no *allowed-writers* check.
@@ -1381,7 +2010,7 @@ definitions:
           If *allow-write* is "self" this parameter is ignored.
 
           If *allow-write* is "signed", this parameter is a list of [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) to identify users allowed to write data to this *datastore-key* (*segment-key* @ *identity*).
-          These could be real authenticated broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](operation--auth-bounce-put). 
+          These could be real authenticated broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](#operation--auth-bounce-put). 
 
           Other users using this broker system attempting to write to this *segment-key* have their *authentication token* checked against the [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) in this list.
       allow-publish:
@@ -1393,7 +2022,7 @@ definitions:
           Value of "signed" indicates *allowed-publishers* property must necessairly list [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) allowed to publish messages into this *segment-key*.  
           Other users using this broker system attempting to publish to this *segment-key* have their *authentication token* checked against 
           the [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) in *allowed-publishers* list.  These could be real authenticated
-          broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](operation--auth-bounce-put).
+          broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](#operation--auth-bounce-put).
 
           Value of "invitee" indicates an invitee of this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is allowed to publish, see
           the [bounce endpoint](#operation--auth-bounce-put).
@@ -1442,7 +2071,7 @@ definitions:
           if *allow-delegation* is "none" or "any" this parameter is ignored.
 
           If *allow-delegation* is "signed", this parameter is a list of [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) to identify users allowed to be delegates for this *datastore-key* (*segment-key* @ *identity*).
-          These could be real authenticated broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](operation--auth-bounce-put).
+          These could be real authenticated broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](#operation--auth-bounce-put).
 
           Delegates attempting to use this *segment-key* have their *authentication token* checked against the [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) in this list.  
       entry-fee:
@@ -1494,29 +2123,6 @@ definitions:
         type: string
         description: |
           The message byte stream base64 encoded.
-  Event:
-    type: object
-    description: |
-      Events coming through the websocket connection will be extentions of this *Event* type:
-
-      * [Event--NewMessage](#definition-Event--NewMessage)
-    required:
-      - type
-    properties:
-      type:
-        type: string
-        enum: [new-message]
-  Event--NewMessage:
-    allOf:
-      - $ref: "#/definitions/Event"
-      - type: object
-        required:
-          - seq-id
-        properties:
-          seq-id:
-            type: integer
-            description: |
-              *seq-id* of most recent message left on the broker system.
   ImportExportPayload:
     type: object
     required:
@@ -1600,51 +2206,85 @@ definitions:
                 $ref: "#/definitions/Message"
 
 responses:
+  WIRE:
+    schema:
+      type: object
+      required:
+        - len
+        - code
+        - response
+      properties:
+        req-id:
+          type: number
+          description: |
+            Request ID of the request this response/subscription event corresponds to.
+        len:
+          type: bytes
+          description: |
+            Number of bytes of the whole response message:  length(response) + 2 bytes.
+        code:
+          type: number
+          description: |
+            One of the WIRE protocol response codes with meanings as detailed by this endpoint.
+
+            They roughly match HTTP response codes.
+
+            This *default* response applies to all *WIRE* event responses.  See a listing of response codes for each specific *WIRE* event for specific codes.
+
+            A code other than *200* or *222*  will always have the *response* byte-stream be a UTF-16 string with meanings as detailed by the *WIRE* event's response code definitions.
+        response:
+          type: bytes
+          description: |
+            The response byte-stream for a *code* of *200* or *222*.  A UTF-16 encoded string with error text for all other *codes*.
+
+            Refer to the specific *WIRE* event's response *code* *200* or *222* for the syntax and semantics of this *response* byte-stream descriptor.
+      description: |
+        WebSocket Requests may have one or more response events.  Each response event from the *overhide* broker is a byte-stream in the following format:
+
+        | *syntax *    | *bytes* | *value* |
+        | ---          | ---     | ---     |
+        | req-id       | 8       |         |
+        | len          | 8       | length(response) + 2 |
+        | code         | 2       |         |
+        | response     | *       | ``      |
+        
   400:
     description: |
-      A bad request from the client results in one or more of the following error message strings.
+      A bad request from the client results in one or more of the following error message strings:
+
+      - invalid remuneration-key, doesn't match broker system capabilities
+      - address incompatible with remuneration provider
+      - invalid signature
+      - invalid datastore-key requested; segment-key or identity mismatch
+      - datastore-key ownership conflict; segment-key @ identity already reserved
+      - invalid type-key, doesn't match broker system capabilities
+      - cannot reach data
+      - cannot process input
 
       The message enum might be extended by broker system.
-    schema:
-      type: array
-      items:
-        type: string
-        enum:
-          - invalid remuneration-key, doesn't match broker system capabilities
-          - address incompatible with remuneration provider
-          - invalid signature
-          - invalid datastore-key requested; segment-key or identity mismatch
-          - datastore-key ownership conflict; segment-key @ identity already reserved
-          - invalid type-key, doesn't match broker system capabilities
-          - cannot reach data
-          - cannot process input
   401:
     description: |
       For an endpoint protected with the [token security definition](#security-definition-Authorization Header), an "Authorization" header was not provided a valid token--as returned from the [authenticate endpoint](#operation--auth-authenticate-put).
   403:
     description: |
-      The *identity* is valid, authenticated, with proper authorizations, but:
+      There is an access violation for this valid and authenticated *identity* against this valid *datastore-key*.
 
-      1. the *identity* has no write or publish access to the valid *datastore-key*.
-      1. the API request would exceed rates and limits as set out within the authorities at the current subscription plan.
+      1. The authenticated *identity* has insufficient access rights to this valid *datastore-key* for the operation.  Review the [access rights](#definition-DatastoreKeySettings) as manipulated with the [settings endpoints](#tag-datastore-key-settings).
+      1. The API request would exceed rates and limits as set out within the authorities at the current [subscription plan](#operation--capabilities-remuneration-tiers--remuneration-key--get) or *datastore-key* [entry-fee](#definition-DatastoreKeySettings).
 
       Errors equally apply to "inviee" *identities*.
 
-      Results in one or more of the following error message strings.
+      Results in one or more of the following error message strings:
 
+      - no write access
+      - no publish access
+      - storage limit exceeded
+      - read-rate exceeded
+      - write-rate exceeded
+        
       The message enum might be extended by broker system.
 
       Broker systems might not throw up this response when read and write rates are exceeded.  Instead a broker system might start throttling responses or responding at a lower-priority.
-    schema:
-      type: array
-      items:
-        type: string
-        enum:
-          - no write access
-          - no publish access
-          - storage limit exceeded
-          - read-rate exceeded
-          - write-rate exceeded
   409:
     description: |
       Go play a lottery:  the generated identity conflicts with some other identity or ended up being a restricted number <10000.
@@ -1666,19 +2306,33 @@ securityDefinitions:
       Provides an authentication token as retrieved with either the [authentication endpoint](#path--auth-authenticate)
       or the [invitee bouncer endpoint](#path--auth-bounce).
 
-      The token returned by either call must be provided in an "Authorization" header to API calls secured with this security definition.
+      The token returned by either call must be provided in an "Authorization" header to HTTPS calls secured with this security definition.
 
       The tokens are whitelisted by the *overhide* broker until revoked or expired (at broker's purview).  
       
       The token contains the *identity*--hashed in implementation specific ways--to help with access control for the rest of the API.  
       
       Details in the [*identity write-up*](https://github.com/JakubNer/overhide/blob/master/docs/identity.md#authenticated-sessions).
-  Authorization Query:
+  Authorization WSS:
     type: apiKey
     in: query
     name: auth
     description: |
-      Same as the Authorization Header security scheme except token is passed in a query parameter named *auth*.
+      Provides an authentication token as retrieved with either the [authentication endpoint](#path--auth-authenticate)
+      or the [invitee bouncer endpoint](#path--auth-bounce).
+
+      For WSS, the token must be provided when establishing the connection:
+
+      ```
+        WebSocket = require 'ws'
+        ws = new WebSocket 'ws://localhost:8000',{
+          headers : {
+            token: "..."
+          }
+        }
+      ```
+
+      Token details are same as per the [Authorization Header](#security-definition-Authorization Header) security scheme.
 externalDocs:
   description: overhide documentation
   url: 'https://pages.github.com/JakubNer/overhide'
