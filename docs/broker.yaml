@@ -1801,6 +1801,45 @@ paths:
           $ref: "#/responses/403"
         429:
           $ref: "#/responses/429"
+  /all-data-lock:
+    put:
+      summary: Locks owners data from any modification until lock is removed. 
+      description: |
+        All of the user's data with caller's *identity* is locked: cannot be modified in any way.
+      tags:
+        - import/export
+      security:
+        - Authorization Header: []
+      consumes:
+        - application/json
+      responses:
+        200:
+          description: |
+            Data successfully locked.
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
+    delete:
+      summary: Remove data lock for owner.
+      description: |
+        Remove data lock for owner:  all user's data can be modified as per specific restrictions of the system and each *segment-key*.
+      tags:
+        - import/export
+      security:
+        - Authorization Header: []
+      responses:
+        200:
+          description: |
+            Data successfully unlocked.
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
   /guids:
     get:
       summary: Retrieve GUIDs to user's data on connected persistence networks.
