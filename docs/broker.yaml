@@ -17,7 +17,11 @@ info:
       
       Operations *GET*, *PUT*, *POST*, *DELETE* use the HTTPS scheme.  These endpoints should be understood as standard REST requests.  These configuration/discovery exchanges involve text parameters on the URL line and text/numeric payloads in the JSON representation.  They have URL encoded parameters on the URL line and use BASE64 encoding for some JSON attributes.  The BASE64 encoding is explicitly stated.
 
-      Operations *WIRE* are WebSocket events that use a custom wire protocol.  The SSL secured WebSockets connection is to the same address as the HTTPS connection.  
+      Operations *WIRE* are WebSocket events that use a custom wire protocol.  The SSL secured WebSockets connection is to the same address as the HTTPS connection.  [Authentication](#tag-auth) occurs using HTTPS and seamlessly propagates to the WSS connection.  
+
+      Wire-protocol endpoints require an additional step of a [handshake]() between clien and broker:  beyond just being authenticated.  Failure to [handshake]() will result in "no handshake" 400-series error codes on wire-protocol endpoints.
+
+      Please read the [handshake] endpoint documentation to understand the *WIRE* protocol flow-control mechanisms.
     ***
       A note on the wire-protocol payload notation.  
       
@@ -48,6 +52,9 @@ tags:
       Discover capabilities of the overhide broker system.
       * subscription providers
       * subscription tiers
+  - name: flow-control
+    description: |
+      Flow controls include toggles for the client and the broker to agree on message maximums, message fragmentation parameters, as well as acknowledgment and continuation messages for fragments of large payloads.
   - name: auth
     description: |
       Authentication, authorization, and credential management:
@@ -56,7 +63,7 @@ tags:
         the system and invitees of subscribers of the system.
       * work with  authority levels.
       * change *identity* credentials.  Setting *identity* for the first time is
-      done with the [authenticate endpoint](#path--auth-authenticate).
+      done with the [authenticate endpoint](#operation--auth-credentials-put).
       * work with subscription details for a supported remuneration API and a
       given *identity*.
   - name: data
@@ -75,12 +82,364 @@ tags:
   - name: datastore-key settings
     description: |
       Setting access metadata for *datastore-keys*.
-  - name: import/export
+  - name: metrics
     description: |
-      Batch import and export of all user's data and messages.
+      Usage metrics for specific *datastore-keys* or overall for the *identity*.
+  - name: data-stewardship
+    description: |
+      Stewardship of a users's data.
+      
+      * manage this broker's stewardship mode for an identity's data:  active/passive stewardship
+      * select distributed persistence network particulars for a user
+      * retrieve content propagation status of user's data and messages to the distributed persistence network
+      * batch import and export of all user's data and messages
 
       Envisioned use cases include backup and broker transfer.
 paths:
+  handshake:
+    options:
+      summary: Client initiates handshake with broker.
+      description: |
+        The handshake should take place immediatelly after upgrading an authenticated HTTPS connection to WSS, before using any other *WIRE* endpoints.
+
+        The handshake constitutes message maximums and message fragmentation parameters.
+
+        The client sends the maximums to the broker.  If the broker agrees to the values it responds with a *200*: finalizing the handshake (see responses).  
+        
+        If the values are not acceptable to the broker, the broker responds with a *413*; suggesting alternate values (see responses).  The handshake is broken off at this point.  The client needs to re-start the handshake, adjusting the values sent in.  
+
+        All *WIRE* endpoints following a successful handshake need to keep their message exchanges consistent with the constraints of the handshake, else riske a "message outside handshake constraints" (400) response.
+      tags:
+        - flow-control
+      parameters:
+        - in: body
+          name: payload
+          description: |
+
+            | *syntax*            | *bytes* | *value* |
+            | ---                 | ---     | ---     |
+            | req-id              | 8       |         |
+            | len                 | 8       | IL + 18 |
+            | opcode              | 1       | 0xFF    |
+            | identity-len        | 1       | IL == length(identity) |
+            | identity            | IL      |         |
+            | max-fragment-size   | 4       |         |
+            | max-aggregate-size  | 8       |         |
+            | ack-timeout-millis  | 4       | ``      |
+          schema:
+            type: object
+            required:
+              - req-id
+              - len
+              - opcode
+              - identity-len
+              - max-fragment-size
+              - max-aggregate-size
+              - ack-timeout-millis
+            properties:
+              req-id:
+                type: number
+                description: |
+                  Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
+              len:
+                type: number
+                description: |
+                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.
+              opcode:                  
+                type: bytes
+                description: |
+                  Operation code.
+              identity-len:
+                type: number
+                description: |
+                  Length in bytes of *identity*.
+              identity:
+                type: bytes
+                description: |
+                  Optional identity.  If not provided, identity is that of token owner.
+
+                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+              max-fragment-size:
+                type: number
+                description: |
+                  A large message payload must be split up into fragments at most *max-fragment-size* bytes long.
+
+                  A suggested default is 256KiB.
+              max-aggregate-size:
+                type: number
+                description: |
+                  The maximum size of a message payload--the aggregate of all fragments.
+              ack-timeout-millis:
+                type: number
+                description: |
+                  Milliseconds specifying period within which a fragment acknowledgment is expected before sender can halt exchange.
+      consumes:
+        - application/octet-stream
+      produces:
+        - application/octet-stream
+      security:
+        - Authorization WSS: []
+      responses:
+        RESPONSE:
+          $ref: "#/responses/WIRE"
+        code == 200:
+          description: |
+            Handshake achieved:  broker agrees with the flow-control values as per this handshake request from the client.
+        code == 413:
+          description: |
+            The broker rejects the flow-control values.
+
+            Suggested values are returned in the response byte-stream:
+
+            | *syntax*            | *bytes* | *value* |
+            | ---                 | ---     | ---     |
+            | max-fragment-size   | 4       |         |
+            | max-aggregate-size  | 8       | ``      |
+            | ack-timeout-millis  | 4       | ``      |
+
+            Handshake is not established, the client should retry the handshake with the values suggested by the broker.
+        code == 429:
+          $ref: "#/responses/429"  
+  continue:
+    options:
+      summary: Continue sending fragments of a message to a "setter" endpoint of a broker.
+      description: |
+        For some "setter" *WIRE* endpoints the message payload may be fragmented into multiple requests.  The first request is the *WIRE* endpoint call.  Subsequent requests are this *continuation* call.  All the requests are sequential fragments of the same aggregate message.  The order of the *WIRE* endpoint call and these subsequent *continuation* fragments is guaranteed.
+
+        Any "setter" *WIRE* endpoint that may have it's request fragmented will indicate that it respects the 0x80 (done) *flag* value in it's properties description.  Any *WIRE* endpoint that doesn't consider the 0x80 (done) *flag* may not have its message stream--initiated by endpoint call with a *req-id*--continued with these *continue* fragment messages. 
+        
+        The first *WIRE* endpoint call has the first bytes of the payload and indicates that there are more fragments required by keeping the 0x80 *flag* (done) unset.
+
+        Subsequent *continuation* fragments transfer the remainder of the aggregate message byte-stream to the broker.  The last message has it's 0x80 *flag* (done) set.
+
+        The client must not send subsequent fragments until the broker responds with a *200* code to the previous request.
+      tags:
+        - flow-control
+      parameters:
+        - in: body
+          name: payload
+          description: |
+
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | req-id          | 8       |         |
+            | len             | 8       | length(payload) + 2 |
+            | opcode          | 1       | 0x10    |
+            | flags           | 1       |         |
+            | payload         | *       | ``      |
+          schema:
+            type: object
+            required:
+              - req-id
+              - len
+              - opcode
+              - flags
+              - payload
+            properties:
+              req-id:
+                type: number
+                description: |
+                  Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
+
+                  This is the request ID we're continuing with this fragment.
+              len:
+                type: number
+                description: |
+                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.
+              opcode:                  
+                type: bytes
+                description: |
+                  Operation code.
+              flags:
+                type: bytes
+                description: |
+                  A byte of flags.  
+
+                  | *value* | *name* | *description* |
+                  | ---  | ---  | --- |
+                  | 0x80 | done | `0x1`: this is the last fragment of the payload for req-id |
+              payload:
+                type: bytes
+                description: |
+                  The fragment byte-stream.
+      consumes:
+        - application/octet-stream
+      produces:
+        - application/octet-stream
+      security:
+        - Authorization WSS: []
+      responses:
+        RESPONSE:
+          $ref: "#/responses/WIRE"
+        code == 200:
+          description: |
+            Success.  Empty.
+        code == 400:
+          $ref: "#/responses/400"
+        code == 429:
+          $ref: "#/responses/429"
+  acknowledge:
+    options:
+      summary: Acknowledge receipt of a response fragment from a "getter" endpoint of a broker.
+      description: |
+        The response payload of some "getter" *WIRE* endpoints as well as broker initiated messages (see [subscribe endpoint](#operation-subscribe-WIRE)) may be fragmented into multiple responses. 
+
+        All WSS responses from the broker and broker-initiated messages adhere to the [*WIRE* response](#/responses/WIRE) specification.  
+        
+        Any [*WIRE* response](#/responses/WIRE) with code 206 (fragment response) must be acknowledged by this *acknowledge* message: the broker will not send additional messages until receipt of acknowledgment.
+
+        Any [broker-initiated *WIRE* message](#/responses/WIRE) with code 222--[subscription event](#operation-subscribe-WIRE)--must be acknowledged by this *acknowledge* message: the broker will not send additional messages until receipt of acknowledgment.
+
+        *WIRE* endpoints enumerating that they expect a response with *code* *206* (fragment response) or *222* (subscription event) need concern themselves with these acknowledgments.  *WIRE* endpoints not enumerating a response *code* *206* or *222* will never have a fragmented response.
+
+        Note that this message does not expect a response from the broker.
+      tags:
+        - flow-control
+      parameters:
+        - in: body
+          name: payload
+          description: |
+
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | req-id          | 8       |         |
+            | len             | 8       | 1       |
+            | opcode          | 1       | 0x20    |
+          schema:
+            type: object
+            required:
+              - req-id
+              - len
+              - opcode
+            properties:
+              req-id:
+                type: number
+                description: |
+                  Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
+
+                  This is the request ID who's fragmented response we're acknowledging.
+              len:
+                type: number
+                description: |
+                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.
+              opcode:                  
+                type: bytes
+                description: |
+                  Operation code.
+      produces:
+        - application/octet-stream
+      security:
+        - Authorization WSS: []
+  halt:
+    options:
+      summary: Halt fragmented sending or receiving.
+      description: |
+        Any fragmented sending or receiving--as per the [continue](#operation-continue-WIRE) or [acknowledge](#operation-acknowledge-WIRE) endpoints--may be halted.
+
+        A halt means further fragments should not be sent, should be dropped.
+
+        Only the client can initiate a halt.  The broker may similarly halt on timeout conditions as per [handshake](#operation-handshake-WIRE).
+      tags:
+        - flow-control
+      parameters:
+        - in: body
+          name: payload
+          description: |
+
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | req-id          | 8       |         |
+            | len             | 8       | 1       |
+            | opcode          | 1       | 0x30    |
+          schema:
+            type: object
+            required:
+              - req-id
+              - len
+              - opcode
+            properties:
+              req-id:
+                type: number
+                description: |
+                  Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
+
+                  This is the request ID who's fragmented response we're acknowledging.
+              len:
+                type: number
+                description: |
+                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.
+              opcode:                  
+                type: bytes
+                description: |
+                  Operation code.
+      consumes:
+        - application/octet-stream
+      produces:
+        - application/octet-stream
+      security:
+        - Authorization WSS: []
+      responses:
+        RESPONSE:
+          $ref: "#/responses/WIRE"
+        code == 200:
+          description: |
+            Halt seen.
+        code == 400:
+          $ref: "#/responses/400"
+        code == 429:
+          $ref: "#/responses/429"  
+  watchdog:
+    options:
+      summary: Check if connection is live.
+      description: |
+        Check if connection is live.  Broker has until [timeout as per handshake](#operation-handshake-WIRE) to respond with a 200/woof.
+      tags:
+        - flow-control
+      parameters:
+        - in: body
+          name: payload
+          description: |
+
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | req-id          | 8       |         |
+            | len             | 8       | 1       |
+            | opcode          | 1       | 0x50    |
+          schema:
+            type: object
+            required:
+              - req-id
+              - len
+              - opcode
+            properties:
+              req-id:
+                type: number
+                description: |
+                  Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
+
+                  This is the request ID who's fragmented response we're acknowledging.
+              len:
+                type: number
+                description: |
+                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.
+              opcode:                  
+                type: bytes
+                description: |
+                  Operation code.
+      consumes:
+        - application/octet-stream
+      produces:
+        - application/octet-stream
+      security:
+        - Authorization WSS: []
+      responses:
+        RESPONSE:
+          $ref: "#/responses/WIRE"
+        code == 200:
+          description: |
+            Woof: connection is live.
+        code == 429:
+          $ref: "#/responses/429"  
   /capabilities/remuneration-providers:
     get:
       summary: List of remuneration providers supported.
@@ -102,7 +461,7 @@ paths:
               $ref: "#/definitions/RemunerationProvider"
         429:
           $ref: "#/responses/429"
-  /capabilities/remuneration-tiers/{remuneration-key}:
+  /capabilities/{remuneration-key}/tiers:
     get:
       summary: List of subscription tiers available.
       description: |
@@ -132,7 +491,7 @@ paths:
           $ref: "#/responses/400"
         429:
           $ref: "#/responses/429"
-  /auth/authenticate:
+  /auth/credentials:
     put:
       summary: Authenticate an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) returning a token.
       description: |
@@ -165,7 +524,7 @@ paths:
                 description: |
                   BASE64 encoded.
 
-                  A secret phrase for the specified user-address.  Once a user authenticates against the broker with a secret-phrase and a user-address, the secret-phrase is tied to the user-address indefinitely, unless changed by [change-credentials](#operation--auth-change-credentials-put).
+                  A secret phrase for the specified user-address.  Once a user authenticates against the broker with a secret-phrase and a user-address, the secret-phrase is tied to the user-address indefinitely, unless changed by [changed-credentials](#operation--auth-changed-credentials-put).
               user-address:
                 type: string
                 description: |
@@ -202,7 +561,7 @@ paths:
           $ref: "#/responses/409"
         429:
           $ref: "#/responses/429"
-  /auth/get-authorities:
+  /auth/authorities:
     get:
       summary: Retrieves authorities for an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
       description: |
@@ -229,7 +588,7 @@ paths:
            $ref: "#/responses/401"
         429:
           $ref: "#/responses/429"
-  /auth/bounce:
+  /auth/guest-credentials:
     put:
       summary: Authenticate an invitee's user-address as a guest of a subscriber's user-address.
       description: |
@@ -241,7 +600,7 @@ paths:
 
         The inviting subscriber must expose their *user-address* and a *shared-phrase* that's used to hash their *user-address*
         into an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).  The *shared-phrase* is equivalent to the
-        *secret-phrase* passed into the [authenticate endpoint](#operation--auth-authenticate-put): except it's not kept secret by the 
+        *secret-phrase* passed into the [authenticate endpoint](#operation--auth-credentials-put): except it's not kept secret by the 
         inviting user.  This is necessary to authorize the invitee to the inviting subscriber, and to ensure the inviting subscriber's 
         *user-address* does in fact hash to the desired indentity: we don't want to just pass the inviting subscriber's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md),
         we want to calculate it.
@@ -331,7 +690,7 @@ paths:
           $ref: "#/responses/409"
         429:
           $ref: "#/responses/429"
-  /auth/change-credentials:
+  /auth/changed-credentials:
     put:
       summary: Change authentication of token's user.
       description: |
@@ -342,6 +701,10 @@ paths:
           name: new-authentication
           description: |
             New authentication credentials for user indicated by the *identity* in the [security header](#security-definition-Authorization Header).
+
+            NOTE:  If the user's data is [tracked by multiple brokers](glossary.html#data-steward) the user's identity has to be changed on all 
+            [data-stewards](glossary.html#data-steward) of the user's data.  Changing *identity* on one [data-steward](glossary.html#data-steward) and 
+            failing to do same on the rest yields brokers that track stale data.
           schema:
             type: object
             required:
@@ -362,7 +725,7 @@ paths:
                 description: |
                   BASE64 Encoded.
 
-                  A new secret phrase for the new user-address.  Once credentials are changed successfully; the *new-secret-phrase* is tied to the *new-user-address* indefinitely, unless changed again by [change-credentials](#operation--auth-change-credentials-put).
+                  A new secret phrase for the new user-address.  Once credentials are changed successfully; the *new-secret-phrase* is tied to the *new-user-address* indefinitely, unless changed again by [changed-credentials](#operation--auth-changed-credentials-put).
               new-user-address:
                 type: string
                 description: |
@@ -392,7 +755,7 @@ paths:
           $ref: "#/responses/409"
         429:
           $ref: "#/responses/429"
-  /auth/get-transactions/{remuneration-key}/{from-address}/{to-address}:
+  /auth/{remuneration-key}/{from-address}/{to-address}/transactions:
     get:
       summary: Retrieve remuneration transactions.
       description: |
@@ -473,6 +836,9 @@ paths:
 
         For the *set* to succeed the *datastore-key* (segment-key @ identity) must
         either be brand new of already owned by authorization token owner.
+
+        If this broker is not an active steward of data for *identity*, call fails with a 400 -- 
+        "cannot write, broker not an active steward of user's data"
       tags:
         - data
       parameters:
@@ -483,12 +849,13 @@ paths:
             | *syntax*        | *bytes* | *value* |
             | ---             | ---     | ---     |
             | req-id          | 8       |         |
-            | len             | 8       | SL + IL + length(payload) + 3 |
+            | len             | 8       | SL + IL + length(payload) + 4 |
             | opcode          | 1       | 0x01    |
             | segment-key-len | 1       | SL == length(segment-key) |
             | segment-key     | SL      |         |
             | identity-len    | 1       | IL == length(identity) |
             | identity        | IL      |         |
+            | flags           | 1       |         |
             | payload         | *       | ``      |
           schema:
             type: object
@@ -499,6 +866,7 @@ paths:
               - segment-key-len
               - segment-key
               - identity-len
+              - flags
               - payload
             properties:
               req-id:
@@ -506,9 +874,9 @@ paths:
                 description: |
                   Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
               len:
-                type: bytes
+                type: number
                 description: |
-                  Number of bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + length(payload) + 11.
+                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.
               opcode:                  
                 type: bytes
                 description: |
@@ -516,7 +884,7 @@ paths:
               segment-key-len:
                 type: number
                 description: |
-                  Number of bytes for *segment-key*.
+                  Length in bytes of *segment-key*.
               segment-key:
                 type: bytes
                 description: |
@@ -524,13 +892,23 @@ paths:
               identity-len:
                 type: number
                 description: |
-                  Number of bytes for *identity*.
+                  Length in bytes of *identity*.
               identity:
                 type: bytes
                 description: |
                   Optional identity.  If not provided, identity is that of token owner.
 
                   See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+              flags:
+                type: bytes
+                description: |
+                  A byte of flags.  
+
+                  | *value* | *name* | *description* |
+                  | --- | --- | --- |
+                  | 0x04 | wait-until-persisted | `1`: wait until datastore-key changes are persisted |
+                  | 0x08 | wait-until-shared | `1`: wait until datastore-key changes are shared on distributed persistence network |
+                  | 0x80 | done | `1`: this payload is not fragmented; `0`: this payload is a fragment and subsequent [continue](#operation-continue-WIRE) messages will follow after the broker responds with a *200*. |
               payload:
                 type: bytes
                 description: |
@@ -589,9 +967,9 @@ paths:
                 description: |
                   Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
               len:
-                type: bytes
+                type: number
                 description: |
-                  Number of bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + 11.
+                  Length in bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + 11.
               opcode:                  
                 type: bytes
                 description: |
@@ -599,7 +977,7 @@ paths:
               segment-key-len:
                 type: number
                 description: |
-                  Number of bytes for *segment-key*.
+                  Length in bytes of *segment-key*.
               segment-key:
                 type: bytes
                 description: |
@@ -607,7 +985,7 @@ paths:
               identity-len:
                 type: number
                 description: |
-                  Number of bytes for *identity*.
+                  Length in bytes of *identity*.
               identity:
                 type: bytes
                 description: |
@@ -626,6 +1004,8 @@ paths:
         code == 200:
           description: |
             The value of *datastore-key* (segment-key @ identity).
+        code == 206:
+          $ref: "#/responses/206"
         code == 400:
           $ref: "#/responses/400"
         code == 403:
@@ -638,6 +1018,9 @@ paths:
       description: |
         Delete *datastore-key* (segment-key @ identity).  The *datastore-key* must be
         owned by the token owner.
+
+        If this broker is not an active steward of data for *identity*, call fails with a 400 -- 
+        "cannot write, broker not an active steward of user's data"
       tags:
         - data
       parameters:
@@ -648,12 +1031,13 @@ paths:
             | *syntax*        | *bytes* | *value* |
             | ---             | ---     | ---     |
             | req-id          | 8       |         |
-            | len             | 8       | SL + IL + 3 |
+            | len             | 8       | SL + IL + 4 |
             | opcode          | 1       | 0x03    |
             | segment-key-len | 1       | SL == length(segment-key) |
             | segment-key     | SL      |         |
             | identity-len    | 1       | IL == length(identity) |
             | identity        | IL      | ``      |
+            | flags           | 1       | ``      |
           schema:
             type: object
             required:
@@ -663,15 +1047,16 @@ paths:
               - segment-key-len
               - segment-key
               - identity-len
+              - flags
             properties:
               req-id:
                 type: number
                 description: |
                   Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
               len:
-                type: bytes
+                type: number
                 description: |
-                  Number of bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + length(payload) + 11.
+                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.
               opcode:                  
                 type: bytes
                 description: |
@@ -679,7 +1064,7 @@ paths:
               segment-key-len:
                 type: number
                 description: |
-                  Number of bytes for *segment-key*.
+                  Length in bytes of *segment-key*.
               segment-key:
                 type: bytes
                 description: |
@@ -687,13 +1072,22 @@ paths:
               identity-len:
                 type: number
                 description: |
-                  Number of bytes for *identity*.
+                  Length in bytes of *identity*.
               identity:
                 type: bytes
                 description: |
                   Optional identity.  If not provided, identity is that of token owner.
 
                   See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+              flags:
+                type: bytes
+                description: |
+                  A byte of flags.  
+
+                  | *value* | *name* | *description* |
+                  | --- | --- | --- |
+                  | 0x04 | wait-until-persisted | `1`: wait until datastore-key changes are persisted |
+                  | 0x08 | wait-until-shared | `1`: wait until datastore-key changes are shared on distributed persistence network |                  
       consumes:
         - application/octet-stream
       produces:
@@ -724,7 +1118,10 @@ paths:
 
         If the *datastore-key*'s *allow-publish* setting is "any", the *identity* in the authentication token must simply be valid: a valid broker system user is publishing.
 
-        See the [settings getter](#operation--settings--segment-key--get) for the above settings.
+        See the [settings getter](#operation---segment-key--settings--get) for the above settings.
+
+        If this broker is not an active steward of data for *identity*, call fails with a 400 -- 
+        "cannot write, broker not an active steward of user's data"
       tags:
         - backchannel queues
       parameters:
@@ -735,7 +1132,7 @@ paths:
             | *syntax*        | *bytes* | *value* |
             | ---             | ---     | ---     |
             | req-id          | 8       |         |
-            | len             | 8       | SL + IL + DL + length(payload) + 4 |
+            | len             | 8       | SL + IL + DL + length(payload) + 5 |
             | opcode          | 1       | 0x04    |
             | segment-key-len | 1       | SL == length(segment-key) |
             | segment-key     | SL      |         |
@@ -743,6 +1140,7 @@ paths:
             | identity        | IL      |         |
             | delegate-len    | 1       | DL == length(delegate) |
             | delegate        | DL      |         |
+            | flags           | 1       | ``      |
             | payload         | *       | ``      |
           schema:
             type: object
@@ -754,6 +1152,7 @@ paths:
               - segment-key
               - identity-len
               - delegate-len
+              - flags
               - payload
             properties:
               req-id:
@@ -761,9 +1160,9 @@ paths:
                 description: |
                   Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
               len:
-                type: bytes
+                type: number
                 description: |
-                  Number of bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + length(payload) + 11.
+                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.
               opcode:                  
                 type: bytes
                 description: |
@@ -771,7 +1170,7 @@ paths:
               segment-key-len:
                 type: number
                 description: |
-                  Number of bytes for *segment-key*.
+                  Length in bytes of *segment-key*.
               segment-key:
                 type: bytes
                 description: |
@@ -779,7 +1178,7 @@ paths:
               identity-len:
                 type: number
                 description: |
-                  Number of bytes for *identity*.
+                  Length in bytes of *identity*.
               identity:
                 type: bytes
                 description: |
@@ -791,7 +1190,7 @@ paths:
               delegate-len:
                 type: number
                 description: |
-                  Number of bytes for *delegate*.
+                  Length in bytes of *delegate*.
               delegate:
                 type: bytes
                 description: |
@@ -801,6 +1200,16 @@ paths:
                   from the path and this *identity* from the query constitute the *datstore-key*.
 
                   The *delegate* must satisfy [settings on the *segment-key*](#definition-DatastoreKeySettings) to publish mesages.
+              flags:
+                type: bytes
+                description: |
+                  A byte of flags.  
+
+                  | *value* | *name* | *description* |
+                  | --- | --- | --- |
+                  | 0x04 | wait-until-persisted | `1`: wait until datastore-key changes are persisted |
+                  | 0x08 | wait-until-shared | `1`: wait until datastore-key changes are shared on distributed persistence network |                  
+                  | 0x80 | done | `1`: this payload is not fragmented; `0`: this payload is a fragment and subsequent [continue](#operation-continue-WIRE) messages will follow after the broker responds with a *200*. |
               payload:
                 type: bytes
                 description: |
@@ -862,9 +1271,9 @@ paths:
                 description: |
                   Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
               len:
-                type: bytes
+                type: number
                 description: |
-                  Number of bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + length(payload) + 11.
+                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.
               opcode:                  
                 type: bytes
                 description: |
@@ -872,7 +1281,7 @@ paths:
               segment-key-len:
                 type: number
                 description: |
-                  Number of bytes for *segment-key*.
+                  Length in bytes of *segment-key*.
               segment-key:
                 type: bytes
                 description: |
@@ -880,7 +1289,7 @@ paths:
               identity-len:
                 type: number
                 description: |
-                  Number of bytes for *identity*.
+                  Length in bytes of *identity*.
               identity:
                 type: bytes
                 description: |
@@ -890,7 +1299,7 @@ paths:
               delegate-len:
                 type: number
                 description: |
-                  Number of bytes for *delegate*.
+                  Length in bytes of *delegate*.
               delegate:
                 type: bytes
                 description: |
@@ -945,22 +1354,27 @@ paths:
             message-len:
               type: number
               description: |
-                Number of bytes for *message*.
+                Length in bytes of *message*.
             message:
               type: bytes
               description: |
                 The message byte stream value.
+        code == 206:
+          $ref: "#/responses/206"
         code == 400:
           $ref: "#/responses/400"
         code == 403:
           $ref: "#/responses/403"
         code == 429:
           $ref: "#/responses/429"
-  acknowledge:
+  acknowledge messages:
     options:
       summary: Acknowledge all messages up to and including seq-id for given datastore-key.
       description: |
         Acknowledge all messages up to and including seq-id have been handled.  All messages up to seq-id will be removed from the backchannel.
+
+        If this broker is not an active steward of data for *identity*, call fails with a 400 -- 
+        "cannot write, broker not an active steward of user's data"
       tags:
         - backchannel queues
       parameters:
@@ -971,7 +1385,7 @@ paths:
             | *syntax*        | *bytes* | *value* |
             | ---             | ---     | ---     |
             | req-id          | 8       |         |            
-            | len             | 8       | SL + IL + DL + 8 |
+            | len             | 8       | SL + IL + DL + 9 |
             | opcode          | 1       | 0x06    |
             | segment-key-len | 1       | SL == length(segment-key) |
             | segment-key     | SL      |         |
@@ -979,6 +1393,7 @@ paths:
             | identity        | IL      |         |
             | delegate-len    | 1       | DL == length(delegate) |
             | delegate        | DL      |         |
+            | flags           | 1       |         |
             | seq-id          | 4       | ``      |
           schema:
             type: object
@@ -990,6 +1405,7 @@ paths:
               - segment-key
               - identity-len
               - delegate-len
+              - flags
               - seq-id
             properties:
               req-id:
@@ -997,9 +1413,9 @@ paths:
                 description: |
                   Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
               len:
-                type: bytes
+                type: number
                 description: |
-                  Number of bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + length(payload) + 11.
+                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.
               opcode:                  
                 type: bytes
                 description: |
@@ -1007,7 +1423,7 @@ paths:
               segment-key-len:
                 type: number
                 description: |
-                  Number of bytes for *segment-key*.
+                  Length in bytes of *segment-key*.
               segment-key:
                 type: bytes
                 description: |
@@ -1015,7 +1431,7 @@ paths:
               identity-len:
                 type: number
                 description: |
-                  Number of bytes for *identity*.
+                  Length in bytes of *identity*.
               identity:
                 type: bytes
                 description: |
@@ -1025,7 +1441,7 @@ paths:
               delegate-len:
                 type: number
                 description: |
-                  Number of bytes for *delegate*.
+                  Length in bytes of *delegate*.
               delegate:
                 type: bytes
                 description: |
@@ -1035,6 +1451,15 @@ paths:
                   from the path and this *identity* from the query constitute the *datstore-key*.
 
                   Only the *delegate* may acknowledge these qualified mesages.
+              flags:
+                type: bytes
+                description: |
+                  A byte of flags.  
+
+                  | *value* | *name* | *description* |
+                  | --- | --- | --- |
+                  | 0x04 | wait-until-persisted | `1`: wait until datastore-key changes are persisted |
+                  | 0x08 | wait-until-shared | `1`: wait until datastore-key changes are shared on distributed persistence network |                  
               seq-id:
                 type: number
                 description: |
@@ -1065,7 +1490,10 @@ paths:
         
         If the *shunt* query parameter is not specified, subscription doesn't send actual message content, just notification of new messages with a new *seq-id*.
 
-        If the *shunt* query parameter is specified, full message content is sent via subscription.  Unless the *auto-acknowledge* flag is set, the messages do have to be explicitly [acknowledged](#operation-acknowledge-WIRE) to clear the backchannel queue.  Failure to acknowledge messages with *auto-acknowledge* off and [limit-bytes set](#definition-DatastoreKeySettings) may lead to a full backchannel queue and dropped messages; not forwarded to these live subscriptions.
+        If the *shunt* query parameter is specified, full message content is sent via subscription.  Unless the *auto-acknowledge* flag is set, the messages do have to be explicitly [acknowledged](#operation-acknowledge-messages-WIRE) to clear the backchannel queue.  Failure to acknowledge messages with *auto-acknowledge* off and [limit-bytes set](#definition-DatastoreKeySettings) may lead to a full backchannel queue and dropped messages; not forwarded to these live subscriptions.
+
+        If this broker is not an active steward of data for *identity* and the *auto-acknowledge* flag is set, call fails with a 400 -- 
+        "cannot write, broker not an active steward of user's data"
       tags:
         - backchannel queues
       parameters:
@@ -1095,16 +1523,16 @@ paths:
               - segment-key
               - identity-len
               - delegate-len
-              - payload
+              - flags
             properties:
               req-id:
                 type: number
                 description: |
                   Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
               len:
-                type: bytes
+                type: number
                 description: |
-                  Number of bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + length(payload) + 11.
+                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.
               opcode:                  
                 type: bytes
                 description: |
@@ -1112,7 +1540,7 @@ paths:
               segment-key-len:
                 type: number
                 description: |
-                  Number of bytes for *segment-key*.
+                  Length in bytes of *segment-key*.
               segment-key:
                 type: bytes
                 description: |
@@ -1120,7 +1548,7 @@ paths:
               identity-len:
                 type: number
                 description: |
-                  Number of bytes for *identity*.
+                  Length in bytes of *identity*.
               identity:
                 type: bytes
                 description: |
@@ -1130,7 +1558,7 @@ paths:
               delegate-len:
                 type: number
                 description: |
-                  Number of bytes for *delegate*.
+                  Length in bytes of *delegate*.
               delegate:
                 type: bytes
                 description: |
@@ -1147,8 +1575,10 @@ paths:
 
                   | *value* | *name* | *description* |
                   | --- | --- | --- |
-                  | 0x1 | shunt | `false`: subscription doesn't send actual message content, just notification of new messages with a new *seq-id*.  `true`: full message content is sent via subscription. |
-                  | 0x2 | auto-acknowledge | `false`: explicit acknowledgment via [acknowledge](#operation-acknowledge-WIRE) call required.  `true`: messages are auto-acknowledged, not queued.  This falg only applies in conjunction with the *shunt* flag |                  
+                  | 0x01 | shunt | `0`: subscription doesn't send actual message content, just notification of new messages with a new *seq-id*.  `1`: full message content is sent via subscription. |
+                  | 0x02 | auto-acknowledge | `0`: explicit acknowledgment via [acknowledge](#operation-acknowledge-messages-WIRE) call required.  `1`: messages are auto-acknowledged, not queued.  This falg only applies in conjunction with the *shunt* flag |  
+                  | 0x04 | wait-until-persisted | `1`: wait until datastore-key changes are persisted (only relevant if *auto-acknowledge* is `1`) |
+                  | 0x08 | wait-until-shared | `1`: wait until datastore-key changes are shared on distributed persistence network (only relevant if *auto-acknowledge* is `1`) |                  
       consumes:
         - application/octet-stream
       produces:
@@ -1161,6 +1591,8 @@ paths:
         code == 222:
           description: |
             For as long as the connection remains opened, all *datastore-keys*--subscribed to using this *subscribe* request--may emit 222 responses.
+
+            Each 222 event requires a subsequent [acknowledgment](#operation-acknowledge-WIRE) by the client.
 
             The following details the possible messages that will come across.
 
@@ -1178,19 +1610,31 @@ paths:
 
             | *syntax*        | *bytes* | *value* |
             | ---             | ---     | ---     |
+            | flags           | 1       |         |
             | loop {          |         |         |
             |   seq-id        | 4       |         |
-            |   message-len   | 8       | ML = length(message) |
+            |   message-len   | 8       | ML = length(message) + 1 |
             |   message       | *       |         |
             | }               |         | ``      |
 
           schema:
             type: object
             required:
+              - flags
               - seq-id
               - message-len
               - message
             properties:
+              flags:
+                type: bytes
+                description: |
+                  A byte of flags.  
+
+                  The `0x80` (done) flag--if `1`--indicates that all messages in the descriptor loop are done; do not have fragment bytes outstanding.  A `0` value indicates that the last message in the descriptor loop is fragmented and bytes are still outstanding.  Those bytes will come down in the imediatelly following 222 subscription events.  The *seq-id* will be repeated for all fragments.  The aggregate fragments are all transmitted for the message if the `0x80` (done) flag comes down as a `1` or the fragmented message matching the *seq-id* is not the last message in the descriptor loop.
+
+                  | *value* | *name* | *description* |
+                  | ---  | ---  | --- |
+                  | 0x80 | done | `1`: all the messages in the descriptor loop are done--do not have outstanding fragments--`0`: the last message in the descriptor loop has additional fragments, to come down in the imediatelly following 222 subscription events |
               seq-id:
                 type: number
                 description: |
@@ -1198,11 +1642,13 @@ paths:
               message-len:
                 type: number
                 description: |
-                  Number of bytes for *message*.
+                  Length in bytes of *message*.
               message:
                 type: bytes
                 description: |
                   The message byte stream value.
+        code == 400:
+          $ref: "#/responses/400"
 
   set delegate data:
     options:
@@ -1217,6 +1663,9 @@ paths:
         from the path.
 
         A delegate can only write their value to this *segment-key* [settings on *segment-key* permitting](#definition-DatastoreKeySettings).  Only the delegate identified can write data.  The *settings* are solely to identify who the delegates can be.
+
+        If this broker is not an active steward of data for *identity*, call fails with a 400 -- 
+        "cannot write, broker not an active steward of user's data"
       tags:
         - delegate
       parameters:
@@ -1227,12 +1676,13 @@ paths:
             | *syntax*        | *bytes* | *value* |
             | ---             | ---     | ---     |
             | req-id          | 8       |         |
-            | len             | 8       | SL + IL + length(payload) + 3 |
+            | len             | 8       | SL + IL + length(payload) + 4 |
             | opcode          | 1       | 0x08    |
             | segment-key-len | 1       | SL == length(segment-key) |
             | segment-key     | SL      |         |
             | identity-len    | 1       | IL == length(identity) |
             | identity        | IL      |         |
+            | flags           | 1       | ``      |
             | payload         | *       | ``      |
           schema:
             type: object
@@ -1243,6 +1693,7 @@ paths:
               - segment-key-len
               - segment-key
               - identity-len
+              - flags
               - payload
             properties:
               req-id:
@@ -1250,9 +1701,9 @@ paths:
                 description: |
                   Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
               len:
-                type: bytes
+                type: number
                 description: |
-                  Number of bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + length(payload) + 11.
+                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.
               opcode:                  
                 type: bytes
                 description: |
@@ -1260,7 +1711,7 @@ paths:
               segment-key-len:
                 type: number
                 description: |
-                  Number of bytes for *segment-key*.
+                  Length in bytes of *segment-key*.
               segment-key:
                 type: bytes
                 description: |
@@ -1268,13 +1719,22 @@ paths:
               identity-len:
                 type: number
                 description: |
-                  Number of bytes for *identity*.
+                  Length in bytes of *identity*.
               identity:
                 type: bytes
                 description: |
                   Required identity of *segment-key* owner--[authorization header](#security-definition-Authorization Header) [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is used for qualifying the delegate.
 
                   See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+              flags:
+                type: bytes
+                description: |
+                  A byte of flags.  
+
+                  | *value* | *name* | *description* |
+                  | --- | --- | --- |
+                  | 0x04 | wait-until-persisted | `1`: wait until datastore-key changes are persisted |
+                  | 0x08 | wait-until-shared | `1`: wait until datastore-key changes are shared on distributed persistence network |                  
               payload:
                 type: bytes
                 description: |
@@ -1336,9 +1796,9 @@ paths:
                 description: |
                   Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
               len:
-                type: bytes
+                type: number
                 description: |
-                  Number of bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + length(payload) + 11.
+                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.
               opcode:                  
                 type: bytes
                 description: |
@@ -1346,7 +1806,7 @@ paths:
               segment-key-len:
                 type: number
                 description: |
-                  Number of bytes for *segment-key*.
+                  Length in bytes of *segment-key*.
               segment-key:
                 type: bytes
                 description: |
@@ -1354,7 +1814,7 @@ paths:
               identity-len:
                 type: number
                 description: |
-                  Number of bytes for *identity*.
+                  Length in bytes of *identity*.
               identity:
                 type: bytes
                 description: |
@@ -1373,6 +1833,8 @@ paths:
         code == 200:
           description: |
             The value of *datastore-key* (segment-key @ identity).
+        code == 206:
+          $ref: "#/responses/206"
         code == 400:
           $ref: "#/responses/400"
         code == 403:
@@ -1390,6 +1852,9 @@ paths:
         is used to qualify the data stored at the *segment-key*: this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is the delegate.
 
         The *datastore-key* must be owned by the in-path [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
+
+        If this broker is not an active steward of data for *identity*, call fails with a 400 -- 
+        "cannot write, broker not an active steward of user's data"
       tags:
         - delegate
       parameters:
@@ -1400,12 +1865,13 @@ paths:
             | *syntax*        | *bytes* | *value* |
             | ---             | ---     | ---     |
             | req-id          | 8       |         |
-            | len             | 8       | SL + IL + 3 |
+            | len             | 8       | SL + IL + 4 |
             | opcode          | 1       | 0x0A    |
             | segment-key-len | 1       | SL == length(segment-key) |
             | segment-key     | SL      |         |
             | identity-len    | 1       | IL == length(identity) |
             | identity        | IL      | ``      |
+            | flags           | 1       | ``      |
           schema:
             type: object
             required:
@@ -1415,15 +1881,16 @@ paths:
               - segment-key-len
               - segment-key
               - identity-len
+              - flags
             properties:
               req-id:
                 type: number
                 description: |
                   Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
               len:
-                type: bytes
+                type: number
                 description: |
-                  Number of bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + length(payload) + 11.
+                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.
               opcode:                  
                 type: bytes
                 description: |
@@ -1431,7 +1898,7 @@ paths:
               segment-key-len:
                 type: number
                 description: |
-                  Number of bytes for *segment-key*.
+                  Length in bytes of *segment-key*.
               segment-key:
                 type: bytes
                 description: |
@@ -1439,13 +1906,22 @@ paths:
               identity-len:
                 type: number
                 description: |
-                  Number of bytes for *identity*.
+                  Length in bytes of *identity*.
               identity:
                 type: bytes
                 description: |
                   Required identity of *segment-key* owner--[authorization header](#security-definition-Authorization Header) [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is used for qualifying the delegate.
 
                   See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+              flags:
+                type: bytes
+                description: |
+                  A byte of flags.  
+
+                  | *value* | *name* | *description* |
+                  | --- | --- | --- |
+                  | 0x04 | wait-until-persisted | `1`: wait until datastore-key changes are persisted |
+                  | 0x08 | wait-until-shared | `1`: wait until datastore-key changes are shared on distributed persistence network |                  
       consumes:
         - application/octet-stream
       produces:
@@ -1483,13 +1959,12 @@ paths:
             | *syntax*        | *bytes* | *value* |
             | ---             | ---     | ---     |
             | req-id          | 8       |         |
-            | len             | 8       | SL + IL + 11 |
+            | len             | 8       | SL + IL + 3 |
             | opcode          | 1       | 0x0B    |
             | segment-key-len | 1       | SL == length(segment-key) |
             | segment-key     | SL      |         |
             | identity-len    | 1       | IL == length(identity) |
             | identity        | IL      |         |
-            | page            | 8       | ``      |
           schema:
             type: object
             required:
@@ -1499,16 +1974,15 @@ paths:
               - segment-key-len
               - segment-key
               - identity-len
-              - page
             properties:
               req-id:
                 type: number
                 description: |
                   Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
               len:
-                type: bytes
+                type: number
                 description: |
-                  Number of bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + length(payload) + 11.
+                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.
               opcode:                  
                 type: bytes
                 description: |
@@ -1516,7 +1990,7 @@ paths:
               segment-key-len:
                 type: number
                 description: |
-                  Number of bytes for *segment-key*.
+                  Length in bytes of *segment-key*.
               segment-key:
                 type: bytes
                 description: |
@@ -1524,17 +1998,13 @@ paths:
               identity-len:
                 type: number
                 description: |
-                  Number of bytes for *identity*.
+                  Length in bytes of *identity*.
               identity:
                 type: bytes
                 description: |
                   Required identity of *segment-key* owner.
 
                   See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
-              page:
-                type: number
-                description: |
-                  Indicate the page # of the data to retrieve.
       consumes:
         - application/octet-stream
       produces:
@@ -1548,12 +2018,8 @@ paths:
           description: |
             List of all delegate data under the *datastore-key*.
 
-            The results are paginated; see *page* parameter of request.
-
             | *syntax*        | *bytes* | *value* |
             | ---             | ---     | ---     |
-            | page            | 8       |         |
-            | pages           | 8       |         |
             | loop {          |         |         |
             |   delegate-len  | 1       | DL == length(delegate) |
             |   delegate      | DL      |         |
@@ -1564,25 +2030,15 @@ paths:
           schema:
             type: object
             required:
-              - page
-              - pages
               - delegate-len
               - delegate
               - message-len
               - message
             properties:
-              page:
-                type: number
-                description: |
-                  Indicates this result's page # out of *pages*.   
-              pages:
-                type: number
-                description: |
-                  Indicates the total number of data pages available to retrieve.  
               delegate-len:
                 type: number
                 description: |
-                  Number of bytes for *delegate*.
+                  Length in bytes of *delegate*.
               delegate:
                 type: bytes
                 description: |
@@ -1590,22 +2046,27 @@ paths:
               message-len:
                 type: number
                 description: |
-                  Number of bytes for *message*.
+                  Length in bytes of *message*.
               message:
                 type: bytes
                 description: |
                   The message byte stream value.
+        code == 206:
+          $ref: "#/responses/206"
         code == 400:
           $ref: "#/responses/400"
         code == 403:
           $ref: "#/responses/403"
         code == 429:
           $ref: "#/responses/429"
-  /settings/{segment-key}:
+  /{segment-key}/settings:
     put:
       summary: Setup settings for given datastore-key (segment-key @ identity).
       description: |
         Setup data and backchannel settings for given *datastore-key* (*segment-key* @ *identity*).
+
+        If this broker is not an active steward of data for *identity*, call fails with a 400 -- 
+        "cannot write, broker not an active steward of user's data"
       tags:
         - datastore-key settings
       parameters:
@@ -1627,6 +2088,18 @@ paths:
 
             See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
           type: string
+        - in: query
+          name: wait-until-persisted
+          required: false
+          description: |
+            Optional request to synchronously block result until change to *datastore-key* is persisted.
+          type: boolean
+        - in: query
+          name: wait-until-shared
+          required: false
+          description: |
+            Optional request to synchronously block result until change to *datastore-key* is shared on distributed persistence network.
+          type: boolean
       security:
         - Authorization Header: []
       consumes:
@@ -1678,6 +2151,76 @@ paths:
           $ref: "#/responses/403"
         429:
           $ref: "#/responses/429"
+  /metrics:
+    get:
+      summary: Returns metrics for an identity.
+      description: |
+        Returns overall metrics for an *identitiy*.
+      tags:
+        - metrics
+      parameters:
+        - in: query
+          name: identity
+          required: false
+          description: |
+            Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
+
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+          type: string
+      security:
+        - Authorization Header: []
+      produces:
+        - application/json
+      responses:
+        200:
+          description: |
+            TBD
+          schema:
+            $ref: "#/definitions/DatastoreKeySettings"
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
+  /{segment-key}/metrics:
+    get:
+      summary: Returns metrics for a given datastore-key.
+      description: |
+        Returns data and backchannel metrics for a given *datastore-key* (*segment-key* @ *identity*).
+      tags:
+        - metrics
+      parameters:
+        - in: path
+          name: segment-key
+          required: true
+          description: |
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+          type: string
+        - in: query
+          name: identity
+          required: false
+          description: |
+            Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
+
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+          type: string
+      security:
+        - Authorization Header: []
+      produces:
+        - application/json
+      responses:
+        200:
+          description: |
+            The value of *datastore-key* (segment-key @ identity).
+          schema:
+            $ref: "#/definitions/DatastoreKeySettings"
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
   /all-data:
     put:
       summary: Set all user's data on the broker system to the provided payload.
@@ -1690,13 +2233,28 @@ paths:
 
         If the payload is malformated and cannot be imported the message call fails with a 
         400 -- "cannot process input", followed by additional optional verbiage.
+
+        If this broker is not an active steward of data for *identity*, call fails with a 400 -- 
+        "cannot write, broker not an active steward of user's data"
       tags:
-        - import/export
+        - data-stewardship
       parameters:
         - in: body
           name: import-export-payload
           schema:
             $ref: "#/definitions/ImportExportPayload"
+        - in: query
+          name: wait-until-persisted
+          required: false
+          description: |
+            Optional request to synchronously block result until change to *datastore-key* is persisted.
+          type: boolean
+        - in: query
+          name: wait-until-shared
+          required: false
+          description: |
+            Optional request to synchronously block result until change to *datastore-key* is shared on distributed persistence network.
+          type: boolean
       security:
         - Authorization Header: []
       consumes:
@@ -1722,6 +2280,9 @@ paths:
         against the source broker instance.  The source broker is a broker currently furnishing the data to 
         the network.
 
+        The broker is returned to being a "passive" steward of data for the *identity*.  The caller must [re-enable active stewardship](#operation--active-stewardship-put)
+        if desired.
+
         If transferring a *segment-key* with a public restricted identity (0 .. 9999), if the
         *segment-key* already exists at provided identity for a different *owner*, the message
         call fails with a 400 -- "datastore-key ownership conflict; segment-key @ identity already reserved".
@@ -1735,7 +2296,7 @@ paths:
         If the payload from the other broker is malformated and cannot be imported the message call fails 
         with a 400 -- "cannot process input", followed by additional optional verbiage.
       tags:
-        - import/export
+        - data-stewardship
       parameters:
         - in: path
           name: type-key
@@ -1769,7 +2330,7 @@ paths:
       description: |
         Get all of the caller's data, based on *identity* passed in.
       tags:
-        - import/export
+        - data-stewardship
       security:
         - Authorization Header: []
       produces:
@@ -1788,7 +2349,20 @@ paths:
       description: |
         Delete all user's data on the broker system, based on *identity* passed in.
       tags:
-        - import/export
+        - data-stewardship
+      parameters:
+        - in: query
+          name: wait-until-persisted
+          required: false
+          description: |
+            Optional request to synchronously block result until change to *datastore-key* is persisted.
+          type: boolean
+        - in: query
+          name: wait-until-shared
+          required: false
+          description: |
+            Optional request to synchronously block result until change to *datastore-key* is shared on distributed persistence network.
+          type: boolean
       security:
         - Authorization Header: []
       responses:
@@ -1801,13 +2375,17 @@ paths:
           $ref: "#/responses/403"
         429:
           $ref: "#/responses/429"
-  /all-data-lock:
+  /active-stewardship:
     put:
-      summary: Locks owners data from any modification until lock is removed. 
+      summary: Make this broker an active-steward of the user's data.
       description: |
-        All of the user's data with caller's *identity* is locked: cannot be modified in any way.
+        All of the user's data with caller's *identity* is now under this broker's [active-stewardship](glossary.html#data-steward).
+
+        Once activated, the user can write data to their *datastore-keys*.
+
+        WARNING: having more than one "active" data-steward may lead to write race-conditions on the distributed persistence network with unknown consequences.
       tags:
-        - import/export
+        - data-stewardship
       security:
         - Authorization Header: []
       consumes:
@@ -1815,7 +2393,7 @@ paths:
       responses:
         200:
           description: |
-            Data successfully locked.
+            Stewardship status change successful.
         400:
           $ref: "#/responses/400"
         403:
@@ -1823,23 +2401,67 @@ paths:
         429:
           $ref: "#/responses/429"
     delete:
-      summary: Remove data lock for owner.
+      summary: Make this broker a passive-steward of the user's data
       description: |
-        Remove data lock for owner:  all user's data can be modified as per specific restrictions of the system and each *segment-key*.
+        All of the user's data with caller's *identity* is now under this broker's [passive-stewardship](glossary.html#data-steward).
+
+        Data--as available on the distributed persistence network--will be pinned/hosted by this broker.  It will be eventually consistent with 
+        data as written to an [active-steward](glossary.html#data-steward) on the network.
+
+        Data writes are prohibited to passive-stewards.
       tags:
-        - import/export
+        - data-stewardship
       security:
         - Authorization Header: []
       responses:
         200:
           description: |
-            Data successfully unlocked.
+            Stewardship status change successful.
         400:
           $ref: "#/responses/400"
         403:
           $ref: "#/responses/403"
         429:
           $ref: "#/responses/429"
+  /{segment-key}/persistence-status:
+    get:
+      summary: Retrieve content hashes representing latest data written out to working-memory, permanent-memory, and shared-memory.
+      description: |
+        Returns content-hashes representing latest content stored at each [memory level](glossary.html#working-memory-permanent-memory-shared-memory-persistence-status)
+        for a given *datastore-key* (*segment-key* @ *identity*).
+      tags:
+        - data-stewardship
+      parameters:
+        - in: path
+          name: segment-key
+          required: true
+          description: |
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+          type: string
+        - in: query
+          name: identity
+          required: false
+          description: |
+            Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
+
+            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+          type: string
+      security:
+        - Authorization Header: []
+      produces:
+        - application/json
+      responses:
+        200:
+          description: |
+            The content-hashes for the *datastore-key* (segment-key @ identity).
+          schema:
+            $ref: "#/definitions/PersistenceStatus"
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"      
   /guids:
     get:
       summary: Retrieve GUIDs to user's data on connected persistence networks.
@@ -1849,7 +2471,7 @@ paths:
 
         The reciprocal of this getter is the [all-data import POST](#operation--all-data-post).
       tags:
-        - import/export
+        - data-stewardship
       security:
         - Authorization Header: []
       produces:
@@ -1873,7 +2495,7 @@ definitions:
   GUID:
     type: object
     description: |
-      *Globally Unique ID* -- An identifier globally unique on a particular network.
+      *Globally Unique ID* -- An identifier globally unique on a particular network: identifies a user's data on the persistence network.
     required:
       - type-key
       - guid
@@ -2033,10 +2655,10 @@ definitions:
           Value of "signed" indicates *allowed-writers* property must necessairly list [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) allowed to write into this *segment-key*.  
           Other users using this broker system attempting to write to this *segment-key* have their *authentication token* checked against 
           the [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) in *allowed-writers* list.  These could be real authenticated
-          broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](#operation--auth-bounce-put).
+          broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](#operation--auth-guest-credentials-put).
 
           Value of "invitee" indicates an invitee of this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is allowed to write, see
-          the [bounce endpoint](#operation--auth-bounce-put): no *allowed-writers* check.
+          the [bounce endpoint](#operation--auth-guest-credentials-put): no *allowed-writers* check.
       allowed-writers:
         type: array
         items:
@@ -2052,7 +2674,7 @@ definitions:
           If *allow-write* is "self" this parameter is ignored.
 
           If *allow-write* is "signed", this parameter is a list of [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) to identify users allowed to write data to this *datastore-key* (*segment-key* @ *identity*).
-          These could be real authenticated broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](#operation--auth-bounce-put). 
+          These could be real authenticated broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](#operation--auth-guest-credentials-put). 
 
           Other users using this broker system attempting to write to this *segment-key* have their *authentication token* checked against the [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) in this list.
       allow-publish:
@@ -2064,10 +2686,10 @@ definitions:
           Value of "signed" indicates *allowed-publishers* property must necessairly list [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) allowed to publish messages into this *segment-key*.  
           Other users using this broker system attempting to publish to this *segment-key* have their *authentication token* checked against 
           the [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) in *allowed-publishers* list.  These could be real authenticated
-          broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](#operation--auth-bounce-put).
+          broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](#operation--auth-guest-credentials-put).
 
           Value of "invitee" indicates an invitee of this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is allowed to publish, see
-          the [bounce endpoint](#operation--auth-bounce-put).
+          the [bounce endpoint](#operation--auth-guest-credentials-put).
       allowed-publishers:
         type: array
         items:
@@ -2083,7 +2705,7 @@ definitions:
           if *allow-publish* is "self" or "any" this parameter is ignored.
 
           If *allow-publish* is "signed", this parameter is a list of [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) to identify users allowed to publish messages to this *datastore-key* (*segment-key* @ *identity*).
-          These could be real authenticated broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](operation--auth-bounce-put).
+          These could be real authenticated broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](#operation--auth-guest-credentials-put).
 
           Other users using this broker system attempting to publish to this *segment-key* have their *authentication token* checked against the [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) in this list.
       allow-delegation:
@@ -2097,7 +2719,7 @@ definitions:
           Value of "signed" indicates *allowed-delegates* property must necessairly list [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) allowed to act as delegates for this *segment-key*.  Delegates attempting to use this *segment-key* have their [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) checked against the *allowed-delegates* list.
 
           Value of "invitee" indicates an invitee of this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) are allowed to be delegates, see
-          the [bounce endpoint](#operation--auth-bounce-put).
+          the [bounce endpoint](#operation--auth-guest-credentials-put).
       allowed-delegates:
         type: array
         items:
@@ -2113,7 +2735,7 @@ definitions:
           if *allow-delegation* is "none" or "any" this parameter is ignored.
 
           If *allow-delegation* is "signed", this parameter is a list of [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) to identify users allowed to be delegates for this *datastore-key* (*segment-key* @ *identity*).
-          These could be real authenticated broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](#operation--auth-bounce-put).
+          These could be real authenticated broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](#operation--auth-guest-credentials-put).
 
           Delegates attempting to use this *segment-key* have their *authentication token* checked against the [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) in this list.  
       entry-fee:
@@ -2172,6 +2794,25 @@ definitions:
         type: number
         description: |
           Time-to-live--in seconds--of [delegate data](#tag-delegate) before it is elegible for cleanup.  Refreshed on any activity on the *segment-key* qualified by the delegate.  
+  PersistenceStatus:
+    type: object
+    required:       
+      - working-memory
+      - permanent-memory
+      - shared-memory
+    properties:
+      working-memory:
+        type: string
+        description: |
+          Content [multihash](https://github.com/multiformats/multihash) of the value in the broker's volatile memory.
+      permanent-memory:
+        type: string
+        description: |
+          Content [multihash](https://github.com/multiformats/multihash) of the value in the broker's non-volatile storage.
+      shared-memory: 
+        type: string
+        description: |
+          Content [multihash](https://github.com/multiformats/multihash) of the value on the broker's distributed persistence network.
   Message:
     type: object
     required:
@@ -2273,7 +2914,9 @@ responses:
     schema:
       type: object
       required:
+        - req-id
         - len
+        - total-fragments
         - code
         - response
       properties:
@@ -2282,9 +2925,17 @@ responses:
           description: |
             Request ID of the request this response/subscription event corresponds to.
         len:
-          type: bytes
+          type: number
           description: |
-            Number of bytes of the whole response message:  length(response) + 2 bytes.
+            Length in bytes of this response message:  length(response) + 6 bytes.
+        total-fragments:
+          type: number
+          description: |
+            Total number of messages constituting all fragments for this response.  
+            
+            For unfragmented responses this value is 1.
+
+            For fragment responses (*code 206*) this value may be useful to gauge progress of receiving the full response: tally of already received versus this value.
         code:
           type: number
           description: |
@@ -2294,23 +2945,35 @@ responses:
 
             This *default* response applies to all *WIRE* event responses.  See a listing of response codes for each specific *WIRE* event for specific codes.
 
-            A code other than *200* or *222*  will always have the *response* byte-stream be a UTF-16 string with meanings as detailed by the *WIRE* event's response code definitions.
+            A code other than *200*, *206*, *222*, or *413*,  will always have the *response* byte-stream be a UTF-16 string with meanings as detailed by the *WIRE* event's response code definitions.
         response:
           type: bytes
           description: |
-            The response byte-stream for a *code* of *200* or *222*.  A UTF-16 encoded string with error text for all other *codes*.
+            The response byte-stream for a *code* of *200*, *206*, *222*, or *413*.  A UTF-16 encoded string with error text for all other *codes*.
 
-            Refer to the specific *WIRE* event's response *code* *200* or *222* for the syntax and semantics of this *response* byte-stream descriptor.
+            Refer to the specific *WIRE* event's response *code* *200*, *206*, *222*, or *413* for the syntax and semantics of this *response* byte-stream descriptor.
+
+            For code *200* the *response* is the completion of a response:  either the full response or the end of fragments for an aggregate response.  The client need to nothing more than consumer the response.
+
+            For code *206* the *response* is a non-final fragment of an aggregate response.  A code *206* event from the broker needs to be [acknowledged](#operation-acknowledge-WIRE) by the client.
       description: |
         WebSocket Requests may have one or more response events.  Each response event from the *overhide* broker is a byte-stream in the following format:
 
-        | *syntax *    | *bytes* | *value* |
-        | ---          | ---     | ---     |
-        | req-id       | 8       |         |
-        | len          | 8       | length(response) + 2 |
-        | code         | 2       |         |
-        | response     | *       | ``      |
+        | *syntax *       | *bytes* | *value* |
+        | ---             | ---     | ---     |
+        | req-id          | 8       |         |
+        | len             | 8       | length(response) + 6 |
+        | total-fragments | 4       |         |
+        | code            | 2       |         |
+        | response        | *       | ``      |
         
+  206:
+    description: |
+      A fragment of the full response.  Payload byte-stream to reconstitute--in-order--into the aggregate as described by the *200* response code.
+
+      Subsequent *206* responses may follow--in-order for reconstituting the response byte stream--until the aggregate response is finalized with a *200* response code.
+
+      Every *206* response must be [acknowledged](#operation-acknowledge-WIRE) by the client before the broker will send subsequent fragments.
   400:
     description: |
       A bad request from the client results in one or more of the following error message strings:
@@ -2318,8 +2981,11 @@ responses:
       - invalid remuneration-key, doesn't match broker system capabilities
       - address incompatible with remuneration provider
       - invalid signature
+      - no handshake
+      - message outside handshake constraints
       - invalid datastore-key requested; segment-key or identity mismatch
       - datastore-key ownership conflict; segment-key @ identity already reserved
+      - cannot write, broker not an active steward of user's data
       - invalid type-key, doesn't match broker system capabilities
       - cannot reach data
       - cannot process input
@@ -2327,13 +2993,13 @@ responses:
       The message enum might be extended by broker system.
   401:
     description: |
-      For an endpoint protected with the [token security definition](#security-definition-Authorization Header), an "Authorization" header was not provided a valid token--as returned from the [authenticate endpoint](#operation--auth-authenticate-put).
+      For an endpoint protected with the [token security definition](#security-definition-Authorization Header), an "Authorization" header was not provided a valid token--as returned from the [authenticate endpoint](#operation--auth-credentials-put).
   403:
     description: |
       There is an access violation for this valid and authenticated *identity* against this valid *datastore-key*.
 
       1. The authenticated *identity* has insufficient access rights to this valid *datastore-key* for the operation.  Review the [access rights](#definition-DatastoreKeySettings) as manipulated with the [settings endpoints](#tag-datastore-key-settings).
-      1. The API request would exceed rates and limits as set out within the authorities at the current [subscription plan](#operation--capabilities-remuneration-tiers--remuneration-key--get) or *datastore-key* [entry-fee](#definition-DatastoreKeySettings).
+      1. The API request would exceed rates and limits as set out within the authorities at the current [subscription plan](#operation--capabilities--remuneration-key--tiers-get) or *datastore-key* [entry-fee](#definition-DatastoreKeySettings).
 
       Errors equally apply to "inviee" *identities*.
 
@@ -2366,7 +3032,7 @@ securityDefinitions:
     in: header
     name: Authorization
     description: |
-      Provides an authentication token as retrieved with either the [authentication endpoint](#path--auth-authenticate)
+      Provides an authentication token as retrieved with either the [authentication endpoint](#operation--auth-credentials-put)
       or the [invitee bouncer endpoint](#path--auth-bounce).
 
       The token returned by either call must be provided in an "Authorization" header to HTTPS calls secured with this security definition.
@@ -2381,7 +3047,7 @@ securityDefinitions:
     in: query
     name: auth
     description: |
-      Provides an authentication token as retrieved with either the [authentication endpoint](#path--auth-authenticate)
+      Provides an authentication token as retrieved with either the [authentication endpoint](#operation--auth-credentials-put)
       or the [invitee bouncer endpoint](#path--auth-bounce).
 
       For WSS, the token must be provided when establishing the connection:

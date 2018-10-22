@@ -327,3 +327,25 @@ An invitee is always invited to interact with a broker on behalf of an actual br
 An invitee is authenticated as owning a valid address on an accepted remuneration provider.  
 
 The service may allow some *datastore-keys* to be written to or published to by the invitee.  The service may restrict access to its *segment-keys* pending sufficient transactions from the invitee address to the service address.
+
+#### data-steward
+
+Implementation dependant--each *overhide* broker is expected to leverage a decentralized persistence network (e.g. [IPFS](decentralization.html)).  
+
+Consider a decentralized persistence network with many peers, some of which are *overhide* brokers.  One or more *overhide* brokers that are peers on this network may be subscribed to by a user.  Peers on the network that are subscribed-to *overhide* brokers are "stewards" of a user's data.
+
+An "active" data-steward is an *overhide* broker that the user can write data against.  Read-only data-stewards are "passive".  The active data-steward is the source of truth for the user's most current data.  Passive data-stewards are eventually consistent, pending network delays.  Passive data-stewards necessarily error-out on writes.  Having more than one "active" data-steward may lead to write race-conditions on the distributed persistence network with unknown consequences.
+
+It is up to the user--the user's tooling--to manage data stewardship via the [broker API](broker.html#tag-data-stewardship).
+
+#### working-memory, permanent-memory, shared-memory (persistence-status)
+
+A *datastore-key* may be modified on a broker faster than it can be persisted or shared with other peers on the broker's decentralized persistence network--as is the case with the [IPFS reference implementation](decentralization.html).
+
+Each *datastore-key* has a *persistence-status* indicating resilience of it's most-recent value to catastrophic broker failure.
+
+If the latest value of a *datastore-key* is only in volatile memory (RAM) of the broker, and is not persisted to the broker's non-volatile storage (HDD/NAS), the *datastore-key* is in "working-memory".  The latest value will be returned by this specific *overhide* broker on subsequent reads.  Reads against other passive *data-stewards* will not return the latest value.  The value will be lost if the broker is power-cycled.
+
+If the latest value of a *datastore-key* has been persisted to the broker's non-volatile storage (HDD/NAS), it's considered to be in "permanent-memory".  Reads against other passive *data-stewards* will not return the latest value.  The value will be lost if the broker's permanent storage is corrupted.
+
+If the latest value of a *datastore-key* has been shared to the decentralized persistence network--making it available to other peers--it's considered to be in "shared-memory"--reads against other passive *data-stewards* will return this latest value.  
