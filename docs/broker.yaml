@@ -969,7 +969,7 @@ paths:
               len:
                 type: number
                 description: |
-                  Length in bytes of the whole message:  length(auth) + length(segment-key) + length(identity) + 11.
+                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.
               opcode:                  
                 type: bytes
                 description: |
@@ -1236,7 +1236,7 @@ paths:
     options:
       summary: Retrieve all messages from the backchannel at the givent datastore-key.
       description: |
-        Retrieve messages from the backchannel at the given *datastore-key* (*segment-key* @ *identity*).
+        Retrieve all messages from the backchannel at the given *datastore-key* (*segment-key* @ *identity*).
       tags:
         - backchannel queues
       parameters:
@@ -1324,11 +1324,8 @@ paths:
 
             Messages are in order of consecutivelly increasing message sequence ID (*seq-id*).  The message sequence IDs are internal system identifiers for the messages furnished by this *datastore-key*, they're unique to this *datastore-key* and consecutive.
 
-            Not all messages may be returned.  The response contains a count of messages still left with the broker system.  The *seq-id* of the most recent message returned (highest *seq-id*) plus the count of messages remaining, is the *seq-id* of most recent message left on the broker system.
-
             | *syntax*        | *bytes* | *value* |
             | ---             | ---     | ---     |
-            | remaining-count | 4       |         |
             | loop {          |         |         |
             |   seq-id        | 4       |         |
             |   message-len   | 8       | ML = length(message) |
@@ -1338,27 +1335,22 @@ paths:
           schema:
             type: object
             required:
-              - remaining-count
               - seq-id
               - message-len
               - message
             properties:
-              remaining-count:
-                type: integer
+              seq-id:
+                type: number
                 description: |
-                  Count of messages still left with the broker system.
-            seq-id:
-              type: number
-              description: |
-                Consecutivelly increasing message sequence ID        
-            message-len:
-              type: number
-              description: |
-                Length in bytes of *message*.
-            message:
-              type: bytes
-              description: |
-                The message byte stream value.
+                  Consecutivelly increasing message sequence ID        
+              message-len:
+                type: number
+                description: |
+                  Length in bytes of *message*.
+              message:
+                type: bytes
+                description: |
+                  The message byte stream value.
         code == 206:
           $ref: "#/responses/206"
         code == 400:
@@ -2078,7 +2070,7 @@ paths:
           name: segment-key
           required: true
           description: |
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+            Base64 encoded [segment-key](glossary.html#segment-key).
           type: string
         - in: query
           name: identity
@@ -2174,9 +2166,9 @@ paths:
       responses:
         200:
           description: |
-            TBD
+            Metrics for all *datastore-keys* (*segment-keys* @ *identity*) of the user.
           schema:
-            $ref: "#/definitions/DatastoreKeySettings"
+            $ref: "#/definitions/Metrics"
         400:
           $ref: "#/responses/400"
         403:
@@ -2195,7 +2187,7 @@ paths:
           name: segment-key
           required: true
           description: |
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+            Base64 encoded [segment-key](glossary.html#segment-key).
           type: string
         - in: query
           name: identity
@@ -2212,17 +2204,80 @@ paths:
       responses:
         200:
           description: |
-            The value of *datastore-key* (segment-key @ identity).
+            Metrics for this *datastore-key* (*segment-key* @ *identity*).
           schema:
-            $ref: "#/definitions/DatastoreKeySettings"
+            $ref: "#/definitions/Metrics"
         400:
           $ref: "#/responses/400"
         403:
           $ref: "#/responses/403"
         429:
           $ref: "#/responses/429"
-  /all-data:
-    put:
+  segment-keys:
+    options:
+      summary: Retrieve key-names of all segment-keys owned by an indentity.
+      description: |
+        Retrieve key-names of all [segment-keys](glossary.html#segment-key) owned by an indentity.
+      tags:
+        - metrics
+      parameters:
+        - in: body
+          name: payload
+          description: |
+
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | req-id          | 8       |         |
+            | len             | 8       | IL + 1  |
+            | opcode          | 1       | 0x0E    |
+          schema:
+            type: object
+            required:
+              - req-id
+              - len
+              - opcode
+            properties:
+              req-id:
+                type: number
+                description: |
+                  Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
+              len:
+                type: number
+                description: |
+                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.
+              opcode:                  
+                type: bytes
+                description: |
+                  Operation code.
+      consumes:
+        - application/octet-stream
+      produces:
+        - application/octet-stream
+      security:
+        - Authorization WSS: []
+      responses:
+        RESPONSE:
+          $ref: "#/responses/WIRE"
+        code == 200:
+          description: |
+            Key-names of [segment-keys](glossary.html#segment-key) in a loop.
+
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | loop {          |         |         |
+            |   key-name      | 128     |         |
+            | }               |         | ``      |                        
+        code == 206:
+          $ref: "#/responses/206"
+        code == 400:
+          $ref: "#/responses/400"
+        code == 403:
+          $ref: "#/responses/403"
+        code == 429:
+          $ref: "#/responses/429"
+
+  import:
+    options:
       summary: Set all user's data on the broker system to the provided payload.
       description: |
         All of the user's data with caller's *identity* is wiped and reset to the payload.
@@ -2240,35 +2295,130 @@ paths:
         - data-stewardship
       parameters:
         - in: body
-          name: import-export-payload
+          name: payload
+          description: |
+
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | req-id          | 8       |         |
+            | len             | 8       | SL + IL + length(payload) + 4 |
+            | opcode          | 1       | 0x0C    |
+            | flags           | 1       |         |
+            | payload         | *       | ``      |
+
+          schema:
+            type: object
+            required:
+              - req-id
+              - len
+              - opcode
+              - flags
+              - payload
+            properties:
+              req-id:
+                type: number
+                description: |
+                  Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
+              len:
+                type: number
+                description: |
+                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.
+              opcode:                  
+                type: bytes
+                description: |
+                  Operation code.
+              flags:
+                type: bytes
+                description: |
+                  A byte of flags.  
+
+                  | *value* | *name* | *description* |
+                  | --- | --- | --- |
+                  | 0x04 | wait-until-persisted | `1`: wait until datastore-key changes are persisted |
+                  | 0x08 | wait-until-shared | `1`: wait until datastore-key changes are shared on distributed persistence network |
+                  | 0x80 | done | `1`: this payload is not fragmented; `0`: this payload is a fragment and subsequent [continue](#operation-continue-WIRE) messages will follow after the broker responds with a *200*. |
+              payload:
+                description: |
+                  All data in JSON format with UTF-8 encoding.
+                schema:
+                  $ref: "#/definitions/ImportExportPayload"
+      consumes:
+        - application/octet-stream
+      produces:
+        - application/octet-stream
+      security:
+        - Authorization WSS: []
+      responses:
+        RESPONSE:
+          $ref: "#/responses/WIRE"
+        code == 200:
+          description: |
+            Success.  Empty.
+        code == 400:
+          $ref: "#/responses/400"
+        code == 403:
+          $ref: "#/responses/403"
+        code == 429:
+          $ref: "#/responses/429"
+  export:
+    options:
+      summary: Extract all user's data from the broker system.
+      description: |
+        Extract all of the caller's data, based on caller's *identity*.
+      tags:
+        - data-stewardship
+      parameters:
+        - in: body
+          name: payload
+          description: |
+
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | req-id          | 8       |         |
+            | len             | 8       | SL + IL + 3 |
+            | opcode          | 1       | 0x0D    |
+          schema:
+            type: object
+            required:
+              - req-id
+              - len
+              - opcode
+            properties:
+              req-id:
+                type: number
+                description: |
+                  Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
+              len:
+                type: number
+                description: |
+                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.
+              opcode:                  
+                type: bytes
+                description: |
+                  Operation code.
+      consumes:
+        - application/octet-stream
+      produces:
+        - application/octet-stream
+      security:
+        - Authorization WSS: []
+      responses:
+        RESPONSE:
+          $ref: "#/responses/WIRE"
+        code == 200:
+          description: |
+            All data in JSON format with UTF-8 encoding.
           schema:
             $ref: "#/definitions/ImportExportPayload"
-        - in: query
-          name: wait-until-persisted
-          required: false
-          description: |
-            Optional request to synchronously block result until change to *datastore-key* is persisted.
-          type: boolean
-        - in: query
-          name: wait-until-shared
-          required: false
-          description: |
-            Optional request to synchronously block result until change to *datastore-key* is shared on distributed persistence network.
-          type: boolean
-      security:
-        - Authorization Header: []
-      consumes:
-        - application/json
-      responses:
-        200:
-          description: |
-            Data successfully set.
+        code == 206:
+          $ref: "#/responses/206"
         400:
           $ref: "#/responses/400"
         403:
           $ref: "#/responses/403"
         429:
-          $ref: "#/responses/429"
+          $ref: "#/responses/429"              
+  /all-data:
     post:
       summary: Set all user's data on the broker system from the provided GUID referencing data on a connected persistence network.
       description: |
@@ -2319,25 +2469,6 @@ paths:
         200:
           description: |
             Data successfully set.
-        400:
-          $ref: "#/responses/400"
-        403:
-          $ref: "#/responses/403"
-        429:
-          $ref: "#/responses/429"
-    get:
-      summary: Get all user's data from the broker system.
-      description: |
-        Get all of the caller's data, based on *identity* passed in.
-      tags:
-        - data-stewardship
-      security:
-        - Authorization Header: []
-      produces:
-        - application/json
-      responses:
-        200:
-          $ref: "#/definitions/ImportExportPayload"
         400:
           $ref: "#/responses/400"
         403:
@@ -2436,7 +2567,7 @@ paths:
           name: segment-key
           required: true
           description: |
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+            Base64 encoded [segment-key](glossary.html#segment-key).
           type: string
         - in: query
           name: identity
@@ -2643,7 +2774,8 @@ definitions:
       - allowed-delegates
       - entry-fee
       - limit-bytes
-      - limit-bytes-per-second
+      - limit-others-read-rate
+      - limit-others-write-rate
       - delegate-data-ttl-seconds
     properties:
       allow-write:
@@ -2782,10 +2914,18 @@ definitions:
           | "reject" | reject the message publish with error |
           | "drop-newest" | publish the message but drop newest messages to make space |
           | "drop-oldest" | publish the message but drop oldest messages to make space |
-      limit-bytes-per-second:
+      limit-others-read-rate:
         type: number
         description: |
-          Maximum number of bytes/second a user, other than the owner, is allowed to write or publish to this *segment-key*.
+          Maximum rate of bytes/hour each user, other than the owner,is allowed to read at from this *segment-key*.
+
+          Once reached by a user, reads might drop in priority, be throttled, or be denied with a 403 response code
+      limit-others-write-rate:
+        type: number
+        description: |
+          Maximum rate of bytes/hour each user, other than the owner,is allowed to write or publish at to this *segment-key*.
+
+          Once reached by a user, writes might drop in priority, be throttled, or be denied with a 403 response code
       limit-delegates:
         type: number
         description: |
@@ -2794,6 +2934,25 @@ definitions:
         type: number
         description: |
           Time-to-live--in seconds--of [delegate data](#tag-delegate) before it is elegible for cleanup.  Refreshed on any activity on the *segment-key* qualified by the delegate.  
+  Metrics:
+    type: object
+    required:
+      - value-storage-bytes
+      - value-read-count
+      - value-write-count
+      - value-last-change-unix-time
+      - messages-storage-bytes
+      - messages-count
+      - messages-acknowledged
+      - delegates-count
+      - delegate-values-storage-bytes
+      - delegate-values-read-count
+      - delegate-values-write-count
+      - delegate-values-last-change-unix
+      - delegate-messages-storage-bytes
+      - delegate-messages-count
+      - delegate-messages-acknowledged
+    properties:
   PersistenceStatus:
     type: object
     required:       
