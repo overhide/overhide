@@ -2442,7 +2442,7 @@ paths:
         same *identity* on the specificed persistence network.  The network data is identified by the provided
         *GUID*.  The broker must be able to exchange data on the network that's identified by *type-key*.
 
-        The reciprocal of this setter is the [*GUIDs* getter](#operation--guids-get) to be called
+        This setter works in conjunction with the [*GUIDs* getter](#operation--guids-get), which is to be called
         against the source broker instance.  The source broker is a broker currently furnishing the data to 
         the network.
 
@@ -2610,13 +2610,54 @@ paths:
         429:
           $ref: "#/responses/429"      
   /guids:
+    put:
+      summary: Generate new GUIDs for user's data.
+      description: |
+        Replace current GUIDs by new generated GUIDs.  Tie the new GUIDs to the authenticated *identity* making this call.
+
+        All data owned by the *identity* on the corresponding distributed persistence network--as per the provided current GUID--is tied to the new GUIDs.  
+        New GUIDs are initialized by the broker and bound by this broker to the user.
+
+        This operation is useful to ensure no other broker can alter your data after a [broker transfer](#operation--all-data-post).  All other [stewards of your data](#tag-data-stewardship) will need to be [made aware of the GUID change](#operation--all-data-post).
+
+        If this broker is not an active steward of data for *identity*, call fails with a 400 -- 
+        "cannot write, broker not an active steward of user's data"
+      tags:
+        - data-stewardship
+      parameters:
+        - in: path
+          name: guid
+          required: true
+          description: |
+            A *GUID* as returned by [GET/guids](#operation--guids-get) on this broker.  On success, this GUID--as well as GUIDs representing the same distributed persistence network as this GUID--will be replaces with a new GUID.
+          type: string
+      security:
+        - Authorization Header: []
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        200:
+          description: |
+            List of new *GUID* pairs.  Only GUIDs corresponding to the parameter GUID are returned: this might be a subset of all user's GUIDs on the broker.
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/GUID"
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
     get:
       summary: Retrieve GUIDs to user's data on connected persistence networks.
       description: |
         Returns the *GUIDs* pointing to persisted data for the *identity*.  This broker must be the owner of whatever
         private metadata is necessary to furnish data to the persistence network at said *GUID*. 
 
-        The reciprocal of this getter is the [all-data import POST](#operation--all-data-post).
+        This getter works in conjunction with the [all-data import POST](#operation--all-data-post) setter for data pinning/distribution.
       tags:
         - data-stewardship
       security:
