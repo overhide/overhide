@@ -113,12 +113,14 @@ tags:
     description: |
       Stewardship of a users's data.
       
-      * manage this broker's stewardship mode for an identity's data:  active/passive stewardship
-      * select distributed persistence network particulars for a user
-      * retrieve content propagation status--of user's data and messages--to the distributed persistence network
+      * manage this broker's stewardship mode for an identity's data:  [active/passive stewardship](glossary.html#data-steward)
+      * manage distributed persistence network particulars for a user
+      * review [content propagation status](glossary.html#working-memory-permanent-memory-shared-memory-persistence-status)--of user's data and messages--to the distributed persistence network
       * batch import and export of all user's data and messages
 
       Envisioned use cases include backup and broker transfer.
+
+      The stewardship APIs enable [data decentralization](decentralization.html) and [broker trustlessness](trustlessness.html).
 paths:
   handshake:
     options:

@@ -90,7 +90,15 @@ Aim of *overhide* is to keep data private.  Anonymity is an important part of pr
 
 ## [Data Decentralization](docs/decentralization.md)
 
-A core value of *overhide* is to decentralize user data.  Although the level of decentralization is broker implementation specific, see how [the *overhide* reference implementation accomplishes data decentralization](docs/decentralization.md).
+A core value of *overhide* is to keep user data decentralized.  The [overhide API](docs/broker.html) expects dependence on resilient distributed persistence networks.
+
+[The *overhide* reference implementation upholds data decentralization](docs/decentralization.md) in its solution.
+
+## [Broker Trustlessness](docs/trustlessness.md)
+
+Brokers are trusted to write-out your data only as far as [Ethereum](https://www.ethereum.org/) or [Bitcoin](https://bitcoin.org) nodes are trusted to write-out your transactions.  Brokers are your agents to the network and are economically incentivized to do the right thing as network peers.
+
+The [*overhide* API minimizes trust](docs/trustlessness.md).
 
 ## [Broker API](docs/broker.html)
 
