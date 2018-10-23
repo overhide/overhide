@@ -13,19 +13,19 @@ info:
     Read this API with reference to the [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md).
 
     ***
-      A note on schemes used in the API.  
+      #### A note on schemes used in the API.  
       
       Operations *GET*, *PUT*, *POST*, *DELETE* use the HTTPS scheme.  These endpoints should be understood as standard REST requests.  These configuration/discovery exchanges involve text parameters on the URL line and text/numeric payloads in the JSON representation.  They use BASE64 encoding: the BASE64 encoding is explicitly stated.
 
-      Operations *WIRE* are WebSocket events that use a custom wire protocol.  The SSL secured WebSockets connection is to the same address as the HTTPS connection.  [Authentication](#tag-auth) occurs using HTTPS and seamlessly propagates to the WSS connection.  
+      Operations *WIRE* are WebSocket events that use a custom wire protocol.  The SSL secured WebSockets connection is to the same address as the HTTPS connection.  [Authentication](#tag-auth) occurs using HTTPS and seamlessly propagates to the [WSS connection](#security-definition-Authorization%20WSS).  
 
-      Wire-protocol events require an additional step of a [handshake](#operation-handshake-WIRE) between client and broker:  beyond just being authenticated.  Failure to [handshake]() will result in "no handshake" 400-series error codes on wire-protocol events.
+      Wire-protocol events require an additional step of a [handshake](#operation-handshake-WIRE) between client and broker:  beyond just being authenticated.  Failure to [handshake](#operation-handshake-WIRE) will result in "no handshake" 400-series error codes on wire-protocol events.
 
-      Please read the [handshake](#operation-handshake-WIRE) event documentation to understand the *WIRE* protocol flow-control mechanisms.
+      Please review the [flow-control](#tag-flow-control) documentation to understand the *WIRE* protocol flow-control mechanisms.
     ***
-      A note on the wire-protocol payload notation.  
+      #### A note on the wire-protocol payload notation.  
       
-      WSS event exchanged payloads are comprised of compact byte streams.  In the documentation payloads with compact byte streams are described as descriptors in the following format:
+      WSS event exchanged payloads are comprised of compact byte streams.  In the documentation payloads with byte streams are described as descriptors in the following format:
 
       | *syntax *    | *bytes* | *value* |
       | ---          | ---     | ---     |
@@ -55,6 +55,30 @@ tags:
   - name: flow-control
     description: |
       Flow controls include toggles for the client and the broker to agree on message maximums, message fragmentation parameters, as well as acknowledgment and continuation messages for fragments of large payloads.
+
+      The various flow-control events are modeled below:
+
+      ![overhide flow-control infographic](https://github.com/JakubNer/overhide/raw/master/docs/images/flowcontrol.png)
+
+      Before the *client* can exchange data with the *overhide broker* it needs to authenticate and handshake.
+
+      The first synchronous HTTPS call is a PUT to [*/auth/credentials*](#operation--auth-credentials-put); returning an [*identity*](identity.html).  Subsequently, when the client establishes a Websocket connection with the broker (*Websocket connect(identity)*) it provides the *identity* as per [WSS Auth](#security-definition-Authorization%20WSS).
+
+      From this point on the exchanges take place over the Websocket protocol, ursng *WIRE* events as documented here.
+
+      Before any data exchanges can take place, the client communicates its desired fragment and aggregate message parameters using the [*handshake* event](#operation-handshake-WIRE).  The server agrees--"shakes on it" with a ["response" *WIRE* event](#/responses/WIRE) having a code of *200/OK*.
+
+      The client proceeds to send a large [*datastore-value*](glossary.html#datastore-value) that is necessairly fragmented into multiple *WIRE* events.  The exchange is started with a [set data event](#operation-set-data-WIRE).  The *flags* attribute of this [set data event](#operation-set-data-WIRE) does not have the `0x80` bit set: indicating that the payload byte-stream is the first fragment of multiple fragments for the large aggregate message.  The broker replies with a ["response" *WIRE* event](#/responses/WIRE) having a code of *200/OK*.  The client does not send the subsequent fragment until the broker confirms receipt of the previous fragment with such a ["response" *WIRE* event](#/responses/WIRE).
+
+      The client sends subsequent fragments using the [continue](#operation-continue-WIRE) events.  Before sending each subsequent fragment the client expects a ["response" *WIRE* event](#/responses/WIRE) having a code of *200/OK*.
+
+      The client sends the final fragment with a *flags* having the `0x80` bit toggled: indicating last fragment sent.
+
+      The final exchange modeled is the client retrieving a large payload from the broker.  The exchange is initiated with a [get data event](#operation-get-data-WIRE).  The broker responds with a [*WIRE* event](#/responses/WIRE) having a code of *206/fragment*.  The client accepts the payload byte-stream as the first fragment of a larger response.  The client sends an [acknowledge event](#operation-acknowledge-WIRE) to the broker; acknowledging receipt of the fragment and freeing the broker to send the subsequent fragment.
+
+      The broker does so, looping through the 206-acknowledge exchanges.
+
+      When the broker sends the last fragment of the aggregate message byte-stream, it sends it with a code of *200/OK*.  The client doesn't have to [acknowledge](#operation-acknowledge-WIRE) this last response as it's not a *206/fragment*.
   - name: auth
     description: |
       Authentication, authorization, and credential management:
