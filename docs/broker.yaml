@@ -15,13 +15,13 @@ info:
     ***
       A note on schemes used in the API.  
       
-      Operations *GET*, *PUT*, *POST*, *DELETE* use the HTTPS scheme.  These endpoints should be understood as standard REST requests.  These configuration/discovery exchanges involve text parameters on the URL line and text/numeric payloads in the JSON representation.  They have URL encoded parameters on the URL line and use BASE64 encoding for some JSON attributes.  The BASE64 encoding is explicitly stated.
+      Operations *GET*, *PUT*, *POST*, *DELETE* use the HTTPS scheme.  These endpoints should be understood as standard REST requests.  These configuration/discovery exchanges involve text parameters on the URL line and text/numeric payloads in the JSON representation.  They use BASE64 encoding: the BASE64 encoding is explicitly stated.
 
       Operations *WIRE* are WebSocket events that use a custom wire protocol.  The SSL secured WebSockets connection is to the same address as the HTTPS connection.  [Authentication](#tag-auth) occurs using HTTPS and seamlessly propagates to the WSS connection.  
 
-      Wire-protocol endpoints require an additional step of a [handshake]() between clien and broker:  beyond just being authenticated.  Failure to [handshake]() will result in "no handshake" 400-series error codes on wire-protocol endpoints.
+      Wire-protocol events require an additional step of a [handshake](#operation-handshake-WIRE) between client and broker:  beyond just being authenticated.  Failure to [handshake]() will result in "no handshake" 400-series error codes on wire-protocol events.
 
-      Please read the [handshake] endpoint documentation to understand the *WIRE* protocol flow-control mechanisms.
+      Please read the [handshake](#operation-handshake-WIRE) event documentation to understand the *WIRE* protocol flow-control mechanisms.
     ***
       A note on the wire-protocol payload notation.  
       
@@ -91,7 +91,7 @@ tags:
       
       * manage this broker's stewardship mode for an identity's data:  active/passive stewardship
       * select distributed persistence network particulars for a user
-      * retrieve content propagation status of user's data and messages to the distributed persistence network
+      * retrieve content propagation status--of user's data and messages--to the distributed persistence network
       * batch import and export of all user's data and messages
 
       Envisioned use cases include backup and broker transfer.
@@ -100,7 +100,7 @@ paths:
     options:
       summary: Client initiates handshake with broker.
       description: |
-        The handshake should take place immediatelly after upgrading an authenticated HTTPS connection to WSS, before using any other *WIRE* endpoints.
+        The handshake should take place immediatelly after upgrading an authenticated HTTPS connection to WSS, before raising any other *WIRE* events.
 
         The handshake constitutes message maximums and message fragmentation parameters.
 
@@ -108,7 +108,7 @@ paths:
         
         If the values are not acceptable to the broker, the broker responds with a *413*; suggesting alternate values (see responses).  The handshake is broken off at this point.  The client needs to re-start the handshake, adjusting the values sent in.  
 
-        All *WIRE* endpoints following a successful handshake need to keep their message exchanges consistent with the constraints of the handshake, else riske a "message outside handshake constraints" (400) response.
+        All *WIRE* events following a successful handshake need to keep their message exchanges consistent with the constraints of the handshake, else risk a "message outside handshake constraints" (400) response.
       tags:
         - flow-control
       parameters:
@@ -119,10 +119,8 @@ paths:
             | *syntax*            | *bytes* | *value* |
             | ---                 | ---     | ---     |
             | req-id              | 8       |         |
-            | len                 | 8       | IL + 18 |
+            | len                 | 8       | 17      |
             | opcode              | 1       | 0xFF    |
-            | identity-len        | 1       | IL == length(identity) |
-            | identity            | IL      |         |
             | max-fragment-size   | 4       |         |
             | max-aggregate-size  | 8       |         |
             | ack-timeout-millis  | 4       | ``      |
@@ -132,7 +130,6 @@ paths:
               - req-id
               - len
               - opcode
-              - identity-len
               - max-fragment-size
               - max-aggregate-size
               - ack-timeout-millis
@@ -149,16 +146,6 @@ paths:
                 type: bytes
                 description: |
                   Operation code.
-              identity-len:
-                type: number
-                description: |
-                  Length in bytes of *identity*.
-              identity:
-                type: bytes
-                description: |
-                  Optional identity.  If not provided, identity is that of token owner.
-
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
               max-fragment-size:
                 type: number
                 description: |
@@ -189,7 +176,7 @@ paths:
           description: |
             The broker rejects the flow-control values.
 
-            Suggested values are returned in the response byte-stream:
+            Suggested values are returned in the *response* byte-stream:
 
             | *syntax*            | *bytes* | *value* |
             | ---                 | ---     | ---     |
@@ -204,11 +191,17 @@ paths:
     options:
       summary: Continue sending fragments of a message to a "setter" endpoint of a broker.
       description: |
-        For some "setter" *WIRE* endpoints the message payload may be fragmented into multiple requests.  The first request is the *WIRE* endpoint call.  Subsequent requests are this *continuation* call.  All the requests are sequential fragments of the same aggregate message.  The order of the *WIRE* endpoint call and these subsequent *continuation* fragments is guaranteed.
-
-        Any "setter" *WIRE* endpoint that may have it's request fragmented will indicate that it respects the 0x80 (done) *flag* value in it's properties description.  Any *WIRE* endpoint that doesn't consider the 0x80 (done) *flag* may not have its message stream--initiated by endpoint call with a *req-id*--continued with these *continue* fragment messages. 
+        For the following *WIRE* events the message payload may be fragmented into multiple requests:
         
-        The first *WIRE* endpoint call has the first bytes of the payload and indicates that there are more fragments required by keeping the 0x80 *flag* (done) unset.
+          * [WIRE set data](#operation-set-data-WIRE)
+          * [WIRE post message](#operation-post-message-WIRE)
+          * [WIRE import](#operation-import-WIRE)
+        
+        The first request is one of the above *WIRE* event calls.  Subsequent requests are this *continuation* call.  All the requests are sequential fragments of the same aggregate message.  The order of the initial *WIRE* event call and these subsequent *continuation* fragments is guaranteed.
+
+        Any "setter" *WIRE* event that may have it's request fragmented will indicate that it respects the 0x80 (done) *flag* value in it's properties description.  Any *WIRE* event that doesn't consider the 0x80 (done) *flag* may not have its message stream--initiated by endpoint call with a *req-id*--continued with these *continue* fragment messages. 
+        
+        The first *WIRE* event transmits the first bytes of the payload and indicates that there are more fragments required by keeping the 0x80 *flag* (done) unset.
 
         Subsequent *continuation* fragments transfer the remainder of the aggregate message byte-stream to the broker.  The last message has it's 0x80 *flag* (done) set.
 
@@ -282,15 +275,22 @@ paths:
     options:
       summary: Acknowledge receipt of a response fragment from a "getter" endpoint of a broker.
       description: |
-        The response payload of some "getter" *WIRE* endpoints as well as broker initiated messages (see [subscribe endpoint](#operation-subscribe-WIRE)) may be fragmented into multiple responses. 
+        The response payload of the following *WIRE* events--as well as broker initiated messages (see [subscribe endpoint](#operation-subscribe-WIRE))--may be fragmented into multiple responses:
+          
+          * [WIRE get data](#operation-get-data-WIRE)
+          * [WIRE fetch messages](#operation-fetch-messages-WIRE)
+          * [WIRE get delegate data](#operation-get-delegate-data-WIRE)
+          * [WIRE get all delegate values](#operation-get-all-delegate-values-WIRE)
+          * [WIRE segment-keys](#operation-segment-keys-WIRE)
+          * [WIRE export](#operation-export-WIRE)
 
-        All WSS responses from the broker and broker-initiated messages adhere to the [*WIRE* response](#/responses/WIRE) specification.  
+        All WSS response events from the broker and broker-initiated events adhere to the [*WIRE* response](#/responses/WIRE) specification.  
         
-        Any [*WIRE* response](#/responses/WIRE) with code 206 (fragment response) must be acknowledged by this *acknowledge* message: the broker will not send additional messages until receipt of acknowledgment.
+        Any [*WIRE* response](#/responses/WIRE) with *code 206* (fragment response) must be acknowledged by this *acknowledge* message: the broker will not send additional messages until receipt of acknowledgment.
 
         Any [broker-initiated *WIRE* message](#/responses/WIRE) with code 222--[subscription event](#operation-subscribe-WIRE)--must be acknowledged by this *acknowledge* message: the broker will not send additional messages until receipt of acknowledgment.
 
-        *WIRE* endpoints enumerating that they expect a response with *code* *206* (fragment response) or *222* (subscription event) need concern themselves with these acknowledgments.  *WIRE* endpoints not enumerating a response *code* *206* or *222* will never have a fragmented response.
+        *WIRE* events enumerating that they expect a response with *code* *206* (fragment response) or *222* (subscription event) need concern themselves with these acknowledgments.  *WIRE* events not enumerating a response *code* *206* or *222* will never have a fragmented response.
 
         Note that this message does not expect a response from the broker.
       tags:
@@ -330,6 +330,7 @@ paths:
         - application/octet-stream
       security:
         - Authorization WSS: []
+      responses:
   halt:
     options:
       summary: Halt fragmented sending or receiving.
@@ -392,7 +393,7 @@ paths:
     options:
       summary: Check if connection is live.
       description: |
-        Check if connection is live.  Broker has until [timeout as per handshake](#operation-handshake-WIRE) to respond with a 200/woof.
+        Check if connection is live.  Broker has until [*ack-timeout-millis* (as per handshake)](#operation-handshake-WIRE) to respond with a 200/woof.
       tags:
         - flow-control
       parameters:
@@ -2145,20 +2146,11 @@ paths:
           $ref: "#/responses/429"
   /metrics:
     get:
-      summary: Returns metrics for an identity.
+      summary: Returns metrics for all datastore-keys owned by an identity.
       description: |
-        Returns overall metrics for an *identitiy*.
+        Returns overall metrics for all *datastore-keys* (segment-keys @ identity) owned by an *identitiy*.
       tags:
         - metrics
-      parameters:
-        - in: query
-          name: identity
-          required: false
-          description: |
-            Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
-
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
-          type: string
       security:
         - Authorization Header: []
       produces:
@@ -2340,8 +2332,8 @@ paths:
               payload:
                 description: |
                   All data in JSON format with UTF-8 encoding.
-                schema:
-                  $ref: "#/definitions/ImportExportPayload"
+                
+                  *Payload* adheres to the [ImportExportPayload definition](#/definitions/ImportExportPayload).
       consumes:
         - application/octet-stream
       produces:
@@ -2420,7 +2412,7 @@ paths:
           $ref: "#/responses/429"              
   /all-data:
     post:
-      summary: Set all user's data on the broker system from the provided GUID referencing data on a connected persistence network.
+      summary: Set all user's data from a connected persistence network.
       description: |
         All of the user's data with caller's *identity* is wiped and reset to data available at the 
         same *identity* on the specificed persistence network.  The network data is identified by the provided
@@ -2556,7 +2548,7 @@ paths:
           $ref: "#/responses/429"
   /{segment-key}/persistence-status:
     get:
-      summary: Retrieve content hashes representing latest data written out to working-memory, permanent-memory, and shared-memory.
+      summary: Retrieve content hashes at different memory levels.
       description: |
         Returns content-hashes representing latest content stored at each [memory level](glossary.html#working-memory-permanent-memory-shared-memory-persistence-status)
         for a given *datastore-key* (*segment-key* @ *identity*).
@@ -2790,7 +2782,7 @@ definitions:
           broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](#operation--auth-guest-credentials-put).
 
           Value of "invitee" indicates an invitee of this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is allowed to write, see
-          the [bounce endpoint](#operation--auth-guest-credentials-put): no *allowed-writers* check.
+          the [guest credentials endpoint](#operation--auth-guest-credentials-put): no *allowed-writers* check.
       allowed-writers:
         type: array
         items:
@@ -2821,7 +2813,7 @@ definitions:
           broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](#operation--auth-guest-credentials-put).
 
           Value of "invitee" indicates an invitee of this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is allowed to publish, see
-          the [bounce endpoint](#operation--auth-guest-credentials-put).
+          the [guest credentials endpoint](#operation--auth-guest-credentials-put).
       allowed-publishers:
         type: array
         items:
@@ -2851,7 +2843,7 @@ definitions:
           Value of "signed" indicates *allowed-delegates* property must necessairly list [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) allowed to act as delegates for this *segment-key*.  Delegates attempting to use this *segment-key* have their [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) checked against the *allowed-delegates* list.
 
           Value of "invitee" indicates an invitee of this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) are allowed to be delegates, see
-          the [bounce endpoint](#operation--auth-guest-credentials-put).
+          the [guest credentials endpoint](#operation--auth-guest-credentials-put).
       allowed-delegates:
         type: array
         items:
@@ -2937,10 +2929,10 @@ definitions:
   Metrics:
     type: object
     required:
+      - last-change-unix-time
       - value-storage-bytes
       - value-read-count
       - value-write-count
-      - value-last-change-unix-time
       - messages-storage-bytes
       - messages-count
       - messages-acknowledged
@@ -2948,11 +2940,66 @@ definitions:
       - delegate-values-storage-bytes
       - delegate-values-read-count
       - delegate-values-write-count
-      - delegate-values-last-change-unix
       - delegate-messages-storage-bytes
       - delegate-messages-count
       - delegate-messages-acknowledged
     properties:
+      last-change-unix-time:
+        type: number
+        description: |
+          Unix-time (seconds since January 1, 1970 UTC) of last modification of any kind.
+      value-storage-bytes:
+        type: number
+        description: |
+          Size in bytes of the data area; sans backchannel or delegates.
+      value-read-count:
+        type: number
+        description: |
+          Count of data area read operations; sans backchannel or delegates.
+      value-write-count:
+        type: number
+        description: |
+          Count of data area write operations; sans backchannel or delegates.
+      messages-storage-bytes:
+        type: number
+        description: |
+          Size in bytes of the backchannel messages; sans delegates.
+      messages-count:
+        type: number
+        description: |
+          Count of backchannel messages; sans delegates.
+      messages-acknowledged:
+        type: number
+        description: |
+          Count of acknowledged backchannel messages; sans delegates.
+      delegates-count:
+        type: number
+        description: |
+          Count of delegate identities using storage in any way.
+      delegate-values-storage-bytes:
+        type: number
+        description: |
+          Size in bytes of the delegate data area; sans backchannel.
+      delegate-values-read-count:
+        type: number
+        description: |
+          Count of delegate data area read operations; sans backchannel.
+      delegate-values-write-count:
+        type: number
+        description: |
+          Count of delegate data area write operations; sans backchannel.
+      delegate-messages-storage-bytes:
+        type: number
+        description: |
+          Size in bytes of the delegate backchannel messages.
+      delegate-messages-count:
+        type: number
+        description: |
+          Count of delegate backchannel messages.
+      delegate-messages-acknowledged:
+        type: number
+        description: |
+          Count of acknowledged backchannel messagess.
   PersistenceStatus:
     type: object
     required:       
@@ -3094,29 +3141,31 @@ responses:
             
             For unfragmented responses this value is 1.
 
-            For fragment responses (*code 206*) this value may be useful to gauge progress of receiving the full response: tally of already received versus this value.
+            For fragment responses (*code 206* followed by a *code 200*) this value may be useful to gauge progress of receiving the full response: tally of already received versus this value.
         code:
           type: number
           description: |
-            One of the WIRE protocol response codes with meanings as detailed by this endpoint.
+            One of the WIRE protocol response codes. 
 
             They roughly match HTTP response codes.
 
-            This *default* response applies to all *WIRE* event responses.  See a listing of response codes for each specific *WIRE* event for specific codes.
-
-            A code other than *200*, *206*, *222*, or *413*,  will always have the *response* byte-stream be a UTF-16 string with meanings as detailed by the *WIRE* event's response code definitions.
+            Refer to the *RESPONSES* section of each particular *WIRE* event for a description of possible *code* values in this corresponding response event.
         response:
           type: bytes
           description: |
-            The response byte-stream for a *code* of *200*, *206*, *222*, or *413*.  A UTF-16 encoded string with error text for all other *codes*.
+            For most error *codes* this is a UTF-8 encoded string with error text.
 
-            Refer to the specific *WIRE* event's response *code* *200*, *206*, *222*, or *413* for the syntax and semantics of this *response* byte-stream descriptor.
+            For *codes* *200*, *206*, *222*, and *413*, this is a response byte-stream.
+            
+            Each *WIRE* event's *RESPONSES* section details which response *codes* apply; specifying the syntax and semantics of this *response* byte-stream descriptor.
 
-            For code *200* the *response* is the completion of a response:  either the full response or the end of fragments for an aggregate response.  The client need to nothing more than consumer the response.
+            `Codes 200 and 206`
+            
+            *Code 200* signifies the response is complete.  For unfragmented responses only one response message is returned and it has a *code* of *200*.  A fragmented response returns one or more *code 206* events followed by a final *code 200* response; signalling end of fragments--at which point the aggregate payload can be reconstituted.  
 
             For code *206* the *response* is a non-final fragment of an aggregate response.  A code *206* event from the broker needs to be [acknowledged](#operation-acknowledge-WIRE) by the client.
       description: |
-        WebSocket Requests may have one or more response events.  Each response event from the *overhide* broker is a byte-stream in the following format:
+        WebSocket Requests may have one or more response events (this).  Each response event from the *overhide* broker is a byte-stream in the following format:
 
         | *syntax *       | *bytes* | *value* |
         | ---             | ---     | ---     |
@@ -3192,7 +3241,7 @@ securityDefinitions:
     name: Authorization
     description: |
       Provides an authentication token as retrieved with either the [authentication endpoint](#operation--auth-credentials-put)
-      or the [invitee bouncer endpoint](#path--auth-bounce).
+      or the [invitee credentials endpoint](#operation--auth-guest-credentials-put).
 
       The token returned by either call must be provided in an "Authorization" header to HTTPS calls secured with this security definition.
 
@@ -3207,7 +3256,7 @@ securityDefinitions:
     name: auth
     description: |
       Provides an authentication token as retrieved with either the [authentication endpoint](#operation--auth-credentials-put)
-      or the [invitee bouncer endpoint](#path--auth-bounce).
+      or the [invitee credentials endpoint](#operation--auth-guest-credentials-put).
 
       For WSS, the token must be provided when establishing the connection:
 
