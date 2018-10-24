@@ -10,7 +10,7 @@ For certain solutions--*overhide* isn't universally applicable--we want to free 
 
 Are users ready for *overhide*?  Although we all enjoy the benefits of centralization for discovery and distribution--e.g. app stores--we do want the freedom of not locking-in, owning our data, and keeping our particulars to ourselves.  
 
-Services built on top of *overhide* can be as decentralized as the service author enables.  An app can be fully decentralized leveraging a distributed implementation of the *overhide* (data) broker, and a blockchain solution for remuneration.  Or said app could start with a simple on-premises instance of an *overhide* broker and no remuneration structure.
+Services built on top of *overhide* can be as decentralized as the service author enables.  An app can be fully decentralized leveraging a distributed implementation of the *overhide* (data) broker, and a blockchain solution for remuneration.  Or said app could start with a simple on-premises instance of an *overhide* broker and no remuneration structure.  (The [reference implementation](https://github.com/JakubNer/overhide-broker) is fully [decentralized](docs/decentralization.md))
 
 ---
 
@@ -50,7 +50,7 @@ Note that the model below shows a browser with *overhide's* [*keybiner*](docs/gl
    * client library to promote decoupling of trust
 * as available and reliable as the technology stack implementing the specification; the [reference implementation](https://github.com/JakubNer/overhide-broker) is geared to be both
 * provides ability to remunerate brokerage and service provider via blockchain: pseudonymous subscription fees
-* quasi-decentralized, *overhide* broker is centralized via DNS for *Web 2.0* stacks, but broker can be easily switched out when failover need arises. 
+* quasi-[decentralized](docs/decentralization.md), *overhide* broker is centralized via DNS for *Web 2.0* stacks, but broker can be easily switched out when failover need arises. 
 
 ### Benefits to Service
 
