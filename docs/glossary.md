@@ -330,13 +330,21 @@ The service may allow some *datastore-keys* to be written to or published to by 
 
 #### data-steward
 
-Implementation dependant--each *overhide* broker is expected to leverage a decentralized persistence network (e.g. [IPFS](decentralization.html)).  
+Implementation dependant--each *overhide* broker is expected to leverage a decentralized persistence network (e.g. [IPFS](https://ipfs.io/)).  The concept of *stewards* is an important aspect of keeping *overhide* [decentralized](decentralization.html).  
 
 Consider a decentralized persistence network with many peers, some of which are *overhide* brokers.  One or more *overhide* brokers that are peers on this network may be subscribed to by a user.  Peers on the network that are subscribed-to *overhide* brokers are "stewards" of a user's data.
 
 An "active" data-steward is an *overhide* broker that the user can write data against.  Read-only data-stewards are "passive".  The active data-steward is the source of truth for the user's most current data.  Passive data-stewards are eventually consistent, pending network delays.  Passive data-stewards necessarily error-out on writes.  Having more than one "active" data-steward may lead to write race-conditions on the distributed persistence network with unknown consequences.
 
 It is up to the user--the user's tooling--to manage data stewardship via the [broker API](broker.html#tag-data-stewardship).
+
+#### GUID -- Globally Unique ID
+
+The *overhide* system expects brokers to be peers on a distributed persistence network as per the [decentralization write-up](decentralization.md).
+
+Each client to *overhider* brokers has their data shared on this network.  A client's data on this network is referenced using GUIDs -- Globally Unique IDs.  E.g. GUIDs on the [IPFS](https://ipfs.io/) network are IPNS names as discussed in the [decentralization write-up](decentralization.md).
+
+GUIDs are used heavily for [managing data stewardship via the broker APIs](broker.html#tag-data-stewardship).
 
 #### working-memory, permanent-memory, shared-memory (persistence-status)
 

@@ -1,16 +1,54 @@
 # Data Decentralization
 
-The [*overhide* broker reference implementation](https://github.com/JakubNer/overhide-broker) uses [*IPFS*](https://ipfs.io/) to decentralize persisted data.
+## Data Stewardship
 
-However, since this core value is implementation specific, not every *overhide* broker may keep user data decentralized.  If an implementation of an *overhide* broker does not openly decentralize user data, the user can always leverage tooling that uses the [import](broker.html#operation-import-WIRE)/[export](broker.html#operation-export-WIRE) functionality of *overhide* broker APIs to extract all user data and do with it as the user pleases.  That's a contractual obligation on a proper *overhide* broker implementation.
+Data decentralization in *overhide* is supported by an explicitly managed network of [data-stewards](glossary.html#data-steward).  
+
+*Data-stewards* are all *overhide* brokers on the same distributed persistence network to which a user pays a subscription: a subset of all *overhide* brokers on the network.
+
+An *active data-steward* is a subscribed-to *overhide* broker that the user interacts with for mutating data.  Only one *overhide* broker can be delegated as an *active data-steward* (see "Data Mutation Speed Considerations" below).
+
+A *passive data-steward* is any other subscribed-to *overhide* broker.  There can be many *passive data-stewards*.  These are read-only.  These guarantee to make the user's data available as soon as it's shared with them by the *active data-steward*.  A *passive data-steward* can be made "active" at any time; it's prudent to deactivate any previously *active data-steward*.
+
+All nodes on the broker's distributed persistence network may receive and make-available the user's data; but the *stewards* ensure to pin the user's data and guarantee its availability.
+
+![stewards](images/stewards-sm.gif)
+
+## Data Mutation Speed Considerations
+
+Ideally data changes would be immediately finally consistent all across a distributed persistence network.  This is not feasible in practice.
+
+User's data mutations go to a specially nominated *active data-steward* before being propagated to other peers.  Each data change progresses through three [persistence-levels](glossary.html#working-memory-permanent-memory-shared-memory-persistence-status):
+
+* [working-memory](glossary.html#working-memory-permanent-memory-shared-memory-persistence-status)
+* [permanent-memory](glossary.html#working-memory-permanent-memory-shared-memory-persistence-status)
+* [shared-memory](glossary.html#working-memory-permanent-memory-shared-memory-persistence-status)
+
+Each level operates at different update speeds.  Data propagation could be superceded at any level by a faster rate of change upstream.
+
+![memory](images/memory-sm.gif)
+
+The [working-memory](glossary.html#working-memory-permanent-memory-shared-memory-persistence-status) and [permanent-memory](glossary.html#working-memory-permanent-memory-shared-memory-persistence-status) are part of the *active data-steward*.  Only changes that progress to [shared-memory](glossary.html#working-memory-permanent-memory-shared-memory-persistence-status) can be pinned by *passive data-stewards* and made available by nodes on the distributed persistence network. 
+
+The SHA-256 content-hashes of any [segment-key](glossary.html#segment-key) value can be retrieved for each [persistence-level](glossary.html#working-memory-permanent-memory-shared-memory-persistence-status): use the [GET /{segment-key}/persistence-status](broker.html#operation---segment-key--persistence-status-get) API call.  On an active steward equivalence between the [shared-memory](glossary.html#working-memory-permanent-memory-shared-memory-persistence-status) hash and the [working-memory](glossary.html#working-memory-permanent-memory-shared-memory-persistence-status) hash means consistency is achieved.  On a passive steward data is driven by the [shared-memory](glossary.html#working-memory-permanent-memory-shared-memory-persistence-status) value; all hashes would be the same, always.  A client can use this API to validate data propagation, pining, hosting, to passive stewards.
+
+## Other Considerations
+
+A user has ultimate control over their data.  A core-value of *overhide* is that users are always able to extract all of their data from any *overhide* system (provided they know their credentials).  The data may be exported from one *overhide* system and imported into another--presumably with incompatible underlying distributed persistence networks.  Users can leverage tooling that uses the [import](broker.html#operation-import-WIRE)/[export](broker.html#operation-export-WIRE) functionality of *overhide* broker APIs to extract all their data so they can do with it as they please.  That's a contractual obligation on a proper *overhide* broker implementation.
 
 ![import/export only](images/import-export.gif) 
 
-The [import](broker.html#operation-import-WIRE)/[export](broker.html#operation-export-WIRE) functionality may prove to be a somewhat cumbersome failover mechanism.  The intent of *overhide* is to go as far as possible to bring decentralization to our apps, with the hope that one day the broker is completely out of the picture and only *overhide.js* remains as a library, not a client shim. 
+The intent of *overhide* is to go as far as possible to bring decentralization to our apps, with the hope that one day the broker is completely out of the picture and only [*overhide.js*](overhide.js.md) remains as a library, not a client shim. 
 
 ![overhide.js as library](images/oh-js-as-lib.gif) 
 
+## [Broker API](broker.html) Support For Decentralization
+
+Refer to the [Broker API](broker.html#tag-data-stewardship) to read about how the APIs support data decentralization.
+
 ## Overview of [*overhide* Reference Implementation](https://github.com/JakubNer/overhide-broker) and [*IPFS*](https://ipfs.io/)
+
+The [*overhide* broker reference implementation](https://github.com/JakubNer/overhide-broker) uses [*IPFS*](https://ipfs.io/) for its decentralized persisted data.
 
 All user data and data-specific metadata is stored on the [*IPFS*](https://ipfs.io/) network.
 

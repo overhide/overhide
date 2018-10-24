@@ -121,6 +121,42 @@ tags:
       Envisioned use cases include backup and broker transfer.
 
       The stewardship APIs enable [data decentralization](decentralization.html) and [broker trustlessness](trustlessness.html).
+
+      #### Sample Use Case: Designation of Stewards
+
+      Consider the following sequence modelling *overhide* API calls required to associate client data with two *overhide* brokers; one designated as an [active data steward](glossary.html#data-steward) and one designated to be a [passive data steward](glossary.html#data-steward).
+
+      Messages in red are API calls detailed in this section.  Other API calls are glanced over.  Blue messages are external.
+
+      ![overhide designation of stewards infographic](https://github.com/JakubNer/overhide/raw/master/docs/images/designate-stewards.png)
+
+      In this sequence the client subscribes to "overhide broker 1" and authenticates [1].  It's important to note that the first time a new user authenticates to a broker a new set of [GUIDs](#/definitions/GUID) is generated pointing to the client's data on the broker's distributed persistence network (e.g. [IPFS](https://ipfs.io/) "names" PKI pair for [IPFS](https://ipfs.io/)).
+
+      At this point "overhide broker 1" is read-only.  Any attempts to write data or post messages would yield a 400 -- "cannot write, broker not an active steward of user's data".  To make the broker writable, it's designated as an [active data steward](glossary.html#data-steward) [2].
+
+      The client writes then reads data as desired [3-5].  The data is eventually made consistent with the distributed persistence network (e.g. [IPFS](https://ipfs.io/)).
+
+      Presumably the distributed persistence network backing "overhide broker 1" is a public decentralized data-store that allows common tooling access [7].  To access the client's data we need its reference.  The reference is retrieved as a [GUID](#/definitions/GUID) [6].
+
+      Another *overhide* broker is subscribed to by the client--to guarantee pinning of the client's data as a backup [8].
+
+      At this point "overhide broker 2" is subscribed to, but it is not associated with the client's data as referenced by "overhide broker 1" [9-11].  The second broker has a compeltelly different GUID for the client's data on the distributed persistence network.
+
+      Once the client furnished the GUID form "overhide broker 1" to "overhide broker 2" [12], "overhide broker 2" starts acting as a passive steward of the client's data [13-17].
+
+      #### Sample Use Case: Disassociation from Steward
+
+      The client may have a reason to diassociate from an *overhide* broker.  In the following sequence we model the API calls required to disassociate client data from "overhide broker 1":  including ensuring the disassociated broker cannot clobber any new data and that old client data is not consuming resources on the broker. 
+
+      ![overhide disassociation from steward infographic](https://github.com/JakubNer/overhide/raw/master/docs/images/steward-disassociation.png)
+
+      We start with "overhide broker 1" being the [active data steward](glossary.html#data-steward) and "overhide broker 2" being the [passive data steward](glossary.html#data-steward) [1-5].
+
+      Before making "overhide broker 2" the new active steward [7], we ensure "overhide broker 1" is made passive [6]:  it's desirable to have just one active steward writing to the distributed persistence network.
+
+      Once "overhide broker 2" is told to be an active steward, we want it to track client data under a new GUID [8-9].  The old GUID is well known to "overhide broker 1" and we want full disassociation.
+
+      Client data is encrypted across *overhide*.  At this point it's also only writable by "overhide broker 2".  Neverless, we may desire to delete all of it from "overhide broker 1" [10].  
 paths:
   handshake:
     options:
