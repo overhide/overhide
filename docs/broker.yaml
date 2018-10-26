@@ -1177,7 +1177,7 @@ paths:
 
         If the *datastore-key*'s *allow-publish* setting is "self", the *identity* in the authentication token must match the *datastore-key* owner.
 
-        If the *datastore-key*'s *allow-publish* setting is "signed", the author of the backchannel message is the *identity* tied ot the authorization token passed to this API.  Message author's public-key (hash) is present in the token and compared to the *allowed-publishers* list--if any--for this *datastore-key*.
+        If the *datastore-key*'s *allow-publish* setting is "signed", the author of the backchannel message is the *identity* tied ot the authorization token passed to this API.  Message author's *identity* is present in the token and compared to the *allowed-publishers* list--if any--for this *datastore-key*.
 
         If the *datastore-key*'s *allow-publish* setting is "any", the *identity* in the authentication token must simply be valid: a valid broker system user is publishing.
 
@@ -1245,9 +1245,7 @@ paths:
               identity:
                 type: bytes
                 description: |
-                  Optional identity.  If provided, must be complimentary to the *delegate* parameter, glob '*', or one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
-
-                  The '*' glob value means the message is posted to all delegates:  it's enqueued on all their queues.
+                  Optional identity.  If provided, must be complementary to the *delegate* parameter,  or one of public restricted identities:  0 .. 9999.  If not provided, identity is that of [token owner](#security-definition-Authorization%20WSS).
 
                   See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
               delegate-len:
@@ -1259,10 +1257,13 @@ paths:
                 description: |
                   Qualifies that this backchannel message is meant for a [delegate](#tag-delegate) of *segment-key*.  The value is the delegate's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
 
-                  If this parameter is present, the *identity* query parameter is mandatory.  The *segment-key*
-                  from the path and this *identity* from the query constitute the *datstore-key*.
+                  This value could be a glob `*`.  The `*` glob value means the message is posted to all delegates:  it's enqueued on all their queues.
 
-                  The *delegate* must satisfy [settings on the *segment-key*](#definition-DatastoreKeySettings) to publish mesages.
+                  The *delegate* is the message recepient and must satisfy [settings on the *segment-key*](#definition-DatastoreKeySettings) allowing delegate publication of mesages.
+
+                  If this parameter is present, the *identity* request parameter is mandatory.  The *segment-key* and the *identity* request parameters constitute the *datstore-key*.
+
+                  The [authorized](#security-definition-Authorization%20WSS) user is the sender.
               flags:
                 type: bytes
                 description: |
@@ -1300,6 +1301,10 @@ paths:
       summary: Retrieve all messages from the backchannel at the givent datastore-key.
       description: |
         Retrieve all messages from the backchannel at the given *datastore-key* (*segment-key* @ *identity*).
+
+        Retrieves messages if [authorized identity](#security-definition-Authorization%20WSS) is the owner of the *datastore-key*.
+
+        Retrieves *delegated* messages if [authorized identity](#security-definition-Authorization%20WSS) is not the owner of the *datastore-key* but is complementary with the *datastore-key's* [delegate configuration](#tag-datastore-key-settings).
       tags:
         - backchannel queues
       parameters:
@@ -1310,14 +1315,12 @@ paths:
             | *syntax*        | *bytes* | *value* |
             | ---             | ---     | ---     |
             | req-id          | 8       |         |
-            | len             | 8       | SL + IL + DL + 4 |
+            | len             | 8       | SL + IL + 3 |
             | opcode          | 1       | 0x05    |
             | segment-key-len | 1       | SL == length(segment-key) |
             | segment-key     | SL      |         |
             | identity-len    | 1       | IL == length(identity) |
             | identity        | IL      |         |
-            | delegate-len    | 1       | DL == length(delegate) |
-            | delegate        | DL      | ``      |
           schema:
             type: object
             required:
@@ -1327,7 +1330,6 @@ paths:
               - segment-key-len
               - segment-key
               - identity-len
-              - delegate-len
             properties:
               req-id:
                 type: number
@@ -1356,22 +1358,13 @@ paths:
               identity:
                 type: bytes
                 description: |
-                  Optional identity.  If provided, must be complimentary to the *delegate* parameter or one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
+                  Optional identity.  If provided, qualifies the *datastore-key* owner--complementary to delegation.  
+                  
+                  May be one of public identities:  0 .. 9999.  
+                  
+                  If not provided, [authorized identity](#security-definition-Authorization%20WSS) defaults as owner.
 
                   See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
-              delegate-len:
-                type: number
-                description: |
-                  Length in bytes of *delegate*.
-              delegate:
-                type: bytes
-                description: |
-                  Qualifies that the messages are to be retrieved for a [delegate](#tag-delegate) of *segment-key*.  The value is the delegate's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
-
-                  If this parameter is present, the *identity* query parameter is mandatory.  The *segment-key*
-                  from the path and this *identity* from the query constitute the *datstore-key*.
-
-                  Only the *delegate* may retrieve these qualified mesages.
       consumes:
         - application/octet-stream
       produces:
@@ -1428,6 +1421,10 @@ paths:
       description: |
         Acknowledge all messages up to and including seq-id have been handled.  All messages up to seq-id will be removed from the backchannel.
 
+        Acknowledge messages if [authorized identity](#security-definition-Authorization%20WSS) is the owner of the *datastore-key*.
+
+        Acknowledge *delegated* messages if [authorized identity](#security-definition-Authorization%20WSS) is not the owner of the *datastore-key* but is complementary with the *datastore-key's* [delegate configuration](#tag-datastore-key-settings).
+
         If this broker is not an active steward of data for *identity*, call fails with a 400 -- 
         "cannot write, broker not an active steward of user's data"
       tags:
@@ -1440,14 +1437,12 @@ paths:
             | *syntax*        | *bytes* | *value* |
             | ---             | ---     | ---     |
             | req-id          | 8       |         |            
-            | len             | 8       | SL + IL + DL + 9 |
+            | len             | 8       | SL + IL + 8 |
             | opcode          | 1       | 0x06    |
             | segment-key-len | 1       | SL == length(segment-key) |
             | segment-key     | SL      |         |
             | identity-len    | 1       | IL == length(identity) |
             | identity        | IL      |         |
-            | delegate-len    | 1       | DL == length(delegate) |
-            | delegate        | DL      |         |
             | flags           | 1       |         |
             | seq-id          | 4       | ``      |
           schema:
@@ -1459,7 +1454,6 @@ paths:
               - segment-key-len
               - segment-key
               - identity-len
-              - delegate-len
               - flags
               - seq-id
             properties:
@@ -1490,22 +1484,13 @@ paths:
               identity:
                 type: bytes
                 description: |
-                  Optional identity.  If provided, must be complimentary to the *delegate* parameter or one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
+                  Optional identity.  If provided, qualifies the *datastore-key* owner--complementary to delegation.  
+                  
+                  May be one of public identities:  0 .. 9999.  
+                  
+                  If not provided, [authorized identity](#security-definition-Authorization%20WSS) defaults as owner.
 
                   See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
-              delegate-len:
-                type: number
-                description: |
-                  Length in bytes of *delegate*.
-              delegate:
-                type: bytes
-                description: |
-                  Qualifies that this acknowledgment is meant for a [delegate](#tag-delegate) of *segment-key*.  The value is the delegate's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
-
-                  If this parameter is present, the *identity* query parameter is mandatory.  The *segment-key*
-                  from the path and this *identity* from the query constitute the *datstore-key*.
-
-                  Only the *delegate* may acknowledge these qualified mesages.
               flags:
                 type: bytes
                 description: |
@@ -1542,7 +1527,11 @@ paths:
       summary:  Owner--identified in token--subscribes to notifications of new messages in datastore-key.
       description: |
         Owner--identified in token--subscribes to notifications of new messages in *datastore-key* (*segment-key* @ *identity*).  
-        
+
+        Subscribes to messages if [authorized identity](#security-definition-Authorization%20WSS) is the owner of the *datastore-key*.
+
+        Subscribes to *delegated* messages if [authorized identity](#security-definition-Authorization%20WSS) is not the owner of the *datastore-key* but is complementary with the *datastore-key's* [delegate configuration](#tag-datastore-key-settings).
+
         If the *shunt* query parameter is not specified, subscription doesn't send actual message content, just notification of new messages with a new *seq-id*.
 
         If the *shunt* query parameter is specified, full message content is sent via subscription.  Unless the *auto-acknowledge* flag is set, the messages do have to be explicitly [acknowledged](#operation-acknowledge-messages-WIRE) to clear the backchannel queue.  Failure to acknowledge messages with *auto-acknowledge* off and [limit-bytes set](#definition-DatastoreKeySettings) may lead to a full backchannel queue and dropped messages; not forwarded to these live subscriptions.
@@ -1559,14 +1548,12 @@ paths:
             | *syntax*        | *bytes* | *value* |
             | ---             | ---     | ---     |
             | req-id          | 8       |         |
-            | len             | 8       | SL + IL + DL + 5 |
+            | len             | 8       | SL + IL + 4 |
             | opcode          | 1       | 0x07    |
             | segment-key-len | 1       | SL == length(segment-key) |
             | segment-key     | SL      |         |
             | identity-len    | 1       | IL == length(identity) |
             | identity        | IL      |         |
-            | delegate-len    | 1       | DL == length(delegate) |
-            | delegate        | DL      |         |
             | flags           | 1       | ``      |
           schema:
             type: object
@@ -1577,7 +1564,6 @@ paths:
               - segment-key-len
               - segment-key
               - identity-len
-              - delegate-len
               - flags
             properties:
               req-id:
@@ -1607,22 +1593,13 @@ paths:
               identity:
                 type: bytes
                 description: |
-                  Optional identity.  If provided, must be complimentary to the *delegate* parameter or one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
+                  Optional identity.  If provided, qualifies the *datastore-key* owner--complementary to delegation.  
+                  
+                  May be one of public identities:  0 .. 9999.  
+                  
+                  If not provided, [authorized identity](#security-definition-Authorization%20WSS) defaults as owner.
 
                   See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
-              delegate-len:
-                type: number
-                description: |
-                  Length in bytes of *delegate*.
-              delegate:
-                type: bytes
-                description: |
-                  Qualifies that this subscription is meant for a [delegate](#tag-delegate) of *segment-key*.  The value is the delegate's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
-
-                  If this parameter is present, the *identity* query parameter is mandatory.  The *segment-key*
-                  from the path and this *identity* from the query constitute the *datstore-key*.
-
-                  Only the *delegate* may subscribe to these qualified mesages.
               flags:
                 type: bytes
                 description: |
@@ -1711,11 +1688,11 @@ paths:
       description: |
         Payload contents is written as a new value into *datastore-key* (segment-key @ identity) qualified by the caller's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).  
         
-        This call requires two identities:  the *segment-key* and [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from the path constitute the *datastore-key*.  The [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from the [authorization header](#security-definition-Authorization Header)
+        This call requires two identities:  the *segment-key* and [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) request parameters constitute the *datastore-key*.  The [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from the [authorization header](#security-definition-Authorization Header)
         is used to qualify the data stored at the *segment-key*: this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is the delegate.
 
         For the *set* to succeed the *datastore-key* (segment-key @ identity) must exist and be owned by the [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md)
-        from the path.
+        from the request parameter.
 
         A delegate can only write their value to this *segment-key* [settings on *segment-key* permitting](#definition-DatastoreKeySettings).  Only the delegate identified can write data.  The *settings* are solely to identify who the delegates can be.
 
@@ -1818,7 +1795,7 @@ paths:
       description: |
         Retrieve contents from *datastore-key* (segment-key @ identity) qualified by the caller's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).  
 
-        This call requires two identities:  the *segment-key* and [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from the path constitute the *datastore-key*.  The [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from the [authorization header](#security-definition-Authorization Header)
+        This call requires two identities:  the *segment-key* and [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) request parameters constitute the *datastore-key*.  The [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from the [authorization header](#security-definition-Authorization Header)
         is used to qualify the data stored at the *segment-key*: this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is the delegate.        
       tags:
         - delegate
@@ -1902,11 +1879,11 @@ paths:
       description: |
         Delete delegate's data filed under the *datastore-key* (segment-key @ identity).  
 
-        This call requires two identities:  the *segment-key* and [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from the path constitute 
+        This call requires two identities:  the *segment-key* and [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) request parameters constitute 
         the *datastore-key*.  The [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from the [authorization header](#security-definition-Authorization Header)
         is used to qualify the data stored at the *segment-key*: this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is the delegate.
 
-        The *datastore-key* must be owned by the in-path [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
+        The *datastore-key* must be owned by the [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from request parameter.
 
         If this broker is not an active steward of data for *identity*, call fails with a 400 -- 
         "cannot write, broker not an active steward of user's data"
@@ -2003,7 +1980,7 @@ paths:
         Retrieve all delegate data under *datastore-key* (segment-key @ identity) as map of delegate
         identities to content.
 
-        The *segment-key* and [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from the path constitute the *datastore-key*.
+        The *segment-key* and [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) request parameters constitute the *datastore-key*.
       tags:
         - delegate
       parameters:
@@ -2867,6 +2844,8 @@ definitions:
       - allowed-publishers
       - allow-delegation
       - allowed-delegates
+      - allow-publish-all-delegates
+      - allow-read-all-delegates
       - entry-fee
       - limit-bytes
       - limit-others-read-rate
@@ -2965,6 +2944,14 @@ definitions:
           These could be real authenticated broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](#operation--auth-guest-credentials-put).
 
           Delegates attempting to use this *segment-key* have their *authentication token* checked against the [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) in this list.  
+      allow-others-publish-all-delegates:
+        type: boolean
+        description: |
+          If `true` [backchannel message posting](#operation-post-message-WIRE) allows messages publishing to all delegates by non-owner--the glob `*` value for the event's *delegate* parameter can be used by all *allowed-publishers*.
+      allow-others-read-all-delegates:
+        type: boolean
+        description: |
+          If `true` allows non-owners to use the ["get all delegate values"](#operation-get-all-delegate-values-WIRE) event.
       entry-fee:
         type: array
         items:
@@ -3185,6 +3172,10 @@ definitions:
                 Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
 
                 See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+            delegate:
+              type: string
+              description: |
+                If value is for a delegate of this *segment-key*, this is the delegate's identity.
             bytes:
               type: string
               description: |
@@ -3213,6 +3204,10 @@ definitions:
                 Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
 
                 See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+            delegate:
+              type: string
+              description: |
+                If messages are for a delegate of this *segment-key*, this is the delegate's identity.
             messages:
               type: array
               items:
