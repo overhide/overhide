@@ -587,7 +587,7 @@ paths:
                 description: |
                   BASE64 encoded.
 
-                  A secret phrase for the specified user-address.  Once a user authenticates against the broker with a secret-phrase and a user-address, the secret-phrase is tied to the user-address indefinitely, unless changed by [changed-credentials](#operation--auth-changed-credentials-put).
+                  A secret phrase for the specified user-address.  Once a user authenticates against the broker with a secret-phrase and a user-address, the secret-phrase is tied to the user-address indefinitely, unless changed by [changed-credentials](#operation--auth-changed-credentials-put).  Using the incorrect *scecret-phrase* will result in a 400 -- "invalid secret-phrase".  ([more information](identity.html#identity-tracked-by-broker))
               user-address:
                 type: string
                 description: |
@@ -718,6 +718,10 @@ paths:
                   BASE64 Encoded.
 
                   A secret phrase for the specified *invitee-user-address*.
+
+                  The broker shall allow the same *invitee-user-address* to be used with multiple different *invitee-secret-phrases*.  The broker can hash the *invitee-user-address* in a broker-specific way and make this hashed version available in the [visitor's authentication token](#security-definition-Authorization%20Header) for use with this API: for duplicate delegate-identity checks.  The hashed *invitee-user-address* is not stored off outside the broker's metadata (i.e. on the distributed persistence network). 
+                  
+                  See also the [*duplicate-delegate-policy* configuration point](#tag-datastore-key-settings) for *datastore-keys*.
               invitee-user-address:
                 type: string
                 description: |
@@ -2982,6 +2986,21 @@ definitions:
 
           If *allow-publish* or *allow-write* is "invitee", this parameter the minimum remuneration value required to be able to write the write/publish operations
           on this *segment-key*.      
+      duplicate-delegate-policy:
+        type: string
+        description: |
+          If a delegate is a [visitor](#operation--auth-guest-credentials-put), the delegate might provide a different *invitee-secret-phrase* for the same *invitee-user-address*.  To prevent the same *invitee-user-address* from using multiples of a *datastore-key's* delegate allotment, this policy may be enforced.
+
+          Note: enforcement of this policy is dependant on a broker-specific hash of the *invitee-user-address* being available in the [visitor's authentication token](#security-definition-Authorization%20Header).  This hashed *invitee-user-address* is not stored off outside the broker's metadata (i.e. on the distributed persistence network). 
+
+          What should the system do if a visitor delegate attempts to use the same *invitee-user-address* with a different visitor *identity*?  Allowed values:
+
+          | *key* | *description* |
+          | ---   | ---  |
+          | "replace-identity" | replace the previous identity associated with *invitee-user-address* by this new currently-used one |
+          | "keep-all" | allow delegate storage for all identities of the same *invitee-user-address* |
+
+          Note that this policy is a complement to the *delegate-data-ttl-seconds* configuration point.
       limit-bytes:
         type: number
         description: |
@@ -3287,6 +3306,7 @@ responses:
       - invalid remuneration-key, doesn't match broker system capabilities
       - address incompatible with remuneration provider
       - invalid signature
+      - invalid secret-phrase
       - no handshake
       - message outside handshake constraints
       - invalid datastore-key requested; segment-key or identity mismatch
