@@ -6,7 +6,7 @@
 
 Function of *X*:  *X* is used in generation of result from *F*.
 
-#### A ◠ B
+#### A &cap; B
 
 *A* is concatenated with *B*.
 
@@ -18,13 +18,13 @@ Function of *X*:  *X* is used in generation of result from *F*.
 
 *x-key* is used as a private key in a private-public pair.
 
-#### x-key<sub>pub | priv</sub>⇒
+#### x-key<sub>pub | priv</sub>&rArr;
 
 This is the "other" key in a private/public key pair.
 
-If *x-key* is a public key, then this is the corresponding private key.  E.g. *some-key<sub>pub</sub>⇒* is the private key of *some-key<sub>pub</sub>*.
+If *x-key* is a public key, then this is the corresponding private key.  E.g. *some-key<sub>pub</sub>&rArr;* is the private key of *some-key<sub>pub</sub>*.
 
-If *x-key* is a private key, then this is the corresponding public key.  E.g. *some-key<sub>priv</sub>⇒* is the public key of *some-key<sub>priv</sub>*.
+If *x-key* is a private key, then this is the corresponding public key.  E.g. *some-key<sub>priv</sub>&rArr;* is the public key of *some-key<sub>priv</sub>*.
 
 #### x-key<sub>sym</sub>
 
@@ -49,9 +49,9 @@ Result (ciphertext) of a *payload* encrypted with the specified key.
 
 ## Definitions
 
-Definitions below are not in alphabetic order but ordered increasing in specificity to our system.  
+Definitions below are not in alphabetic order but ordered increasing in specificity to our system.
 
-For example a *member-group-key* is a function of *user-key*: F(user-key). which is an instance of *datastore-key*.  As such these are defined in the order *datastore-key* first, then *user-key*, then *member-group-key*.
+For example a *member-group-key* is a function of *user-key*: F(user-key). which is an instance of *datastore-key*.  As such these are defined in the order *datastore-key* first, then *user-key*, then *member-group-key*.
 
 > **service, user, group, group-owner, member**
 >
@@ -166,7 +166,7 @@ In *overhide.js* this is either the private key or public address from one of th
 
 In *overhide* the *segment-key* is a function of the domain-key limited to 128 bytes.
 
-In *overhide.js* a *segment-key* is a 128 bytes long using a 32 byte long *segment-key-secret*.  The *segment-key* is derived by *sement-key-secret<sub>hash</sub>*(*domain-key*)◠*segment-key-secret<sub>sym</sub>*(*domain-key'*): a SHA256 hash of the *domain-key*, salted with *segment-key-secret* for the first 32 bytes, followed by 96 bytes of AES256 ciphertext.   The *domain-key'* must necessarily be 79 bytes long, as such *domain-key'* is *domain-key* that's PKCS7 padded.
+In *overhide.js* a *segment-key* is a 128 bytes long using a 32 byte long *segment-key-secret*.  The *segment-key* is derived by *sement-key-secret<sub>hash</sub>*(*domain-key*)&cap;*segment-key-secret<sub>sym</sub>*(*domain-key'*): a SHA256 hash of the *domain-key*, salted with *segment-key-secret* for the first 32 bytes, followed by 96 bytes of AES256 ciphertext.   The *domain-key'* must necessarily be 79 bytes long, as such *domain-key'* is *domain-key* that's PKCS7 padded.
 
 Note the important property that the *domain-key* is decipherable from the *segment-key*:  *segment-key-secret<sub>sym</sub>* applied against the tail bytes (length - 32 bytes).
 
@@ -276,9 +276,9 @@ In *overhide.js* the *datastore-value* is ECDSA (public key) encrypted with a *d
 
 #### member-group-key
 
-A *user-key* owned by a *group-owner* but meant for a specific member: established between group-owner and member user to communicate user's view of group data.
+A *user-key* owned by a *group-owner* but meant for a specific member: established between group-owner and member user to communicate user's view of group data.
 
-As an example, a *member-group-key* could be established by having a user publish a subscription message to a group's *group-key* along with the user's *secrets[?]<sub>pub</sub>*.  The *group-owner* would use the *secrets[?]<sub>pub</sub>* as the *member-group-key*'s *segment-key-secret* and *datastore-value-secret*.  As such the *datastore-value* would be *secrets[?]<sub>pub</sub>* encrypted such that only the user can read it with their *secrets[?]<sub>pub</sub>⇒*.  The *segment-key* would be deterministic by both the *group-owner* and member as they both know the *segment-key-secret*.
+As an example, a *member-group-key* could be established by having a user publish a subscription message to a group's *group-key* along with the user's *secrets[?]<sub>pub</sub>*.  The *group-owner* would use the *secrets[?]<sub>pub</sub>* as the *member-group-key*'s *segment-key-secret* and *datastore-value-secret*.  As such the *datastore-value* would be *secrets[?]<sub>pub</sub>* encrypted such that only the user can read it with their *secrets[?]<sub>pub</sub>&rArr;*.  The *segment-key* would be deterministic by both the *group-owner* and member as they both know the *segment-key-secret*.
 
 A member user can usually publish messages to a *member-group-key* but the *datastore-key* is writable only by the *group-owner*: it's a view with feedback.
 
