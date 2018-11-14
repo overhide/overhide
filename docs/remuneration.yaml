@@ -70,10 +70,12 @@ paths:
         429:
           $ref: "#/responses/429"
   /is-signature-valid:
-    get:
+    post:
       summary: Check signature.
       description: |
         Check if provided signature corresponds to the provided address, resolved to the provided message.
+
+        Check if provided address is a valid address in the ledger abstracted by this API.
       parameters:
         - in: body
           required: true
@@ -98,6 +100,8 @@ paths:
                   the address (public key) of signature
       security:
         - BasicAuth: []
+      consumes:
+        - application/json
       produces:
         - application/json
       responses:
