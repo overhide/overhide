@@ -1,3 +1,13 @@
 node_modules/
-docs/.generated/
 package-lock.json
+.vscode/settings.json
+.vscode/launch.json
+readme.html
+docs/.generated/
+docs/trustlessness.html
+docs/remuneration.html
+docs/overhide.js.html
+docs/identity.html
+docs/glossary.html
+docs/decentralization.html
+docs/broker.html
