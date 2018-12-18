@@ -597,6 +597,8 @@ paths:
               secret-phrase-signed:
                 type: string
                 description: |
+                  BASE64 encoded.
+
                   The *secret-phrase* provided above signed with the private key corrsponding to the
                   *user-address*.
 
@@ -731,6 +733,8 @@ paths:
               invitee-secret-phrase-signed:
                 type: string
                 description: |
+                  BASE64 encoded.
+
                   The *invitee-secret-phrase* provided above signed with the private key corrsponding to the
                   *invitee-user-address*.
 
@@ -802,6 +806,8 @@ paths:
               new-secret-phrase-signed:
                 type: string
                 description: |
+                  BASE64 encoded.
+
                   The *new-secret-phrase* provided above signed with the private key corrsponding to the
                   *new-user-address*.
 
