@@ -600,7 +600,7 @@ paths:
                   The *secret-phrase* provided above signed with the private key corrsponding to the
                   *user-address*.
 
-                  The signature uses Bitcoin's ECDSA curve - secp256k1.
+                  Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
       consumes:
         - application/json
       produces:
@@ -734,7 +734,7 @@ paths:
                   The *invitee-secret-phrase* provided above signed with the private key corrsponding to the
                   *invitee-user-address*.
 
-                  The signature uses Bitcoin's ECDSA curve - secp256k1.
+                  Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
       consumes:
         - application/json
       produces:
@@ -805,7 +805,7 @@ paths:
                   The *new-secret-phrase* provided above signed with the private key corrsponding to the
                   *new-user-address*.
 
-                  The signature uses Bitcoin's ECDSA curve - secp256k1.
+                  Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
       security:
         - Authorization Header: []
       consumes:
