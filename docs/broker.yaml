@@ -739,6 +739,15 @@ paths:
                   *invitee-user-address*.
 
                   Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+              since:
+                type: string
+                description: |
+                  If an [*entry-fee*](#tag-datastore-key-settings) is specified for a *datastore-key*, transactions from *invitee-user-address*
+                  to *inviter-user-address* need to be tallied.  All historical transactions are tallied unless this parameter is specified.
+
+                  Retrieve transactions since this date-time (inclusive) until now.
+
+                  The date-time is a string in [ISO 8601/RFC3339 format](https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14).
       consumes:
         - application/json
       produces:
