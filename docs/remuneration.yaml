@@ -1,4 +1,4 @@
-swagger: '2.0'
+swagger: 2.0
 host: overhide.io
 basePath: /remunerate
 schemes:
@@ -134,6 +134,7 @@ paths:
         400:
           $ref: "#/responses/400"
         401:
+          $ref: "#/responses/401"
         429:
           $ref: "#/responses/429"
 definitions:
@@ -166,6 +167,9 @@ responses:
         enum:
           - address incompatible
           - invalid signature
+  401:
+    description: |
+      Basic-auth check failed.
   429:
     description: |
       Client is calling the API too frequently.
