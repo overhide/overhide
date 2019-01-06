@@ -15,7 +15,7 @@
   },
   "scripts": {
     "build:broker": "bootprint openapi docs/broker.yaml docs/.generated/broker",
-    "build:remuneration": "bootprint openapi docs/remuneration.yaml docs/.generated/remuneration",
+    "build:remuneration": "bootprint openapi http://localhost:8081/swagger.json docs/.generated/remuneration",
 
     "mangle-for-local:md2html": "github-markdown README.md -h -s docs/styles/github.css > readme.html & github-markdown docs/glossary.md -h -s styles/github.css > docs/glossary.html & github-markdown docs/identity.md -h -s styles/github.css > docs/identity.html & github-markdown docs/decentralization.md -h -s styles/github.css > docs/decentralization.html & github-markdown docs/trustlessness.md -h -s styles/github.css > docs/trustlessness.html & github-markdown docs/overhide.js.md -h -s styles/github.css > docs/overhide.js.html",        
     "mangle-for-local:github2local1": "replace-in-file /https:\\/\\/github.com\\/JakubNer\\/overhide\\/blob\\/master/g ../../.. docs/.generated/**/index.html --isRegex",
