@@ -623,7 +623,7 @@ paths:
 
             See [subscriptions write-up](https://github.com/JakubNer/overhide/blob/master/docs/identity.md#subscriptions).
         409:
-          $ref: "#/responses/409"
+          $ref: "#/responses/409-identity-conflict"
         429:
           $ref: "#/responses/429"
   /auth/authorities:
@@ -767,7 +767,7 @@ paths:
 
             See [subscriptions write-up](https://github.com/JakubNer/overhide/blob/master/docs/identity.md#subscriptions).
         409:
-          $ref: "#/responses/409"
+          $ref: "#/responses/409-identity-conflict"
         429:
           $ref: "#/responses/429"
   /auth/changed-credentials:
@@ -834,7 +834,7 @@ paths:
         401:
            $ref: "#/responses/401"
         409:
-          $ref: "#/responses/409"
+          $ref: "#/responses/409-identity-conflict"
         429:
           $ref: "#/responses/429"
   /auth/{remuneration-key}/{from-address}/{to-address}/transactions:
@@ -907,7 +907,7 @@ paths:
         401:
            $ref: "#/responses/401"
         409:
-          $ref: "#/responses/409"
+          $ref: "#/responses/409-identity-conflict"
         429:
           $ref: "#/responses/429"
   set data:
@@ -928,17 +928,20 @@ paths:
           name: payload
           description: |
 
-            | *syntax*        | *bytes* | *value* |
-            | ---             | ---     | ---     |
-            | req-id          | 8       |         |
-            | len             | 8       | SL + IL + length(payload) + 4 |
-            | opcode          | 1       | 0x01    |
-            | segment-key-len | 1       | SL == length(segment-key) |
-            | segment-key     | SL      |         |
-            | identity-len    | 1       | IL == length(identity) |
-            | identity        | IL      |         |
-            | flags           | 1       |         |
-            | payload         | *       | ``      |
+            | *syntax*          | *bytes* | *value* |
+            | ---               | ---     | ---     |
+            | req-id            | 8       |         |
+            | len               | 8       | SL + IL + length(payload) + 4 + [32] |
+            | opcode            | 1       | 0x01    |
+            | segment-key-len   | 1       | SL == length(segment-key) |
+            | segment-key       | SL      |         |
+            | identity-len      | 1       | IL == length(identity) |
+            | identity          | IL      |         |
+            | flags             | 1       |         |
+            | if flags & 0x10 { |         |         |
+            |   write-gate      | 32      |         |
+            | }                 |         |         |
+            | payload           | *       | ``      |
           schema:
             type: object
             required:
@@ -958,7 +961,7 @@ paths:
               len:
                 type: number
                 description: |
-                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.
+                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.  32 bytes are added for a *write-gate* if *flags* has `0x10` set.
               opcode:                  
                 type: bytes
                 description: |
@@ -990,7 +993,13 @@ paths:
                   | --- | --- | --- |
                   | 0x04 | wait-until-persisted | `1`: wait until datastore-key changes are persisted |
                   | 0x08 | wait-until-shared | `1`: wait until datastore-key changes are shared on distributed persistence network |
+                  | 0x10 | gate-the-write | `1`: use SHA256 in *write-gate* to check value at *segment-key* for equality before overriding. |
                   | 0x80 | done | `1`: this payload is not fragmented; `0`: this payload is a fragment and subsequent [continue](#operation-continue-WIRE) messages will follow after the broker responds with a *200*. |
+              write-gate:
+                type: bytes
+                description: |
+                  Optional write "gate": a 32 byte SHA256 hash value of the content being replaced by this set operation.  If this hash does not match the current value at this *segment-key*, this
+                  set operation will fail with error code 409.
               payload:
                 type: bytes
                 description: |
@@ -1011,6 +1020,8 @@ paths:
           $ref: "#/responses/400"
         code == 403:
           $ref: "#/responses/403"
+        code == 409:
+          $ref: "#/responses/409-write-conflict"
         code == 429:
           $ref: "#/responses/429"
   get data:
@@ -1724,17 +1735,20 @@ paths:
           name: payload
           description: |
 
-            | *syntax*        | *bytes* | *value* |
-            | ---             | ---     | ---     |
-            | req-id          | 8       |         |
-            | len             | 8       | SL + IL + length(payload) + 4 |
-            | opcode          | 1       | 0x08    |
-            | segment-key-len | 1       | SL == length(segment-key) |
-            | segment-key     | SL      |         |
-            | identity-len    | 1       | IL == length(identity) |
-            | identity        | IL      |         |
-            | flags           | 1       | ``      |
-            | payload         | *       | ``      |
+            | *syntax*          | *bytes* | *value* |
+            | ---               | ---     | ---     |
+            | req-id            | 8       |         |
+            | len               | 8       | SL + IL + length(payload) + 4 + [32] |
+            | opcode            | 1       | 0x08    |
+            | segment-key-len   | 1       | SL == length(segment-key) |
+            | segment-key       | SL      |         |
+            | identity-len      | 1       | IL == length(identity) |
+            | identity          | IL      |         |
+            | flags             | 1       | ``      |
+            | if flags & 0x10 { |         |         |
+            |   write-gate      | 32      |         |
+            | }                 |         |         |
+            | payload           | *       | ``      |
           schema:
             type: object
             required:
@@ -1744,6 +1758,7 @@ paths:
               - segment-key-len
               - segment-key
               - identity-len
+              - identity
               - flags
               - payload
             properties:
@@ -1754,7 +1769,7 @@ paths:
               len:
                 type: number
                 description: |
-                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.
+                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.  32 bytes are added for a *write-gate* if *flags* has `0x10` set.
               opcode:                  
                 type: bytes
                 description: |
@@ -1786,6 +1801,13 @@ paths:
                   | --- | --- | --- |
                   | 0x04 | wait-until-persisted | `1`: wait until datastore-key changes are persisted |
                   | 0x08 | wait-until-shared | `1`: wait until datastore-key changes are shared on distributed persistence network |                  
+                  | 0x10 | gate-the-write | `1`: use SHA256 in *write-gate* to check value at *segment-key* for equality before overriding. |
+                  | 0x80 | done | `1`: this payload is not fragmented; `0`: this payload is a fragment and subsequent [continue](#operation-continue-WIRE) messages will follow after the broker responds with a *200*. |
+              write-gate:
+                type: bytes
+                description: |
+                  Optional write "gate": a 32 byte SHA256 hash value of the content being replaced by this set operation.  If this hash does not match the current value at this *segment-key*, this
+                  set operation will fail with error code 409.
               payload:
                 type: bytes
                 description: |
@@ -1806,12 +1828,14 @@ paths:
           $ref: "#/responses/400"
         code == 403:
           $ref: "#/responses/403"
+        code == 409:
+          $ref: "#/responses/409-write-conflict"
         code == 429:
           $ref: "#/responses/429"
   get delegate data:
     options:
       summary: A delegate retrieves their specific value under this datastore-key.
-      description: |
+      description: |  
         Retrieve contents from *datastore-key* (segment-key @ identity) qualified by the caller's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).  
 
         This call requires two identities:  the *segment-key* and [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) request parameters constitute the *datastore-key*.  The [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from the [authorization header](#security-definition-Authorization Header)
@@ -1841,6 +1865,7 @@ paths:
               - segment-key-len
               - segment-key
               - identity-len
+              - identity
             properties:
               req-id:
                 type: number
@@ -1932,6 +1957,7 @@ paths:
               - segment-key-len
               - segment-key
               - identity-len
+              - identity
               - flags
             properties:
               req-id:
@@ -2025,6 +2051,7 @@ paths:
               - segment-key-len
               - segment-key
               - identity-len
+              - identity
             properties:
               req-id:
                 type: number
@@ -3134,15 +3161,15 @@ definitions:
       working-memory:
         type: string
         description: |
-          Content [multihash](https://github.com/multiformats/multihash) of the value in the broker's volatile memory.
+          SHA256 content hash as '0x' prefixed upper-case hex string of the value in the broker's volatile memory.
       permanent-memory:
         type: string
         description: |
-          Content [multihash](https://github.com/multiformats/multihash) of the value in the broker's non-volatile storage.
+          SHA256 content hash as '0x' prefixed upper-case hex string of the value in the broker's volatile memory.
       shared-memory: 
         type: string
         description: |
-          Content [multihash](https://github.com/multiformats/multihash) of the value on the broker's distributed persistence network.
+          SHA256 content hash as '0x' prefixed upper-case hex string of the value in the broker's volatile memory.
   Message:
     type: object
     required:
@@ -3355,13 +3382,18 @@ responses:
       The message enum might be extended by broker system.
 
       Broker systems might not throw up this response when read and write rates are exceeded.  Instead a broker system might start throttling responses or responding at a lower-priority.
-  409:
+  409-identity-conflict:
     description: |
       Go play a lottery:  the generated identity conflicts with some other identity or ended up being a restricted number <10000.
 
       *User-address* hashed with its *secret-phrase* must be unique within the system.  Another *user-address*/*secret-phrase* already in the system hashes to the same hash as the provided *user-address*/*secret-phrase*.
 
       Try a different *secret-phrase*.
+  409-write-conflict:
+    description: |
+      Occurs when a data set operation includes a *write-gate* parameter that has a SHA256 value which does not match the SHA256 hash of the current (in-datastore) value of a *segment-key*.
+
+      A data write is requested on a *segment-key* that has an unexpected value in the datastore.  Implies there is a concurrent write issue. 
   429:
     description: |
       Client is calling the API too frequently.
