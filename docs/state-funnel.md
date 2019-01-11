@@ -30,6 +30,6 @@ The *rolodex* as a binary-tree of key-values demonstrates this in the example be
 
 Consider an application allowing regional teams to work through sales workflows from quote to final order.  The team brings their own data into the application.  The application is written to work with the following domain model:
 
-![Static model of example domain.](docs/images/state-funnel.png)
+![Static model of example domain.](images/state-funnel.png)
 
 Although the application is written with a specific domain model, the data set the team works with is limited to just that team.
