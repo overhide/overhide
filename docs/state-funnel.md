@@ -16,7 +16,7 @@ The rest of this write-up is an example detailing out flow of data between team-
 
 If you design your system with the expectation of "bring your own data" as a fundamental tenet, you can have a much more manageable data set to enumerate and traverse.
 
-I don't mean literally.  The data sits in *overhide*.  I mean figurativelly; the team furnishes their own team-specific data by referencing relevant keys in the datastore.
+I don't mean literally.  The data sits in [IPFS](https://ipfs.io/) and accessed with *overhide*.  I mean figurativelly; the team furnishes their own team-specific data by referencing relevant keys in the datastore.
 
 Queries to narrow down your data-set just to the records your team is interested in are not needed.
 
