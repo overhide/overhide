@@ -20,7 +20,7 @@ I don't mean literally.  The data sits in [IPFS](https://ipfs.io/) and accessed 
 
 With such a design there is no need for queries that narrow down a huge data-set to the records your team is interested in: they're all your team's records.
 
-However queries within your narrower data-set are usually unavoidable for many applications.  We still need an ability to query the data dispersed in our key-values.  This cannot be relegated to the *overhide* as a back-end--as *overhide* is completelly uninterested in what your data is and cannot help.  A judicious use of key-values to store metadata references can go a long way to quickly search through your domain.
+However queries within your narrower data-set are usually unavoidable for many applications.  We still need an ability to query the data dispersed in our key-values.  This cannot be relegated to the *overhide* as a back-end--as *overhide* is completelly uninterested in what your data is and cannot help.  But there is a way:  a judicious use of key-values to store metadata references can go a long way to quickly search through your domain.
 
 The *rolodex* as a binary-tree of key-values demonstrates this in the example below.
 
