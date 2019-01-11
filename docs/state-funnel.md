@@ -10,5 +10,18 @@ It's all in the title:
 * **thick client think client ambivalence**: *overhide* provided data crunching is done--or at least mediated--client-side (instead of a back-end)
 * **relations**: this isn't a relational store, but you can certainly store relations; with *overhide*'s segmentation of data by owner--e.g. an individual, a team, a group--consider how references to tightly correlated key-values can be effective over a long constantly filtered tables
 
-The rest of this write-up will be an example detailing out flow of data between team-members--each using a mobile app to collaborate on a common data-set.  Each user's app is a thick client that *funnels* state transitions to keep data *relations* consistent.  The only backend is the *overhide* system.
+The rest of this write-up is an example detailing out flow of data between team-members--each using a mobile app to collaborate on a common data-set.  Each user's app is a thick client that *funnels* state transitions to keep data *relations* consistent.  The only backend is the *overhide* system.
 
+#### Paradigm Shift
+
+If you design your system with the expectation of "bring your own data" as a fundamental tenet, you can have a much more manageable data set to enumerate and traverse.
+
+I don't mean literally.  The data sits in *overhide*.  I mean figurativelly; the team furnishes their own team-specific data by referencing relevant keys in the datastore.  
+
+#### The Example
+
+Consider an application allowing regional teams to work through sales workflows from quote to final order.  The team brings their own data into the application.  The application is written to work with the following domain model:
+
+![Static model of example domain.](docs/images/state-funnel.png)
+
+Although the application is written with a specific domain model, the data set the team works with is limited to just that team.
