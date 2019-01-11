@@ -18,9 +18,9 @@ If you design your system with the expectation of "bring your own data" as a fun
 
 I don't mean literally.  The data sits in [IPFS](https://ipfs.io/) and accessed with *overhide*.  I mean figurativelly; the team furnishes their own team-specific data by referencing relevant keys in the datastore.
 
-Queries to narrow down your data-set just to the records your team is interested in are not needed.
+With such a design there is no need for queries that narrow down a huge data-set to just the records your team is interested in.
 
-However queries within your data-set are unavoidable for many applications.  This cannot be relegated to the *overhide* as a back-end--as *overhide* is completelly uninterested in what your data is and cannot help.  A judicious use of key-values to store metadata references can go a long way to quickly search through your domain.
+However queries within your narrower data-set are usually unavoidable for many applications.  We still need an ability to query the data dispersed in our key-values.  This cannot be relegated to the *overhide* as a back-end--as *overhide* is completelly uninterested in what your data is and cannot help.  A judicious use of key-values to store metadata references can go a long way to quickly search through your domain.
 
 The *rolodex* as a binary-tree of key-values demonstrates this in the example below.
 
