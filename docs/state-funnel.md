@@ -16,7 +16,15 @@ The rest of this write-up is an example detailing out flow of data between team-
 
 If you design your system with the expectation of "bring your own data" as a fundamental tenet, you can have a much more manageable data set to enumerate and traverse.
 
-I don't mean literally.  The data sits in *overhide*.  I mean figurativelly; the team furnishes their own team-specific data by referencing relevant keys in the datastore.  
+I don't mean literally.  The data sits in *overhide*.  I mean figurativelly; the team furnishes their own team-specific data by referencing relevant keys in the datastore.
+
+Queries to narrow down your data-set just to the records your team is interested in are not needed.
+
+However queries within your data-set are unavoidable for many applications.  This cannot be relegated to the *overhide* as a back-end--as *overhide* is completelly uninterested in what your data is and cannot help.  A judicious use of key-values to store metadata references can go a long way to quickly search through your domain.
+
+The *rolodex* as a binary-tree of key-values demonstrates this in the example below.
+
+> We have all intentions to bolster the [overhide.js](http://overhide.io/overhide/docs/overhide.js.html) client-side library with helper methods to aid application developers work with references in such binary-tree key-values.  An *overhide* specific client-side reference/query framework if you will.  This sort of boilerplate shouldn't have to be subsidized by the application developer.
 
 #### The Example
 
