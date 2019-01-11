@@ -24,7 +24,7 @@ However queries within your narrower data-set are usually unavoidable for many a
 
 The *rolodex* as a binary-tree of key-values demonstrates this in the example below.
 
-> We have all intentions to bolster the [overhide.js](http://overhide.io/overhide/docs/overhide.js.html) client-side library with helper methods to aid application developers work with references in such binary-tree key-values.  An *overhide* specific client-side reference/query framework if you will.  This sort of boilerplate shouldn't have to be subsidized by the application developer.
+> Not there yet, but we will bolster the [overhide.js](http://overhide.io/overhide/docs/overhide.js.html) client-side library with helper methods to aid application developers work with references in such binary-tree key-values.  An *overhide* specific client-side reference/query framework if you will.  This sort of boilerplate shouldn't have to be subsidized by the application developer.
 
 #### The Example
 
