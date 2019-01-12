@@ -116,6 +116,6 @@ By convention this library is to be provided in the global context via an `overh
 
 An instance of this object could be made available to app/service code running in a browser via a [*keybiner*](docs/glossary.md#keybiner--keyrings) browser extension--similar to what *MetaMask* does with *web3.js* in *Chrome*.  This setup effectively removes the need to trust every app/service developer; just the "keybiner" needs to be trusted.
 
-## [On Applicability](docs/state-funnel.md)
+## [On Applicability of a Key-Value Store](docs/state-funnel.md)
 
 An example of *overhide* [applicability](docs/state-funnel.md) to a problem customairly solved with a relational database in the back-end.
