@@ -25,7 +25,13 @@ With such a design there is no need for queries that narrow down a huge data-set
 
 Even though you're dealing with a data-set cohesive to your team, some queries within this narrower data-set are usually unavoidable.  We still need an ability to query the data dispersed in our key-values.  This cannot be relegated to the *overhide* as a back-end--as *overhide* is completelly uninterested in what your data is and cannot help.  But there is a way:  a judicious use of index files to store metadata references can go a long way to quickly search through your domain.
 
+Consider organizing your metadata into lists of references keyed appropriatelly.  For example all the contacts can be referenced from lists comprizing a rolodex.  All the quotes and orders are perhaps tied to a date, a month.  You might want to organize them in indexes by month.  There is nothing stopping you from having multiple different indexes to each referenced key.
+
 ![Using index files](images/index_files.png)
+
+For the rolodex example of index lists to contacts, the key-values might look like the model below.  Notice that each index file is a list of all contacts with a last name starting with a particular letter.
+
+![Rolodex](images/rolodex.png)
 
 #### The Example
 
