@@ -1,16 +1,17 @@
-# The State Funnel -- On Thick Client Thin Client Ambivalence and Relations in a Key-Value Store
+# On Applicability of a Key-Value Store
 
 The *overhide* system is here as an alternative backend for apps and services.  It provides authentication, authorization, and a data store.  But does it apply in many projects?  Can you fit it in your architecture?
 
 This write-up is meant to provoke a way of thinking when writing a meaningful collaborative application without a relational database, with just a key-value store.
 
-It's all in the title:
+Some concepts to consider:
 
 * **state funnel**: state of data is funneled via [backchannels](http://overhide.io/overhide/docs/glossary.html#backchannel-queue) to update [segment-key](http://overhide.io/overhide/docs/glossary.html#segment-key) values in a gated fashion
 * **thick client thin client ambivalence**: the datastore is just that, a store of data, all data is processed and mediated client-side: the client thickens as the back-end stays thin
 * **relations**: this isn't a relational store, but you can certainly store relations; with *overhide*'s segmentation of data by owner (an individual, a team, a group) relations are references to tightly correlated datastore keys
+* **indices**: any data indices are necessairly client-managed value blobs in the datastore with references to particular keys; if a searchable list of strings-to-references is not enough, you could always store of [DB documents](https://github.com/louischatriot/nedb)
 
-#### Paradigm Shift
+#### Bring Your Own Data
 
 If you design your system with the expectation of "bring your own data" as a fundamental tenet, you can have a much more manageable data set to enumerate and traverse.
 
@@ -20,11 +21,11 @@ With such a design there is no need for queries that narrow down a huge data-set
 
 ![Huge data set from RDBMS versus key-value document store](images/huge_data_set.png)
 
-Even though you're dealing with a data-set cohesive to your team, some queries within this narrower data-set are usually unavoidable.  We still need an ability to query the data dispersed in our key-values.  This cannot be relegated to the *overhide* as a back-end--as *overhide* is completelly uninterested in what your data is and cannot help.  But there is a way:  a judicious use of key-values to store metadata references can go a long way to quickly search through your domain.
+#### The Rolodex: Index Files
 
-The *rolodex* as a binary-tree of key-values demonstrates this in the example below.
+Even though you're dealing with a data-set cohesive to your team, some queries within this narrower data-set are usually unavoidable.  We still need an ability to query the data dispersed in our key-values.  This cannot be relegated to the *overhide* as a back-end--as *overhide* is completelly uninterested in what your data is and cannot help.  But there is a way:  a judicious use of index files to store metadata references can go a long way to quickly search through your domain.
 
-> Not there yet, but we will bolster the [overhide.js](http://overhide.io/overhide/docs/overhide.js.html) client-side library with helper methods to aid application developers work with references in such binary-tree key-values.  An *overhide* specific client-side reference/query framework if you will.  This sort of boilerplate shouldn't have to be subsidized by the application developer.
+![Using index files](images/index_files.png)
 
 #### The Example
 
