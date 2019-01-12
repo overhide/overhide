@@ -9,7 +9,7 @@ Some concepts to consider:
 * **state funnel**: state of data is funneled via [backchannels](http://overhide.io/overhide/docs/glossary.html#backchannel-queue) to update [segment-key](http://overhide.io/overhide/docs/glossary.html#segment-key) values in a gated fashion
 * **thick client thin client ambivalence**: the datastore is just that, a store of data, all data is processed and mediated client-side: the client thickens as the back-end stays thin
 * **relations**: this isn't a relational store, but you can certainly store relations; with *overhide*'s segmentation of data by owner (an individual, a team, a group) relations are references to tightly correlated datastore keys
-* **indices**: any data indices are necessairly client-managed value blobs in the datastore with references to particular keys; if a searchable list of strings-to-references is not enough, you could always store of [DB documents](https://github.com/louischatriot/nedb)
+* **indices**: any data indices are necessairly client-managed value blobs in the datastore with references to particular keys; if a searchable list of strings-to-references is not enough, you could always store off [DB documents](https://github.com/louischatriot/nedb)
 
 ## Bring Your Own Data
 
