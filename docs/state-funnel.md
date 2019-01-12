@@ -18,6 +18,8 @@ I don't mean "bring it" literally.  The data sits on the network; in [IPFS](http
 
 With such a design there is no need for queries that narrow down a huge data-set to the records your team is interested in: they're all your team's records.  Contrast this with a typical SQL workflow, which starts by selecting a subset of client specific data from a table with millions of unrelated records.
 
+![Huge data set from RDBMS versus key-value document store](images/huge_data_set.png)
+
 Even though you're dealing with a data-set cohesive to your team, some queries within this narrower data-set are usually unavoidable.  We still need an ability to query the data dispersed in our key-values.  This cannot be relegated to the *overhide* as a back-end--as *overhide* is completelly uninterested in what your data is and cannot help.  But there is a way:  a judicious use of key-values to store metadata references can go a long way to quickly search through your domain.
 
 The *rolodex* as a binary-tree of key-values demonstrates this in the example below.
