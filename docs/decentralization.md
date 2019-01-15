@@ -1,5 +1,14 @@
 # Data Decentralization
 
+## Opt-In
+
+By default all of a broker's data is stored in broker-local storage and not decentralized.
+
+A user has to either [opt-in all their data](broker.html#operation--auth-opt-in--agree--put) or [select *segment-keys*](broker.html#definition-DatastoreKeySettings) to 
+leverage the data decentralization discussed here.
+
+With the exception of the section on [manual import/export](#other-considerations), this write-up discusses [data-stewardship](glossary.html#data-steward) and use of [*IPFS*](https://ipfs.io/) as if the user did opt-in into decentralized persistence.
+
 ## Data Stewardship
 
 Data decentralization in *overhide* is supported by an explicitly managed network of [data-stewards](glossary.html#data-steward).  
@@ -104,6 +113,6 @@ The messages are encrypted in a [usage specific way](glossary.md#datastore-value
 
 Metadata for a specific [*segment-key*](glossary.md#segment-key) lives under *//repo/[\<identity>](identity.md)/[\<segment-key>](glossary.md#segment-key)/.metadata* file.
 
-Each queue is navigable via [*IPNS*](https://docs.ipfs.io/guides/concepts/ipns/) by dereferencing *\<GUID>/[\<segment-key>](glossary.md#segment-key)/.metadata*.
+Each metadata file is navigable via [*IPNS*](https://docs.ipfs.io/guides/concepts/ipns/) by dereferencing *\<GUID>/[\<segment-key>](glossary.md#segment-key)/.metadata*.
 
 This file is not meant for consumption by the user, but by *overhide* systems; these files are plain-text with pseudonymous content.

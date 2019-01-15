@@ -342,7 +342,7 @@ It is up to the user--the user's tooling--to manage data stewardship via the [br
 
 The *overhide* system expects brokers to be peers on a distributed persistence network as per the [decentralization write-up](decentralization.md).
 
-Each client to *overhider* brokers has their data shared on this network.  A client's data on this network is referenced using GUIDs -- Globally Unique IDs.  E.g. GUIDs on the [IPFS](https://ipfs.io/) network are IPNS names as discussed in the [decentralization write-up](decentralization.md).
+Each client to *overhider* brokers can opt-in their data to being stored on this network.  A client's data on this network is referenced using GUIDs -- Globally Unique IDs.  E.g. GUIDs on the [IPFS](https://ipfs.io/) network are IPNS names as discussed in the [decentralization write-up](decentralization.md).
 
 GUIDs are used heavily for [managing data stewardship via the broker APIs](broker.html#tag-data-stewardship).
 

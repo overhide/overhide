@@ -86,6 +86,7 @@ tags:
       * authenticate providing an [access token](#security-definition-Authorization Header): authenticate subscribers of 
         the system and invitees of subscribers of the system.
       * work with  authority levels.
+      * opt-in persistence network storage
       * change *identity* credentials.  Setting *identity* for the first time is
       done with the [authenticate endpoint](#operation--auth-credentials-put).
       * work with subscription details for a supported remuneration API and a
@@ -106,13 +107,24 @@ tags:
   - name: datastore-key settings
     description: |
       Setting access metadata for *datastore-keys*.
+
+      * write rights
+      * publish rights
+      * delegate access rights
+      * entry-fee: minimum remuneration to access
+      * read/write limits
+      * opt-in for decentralized storge
   - name: metrics
     description: |
       Usage metrics for specific *datastore-keys* or overall for the *identity*.
   - name: data-stewardship
     description: |
       Stewardship of a users's data.
-      
+
+      Stewardship of data is important regardless whether an *identity* opts-in into decentralized storage or not.
+      All but [one](#operation--opt-in-data-post) of these APIs deal with stwardship regardless of decentralization opt-in selected: see 
+      [opt-in endpoint](#operation--auth-opt-in--agree--put) and [*segment-key* specific opt-in](#definition-DatastoreKeySettings).  
+          
       * manage this broker's stewardship mode for an identity's data:  [active/passive stewardship](glossary.html#data-steward)
       * manage distributed persistence network particulars for a user
       * review [content propagation status](glossary.html#working-memory-permanent-memory-shared-memory-persistence-status)--of user's data and messages--to the distributed persistence network
@@ -829,6 +841,50 @@ paths:
         200:
           description: |
             Credentials successfully changed.
+        400:
+          $ref: "#/responses/400"
+        401:
+           $ref: "#/responses/401"
+        409:
+          $ref: "#/responses/409-identity-conflict"
+        429:
+          $ref: "#/responses/429"
+  /auth/opt-in/{agree}:
+    put:
+      summary:  Opt-in to store all data for an identity via the broker's decentralized persistence.
+      description: |
+        Opt-in to store all data for an *identity* via the broker's decentralized persistence.
+
+        By default all data for an *identity* is stored on this broker's local persistence.
+
+        Unless opted-in, data is not decentralized: it does not end up on the broker's decentralized persistence.
+
+        For fine-grained control you may instead selectivelly [opt-in each key *segment-key*](#definition-DatastoreKeySettings).
+
+        You can still inspect all your data; [import](#operation-import-WIRE) or [export](#operation-export-WIRE) it manually.
+
+        To automatically make all of an *identity's* data eventually consistent with the decentralized persistence network, 
+        ensure to opt-in that *identity* with this endpoint.
+      tags:
+        - auth
+      parameters:
+        - in: path
+          name: agree
+          required: true
+          description: |
+            Truthy string such as 'true' matching the regex `/t/i` will opt-in.  To opt-out send in a falsey string such as 'false' not matching
+            that regex.
+
+            All data for authenticated *identity* will be opted in.
+          type: string
+      security:
+        - Authorization Header: []
+      consumes:
+        - application/json
+      responses:
+        200:
+          description: |
+            Opt-in changed.
         400:
           $ref: "#/responses/400"
         401:
@@ -2495,20 +2551,18 @@ paths:
           $ref: "#/responses/403"
         429:
           $ref: "#/responses/429"              
-  /all-data:
+  /opt-in-data:
     post:
-      summary: Set all user's data from a connected persistence network.
+      summary: Set all user's opt-in data from a connected persistence network.
       description: |
-        All of the user's data with caller's *identity* is wiped and reset to data available at the 
-        same *identity* on the specificed persistence network.  The network data is identified by the provided
-        *GUID*.  The broker must be able to exchange data on the network that's identified by *type-key*.
+        For all *segment-keys* available on the decentralized persistence, data in this broker's  *segment-keys* is wiped and reset to data available at the same *identity* on the specificed persistence network.  The network data is identified by the provided *GUID*.  The broker must be able to exchange data on the network that's identified by *type-key*.
 
-        This setter works in conjunction with the [*GUIDs* getter](#operation--guids-get), which is to be called
-        against the source broker instance.  The source broker is a broker currently furnishing the data to 
+        Note that the only *segment-keys* imported are ones explicitly opted-in on the [active steward](glossary.html#data-steward) with either the [opt-in endpoint](#operation--auth-opt-in--agree--put) or the [*segment-key* specific opt-in]().
+
+        This setter works in conjunction with the [*GUIDs* getter](#operation--guids-get), which is to be called against the source broker instance.  The source broker is a broker currently furnishing the data to 
         the network.
 
-        The broker is returned to being a "passive" steward of data for the *identity*.  The caller must [re-enable active stewardship](#operation--active-stewardship-put)
-        if desired.
+        The broker is returned to being a "passive" steward of data for the *identity*.  The caller must [re-enable active stewardship](#operation--active-stewardship-put)        if desired.
 
         If transferring a *segment-key* with a public restricted identity (0 .. 9999), if the
         *segment-key* already exists at provided identity for a different *owner*, the message
@@ -2897,6 +2951,7 @@ definitions:
       - limit-others-read-rate
       - limit-others-write-rate
       - delegate-data-ttl-seconds
+      - opt-in
     properties:
       allow-write:
         type: string
@@ -3077,6 +3132,10 @@ definitions:
         type: number
         description: |
           Time-to-live--in seconds--of [delegate data](#tag-delegate) before it is elegible for cleanup.  Refreshed on any activity on the *segment-key* qualified by the delegate.  
+      opt-in:
+        type: boolean
+        description: |
+          Opt-in this *segment-key* to be stored on this broker's decentralized persistence.  
   Metrics:
     type: object
     required:
