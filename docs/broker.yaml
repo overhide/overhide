@@ -572,6 +572,8 @@ paths:
       description: |
         Authenticate an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) returning a token to be used for [token
         authentication](#security-definition-Authorization Header) in the rest of the API.
+        
+        > Note that the token will be returned as part of a *200/OK* result code or a *302/FOUND* result code.
       tags:
         - auth
       parameters:
@@ -626,6 +628,11 @@ paths:
             overhide broker.
           schema:
             type: string
+        302:
+          description: |
+            Found -- the *login* succeeded and the authentication token is returned in the payload as per 200/OK.  For subsequent interaction with the API--including engaging the [WIRE connection](#security-definition-Authorization%20WSS)--you must use the URL in the returned `Location: <url>` header.
+            
+            This return code is to be expected when the broker is being load-balanced.
         400:
           $ref: "#/responses/400"
         402:
@@ -683,6 +690,8 @@ paths:
         we want to calculate it.
 
         Returns an "invitee" token to be used for [token authentication](#security-definition-Authorization Header) in the rest of the API.
+        
+        > Note that the token will be returned as part of a *200/OK* result code or a *302/FOUND* result code.
 
         The *invitee-user-address*  hashed by *invitee-secret-phrase* is the invitee's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md)
         for the purposes of [write/publish permissions](#definition-DatastoreKeySettings) on *segment-keys*.
@@ -771,6 +780,11 @@ paths:
             overhide broker.
           schema:
             type: string
+        302:
+          description: |
+            Found -- the *login* succeeded and the authentication token is returned in the payload as per 200/OK.  For subsequent interaction with the API--including engaging the [WIRE connection](#security-definition-Authorization%20WSS)--you must use the URL in the returned `Location: <url>` header.
+            
+            This return code is to be expected when the broker is being load-balanced.            
         400:
           $ref: "#/responses/400"
         402:
