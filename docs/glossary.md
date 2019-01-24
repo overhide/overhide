@@ -14,9 +14,13 @@ Function of *X*:  *X* is used in generation of result from *F*.
 
 *x-key* is used as a public key in a private-public pair.
 
+> ECIES in *overhide.js* with *secrets[?]* as 32 byte private key generating 65 byte public key (see *secrets* below).
+
 #### x-key<sub>priv</sub>
 
 *x-key* is used as a private key in a private-public pair.
+
+> ECIES in *overhide.js* with *secrets[?]* as 32 byte private key generating 65 byte public key (see *secrets* below).
 
 #### x-key<sub>pub | priv</sub>&rArr;
 
@@ -35,9 +39,13 @@ In this write-up F(*x-key<sub>sym</sub>*) is context specific:
 * *x-key<sub>sym</sub>*(plaintext) means *x-key<sub>sym</sub>* encrypts plaintext into cyphertext.
 * *x-key<sub>sym</sub>*(cyphertext) means *x-key<sub>sym</sub>* decrypts cyphertext into plaintext.
 
+> AES 256 CTR in *overhide.js* with *secrets[?]* as passphrase  (see *secrets* below).
+
 #### salt<sub>hash</sub>(payload)
 
 Hash of *payload* with provided *salt*.
+
+> SHA256 in *overhide.js* with *secrets[?]* as salt  (see *secrets* below).
 
 #### x-key<sub>priv | pub | sym</sub>(payload)
 
@@ -46,6 +54,8 @@ Result (ciphertext) of a *payload* encrypted with the specified key.
 #### x-key<sub>sig</sub>(message)
 
 *message* is signed with *x-key<sub>priv</sub>*.  *message* and *x-key<sub>sig</sub>(message)* can be verified with *x-key<sub>pub</sub>*.
+
+> ECDSA in *overhide.js* with *secrets[?]* as 32 byte private key generating 65 byte public key (see *secrets* below).
 
 ## Definitions
 
@@ -69,11 +79,13 @@ For example a *member-group-key* is a function of *user-key*: F(user-key). which
 
 #### secrets
 
-Secrets are an array of private key-public address pairs obtained from a 12 word mneumonic using the BIP39 algorithm.
+The *secrets[?]* array is an *overhide.js* convention.  It's an array of 32 byte secrets.  It's an array of public addresses from simple ('m/i') [BIP32](http://bip32.org/) key-pairs.  Note that the compressed addresses from each key-pair is 32 bytes after removing the 1 byte BIP32 prefix.  
 
-Secrets can be per user, per service, per group, whatever the domain calls for.
+The *secrets[?]* array master node is seeded with an 18 word mnemonic using the BIP39 algorithm.
 
-*secrets* is an array, *secrets[0]* would be the first key pair of *secrets[0]<sub>pub</sub>* and *secrets[0]<sub>priv</sub>*.  Keys from *secrets* can be used for:
+These *secrets[?]* don't relate to users' blockchain addresses:  they're available for convenience when leveraging *overhide.js*.
+
+Different *secrets* indices can be used at different times for:
 
 * hash salts
 * symmetric keys
@@ -81,8 +93,6 @@ Secrets can be per user, per service, per group, whatever the domain calls for.
 * signature keys
 * identities
 * addresses
-
-*secrets[?]<sub>priv</sub>* would be any/some secret from the array: domain/context specific.
 
 *overhide.js* promotes the use of such secrets via the concept of a "keyring": instead of user generated pass-phrases.
 
@@ -98,11 +108,11 @@ It also contains private keys used to sign transactions on behalf of the public 
 
 #### keybiner & keyrings
 
-A *keybiner* is a collection of *keyrings*.  A *keyring* is a mapping of assymetric key-pairs to a particular *overhide* broker system, for a particular *service*.  I.e. a *keyring* is a set of keys for a particular purpose grouped together.
+A *keybiner* is a collection of *keyrings*.  A *keyring* is a mapping of crypto key-pairs to a particular *overhide* broker system, for a particular *service*.  I.e. a *keyring* is a set of keys for a particular purpose grouped together.
 
-An application will repetativelly access a particular *overhide* broker instance with a particular blockchain public key (address) for identification.  The corresponding blockchain private key is also needed on-hand--only in-browser--for signatures.  For convenience, better user experience, better application flow, it's desirable to store a mapping of all these identifiers and tokens on the client machine, e.g. in the client browser.  All these identifiers and tokens for a single purpose comprise a *keyring*.  Multiple such *keyrings* are stored in the client's *keybiner*.
+An application will repetitively access a particular *overhide* broker instance with a particular blockchain public key (address) for identification.  The corresponding blockchain private key is also needed on-hand--only in-browser--for signatures.  For convenience, better user experience, better application flow, it's desirable to store a mapping of all these identifiers and tokens on the client machine, e.g. in the client browser.  All these identifiers and tokens for a single purpose comprise a *keyring*.  Multiple such *keyrings* are stored in the client's *keybiner*.
 
-The assymetric key-pairs in *keyrings* include public blockchain address keys and references to their private signing keys, as well as any additional keys the application may want to keep track of.  The additional keys are described above in the *secrets* section, and are usually generated using a mnemonic.
+The asymmetric key-pairs in *keyrings* include public blockchain address keys and references to their private signing keys, as well as any additional keys the application may want to keep track of.  The additional keys are described above in the *secrets* section, and are usually generated using a mnemonic.
 
 It's unlikely the private signing keys of a public blockchain will be made available to the *keybiner*, they will be kept in the user's *wallets*.  As such the *keyrings* may not store the keys themselves, but references to the keys in their particular *wallet*.
 
@@ -222,7 +232,7 @@ Each datastore-value is somehow encrypted.  Details of encryption depend on the 
 In *overhide.js* a *datastore-value* can be encrypted using:
 
 * AES256 for symmetric encryption
-* ECDSA for asymmetric encryption
+* ECIES for asymmetric encryption
 
 The encryption key used for the datastore-value is the *datastore-value-secret*.
 
