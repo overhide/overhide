@@ -24,18 +24,17 @@ A "user" could be a person who wants to own all the data used by the "service" a
 
 For reference, below is a sample model of the above mentioned components.  In <span style="color:lightgreen">green</span> are the artifacts documented by this repository.
 
-Note that the model below shows a browser with *overhide's* [*keybiner*](docs/glossary.md#keybiner--keyrings) injecting [*overhide.js*](docs/overhide.js.md)--an implementation of the *overhide* JavaScript client API.  The *overhide.js* references blockchain APIs (*web3.js*, *shapeshift*) as injected by [*wallets*](docs/glossary.md#wallet).  The blockchain APIs as well as the *overhide broker* are seen using the *Ethereum blockchain*.  The broker is also seen using [*IPFS*](https://ipfs.io/) for persistence.  This is but one model of possible implementation patterns; it is the reference model.  There is nothing precluding a service or tooling written in any language from using the APIs directly, going against another blockchain stack, or a completely different remuneration mechanism altogether (as long as it implements *remuneration API*).
+Note that the model below shows a browser with *overhide's* [*keybiner*](docs/glossary.md#keybiner--keyrings) provided by [*overhide.js*](docs/overhide.js.md)--an implementation of the *overhide* JavaScript client API.  The *overhide.js* references blockchain APIs (*web3.js*, *shapeshift*) as injected by [*wallets*](docs/glossary.md#wallet).  The blockchain APIs as well as the *overhide broker* are seen using the *Ethereum blockchain*.  The broker is also seen using [*IPFS*](https://ipfs.io/) for persistence.  This is but one model of possible implementation patterns; it is the reference model.  There is nothing precluding a service or tooling written in any language from using the APIs directly, going against another blockchain stack, or a completely different remuneration mechanism altogether (as long as it implements *remuneration API*).
 
 ![components](docs/images/provided.png)
 
 * a user uses the Web app, persisting and sharing data via *overhide*
-* a user interfaces with an Ethereum blockchain using their [*wallet*](docs/glossary.md#wallet) browser extension--external to *overhide*, optionally paying service and broker subscriptions
+* a user interfaces with an Ethereum blockchain using their [*wallet*](docs/glossary.md#wallet) browser module--external to *overhide*, optionally paying service and broker subscriptions
 * the app (service) code interfaces with the blockchain via *overhide.js*, a clean abstraction to initiate payment of service and broker subscriptions with a cohesive UX wrapper
 * a user interfaces with a [*keybiner*](docs/glossary.md#keybiner--keyrings) to keep a cohesive mapping of which blockchain key pairs (from the [*wallet*](docs/glossary.md#wallet)) and which *overhide* broker are to be used for a given app (service)
-* All the [*wallet*](docs/glossary.md#wallet) and the [*keybiner*](docs/glossary.md#keybiner--keyrings) extensions are decoupled from the app (service)
+* All the [*wallet*](docs/glossary.md#wallet) and the [*keybiner*](docs/glossary.md#keybiner--keyrings) modules are decoupled from the app (service)
 * the [*wallets*](docs/glossary.md#wallet) inject blockchain libraries--such as Ethereum's *web3.js* JavaScript library or *ShapeShift* API--making it available to any in-browser app, service, or tool; albeit it's advisable to avoid direct use and decouple with *overhide.js*.
-* the [*keybiner*](docs/glossary.md#keybiner--keyrings) injects the *overhide.js* library making it available to any in-browser app, service, or tool
-* the dependency of *overhide.js* on *keybiner* injection is optional--just like *web3.js* injection by a wallet is optional--as the app (service) could bring in its own
+* the [*keybiner*](docs/glossary.md#keybiner--keyrings) is provided by the *overhide.js* library--making it available to any in-browser app, service, or tool
 * the *overhide* broker uses [*IPFS*](https://ipfs.io/) for distributed persistence of the data
 * the "user data" structure in [*IPFS*](https://ipfs.io/) is openly specified and accessible to user with external [*IPFS*](https://ipfs.io/) *tooling*
 * the user has flexibility to point the app (service) to another [*IPFS*](https://ipfs.io/) compatible *overhide* broker to access their data
@@ -70,7 +69,7 @@ Note that the model below shows a browser with *overhide's* [*keybiner*](docs/gl
 * user has the option to treat their online data like any other local computer application data; back it up, export, import, move providers.  
    * depending on service, user might have flexibility to choose own *overhide* broker
 * user continues to have all the availability and reliability benefits of storing data in the cloud/on-prem server
-* user owns their passwords: store them in a browser [*keybiner*](docs/glossary.md#keybiner--keyrings) extension
+* user owns their passwords: store them in a browser [*keybiner*](docs/glossary.md#keybiner--keyrings) module
    * security and recovery as rich as the [*keybiner*](docs/glossary.md#keybiner--keyrings) allows
 
 ### Expected Use Cases
@@ -110,11 +109,9 @@ An [API](docs/remuneration.html) to facilitate proof of payment for remunerating
 
 ## [overhide.js](docs/overhide.js.md)
 
-This [overhide.js JavaScript client library](docs/overhide.js.md) is an implementation of the above APIs.  The library benefits app/service developers in the standard ways.
+This [overhide.js JavaScript client library](docs/overhide.js.md) provides the client implementation of the above APIs.  The library benefits app/service developers in the standard ways.
 
 By convention this library is to be provided in the global context via an `overhide` object.
-
-An instance of this object could be made available to app/service code running in a browser via a [*keybiner*](docs/glossary.md#keybiner--keyrings) browser extension--similar to what *MetaMask* does with *web3.js* in *Chrome*.  This setup effectively removes the need to trust every app/service developer; just the "keybiner" needs to be trusted.
 
 ## [On Applicability of a Key-Value Store](docs/state-funnel.md)
 
