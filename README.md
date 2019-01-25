@@ -79,9 +79,11 @@ The above benefits can only be reaped for certain expected use-cases of a "servi
 * only suitable for certain data patterns where service's data can be reasonably expected to be fully managed within a rich client application: no use of SQL relational data, database-engine, indices, server-side processing, or server-side third-party integrations
 * suitable to make decentralized apps (DApps) regardless of their use of blockchain technology: seems the right fit for DApps' off-chain data and no-chain DApps
 
-## [Glossary & Notation](docs/glossary.md)
+## [Glossary & Notation + Canonical Specifications](docs/glossary.md)
 
 Please refer to the [glossary](docs/glossary.md) to get comfortable with terms and notation syntax used within the repo.
+
+Includes canonical specification of algorithm choices and other conventions.
 
 ## [Identity](docs/identity.md)
 
