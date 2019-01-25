@@ -91,6 +91,13 @@ tags:
       done with the [authenticate endpoint](#operation--auth-credentials-put).
       * work with subscription details for a supported remuneration API and a
       given *identity*.
+  - name: scratch-pad 
+    description: |
+      A single identity specific data container for holding a small piece of data in working-memory.
+
+      This data is volatile and not guaranteed: it's only ever stored in working-memory.
+
+      In working-data volatile memory limited to 32KiB that doesn't survive broker instance restarts.
   - name: data
     description: |
       Data key-value CRUD operations; modifying data values in *datastore-keys*.
@@ -980,6 +987,60 @@ paths:
           $ref: "#/responses/409-identity-conflict"
         429:
           $ref: "#/responses/429"
+  /scratch-pad:
+    get:
+      summary: Get scratch-pad binary data for a user.
+      description: |
+        Retrieve *scratch-pad* data.
+      
+        *Scratch-pad* data is limited to 32KiB of temporary data.  Data is never be persisted and will only live in volatile memory: *working-data*.  *Scratch-pad* data is not qualified beyond authenticated *identity*: a single *scratch-pad* per identity.
+      tags:
+        - scratch-pad
+      security:
+        - Authorization Header: []
+      produces:
+        - application/octet-stream
+      responses:
+        200:
+          description: |
+            Data payload retrieved.
+        400:
+          $ref: "#/responses/400"
+        401:
+           $ref: "#/responses/401"
+        409:
+          $ref: "#/responses/409-identity-conflict"
+        429:
+          $ref: "#/responses/429"            
+    put:
+      summary: Set scratch-pad data for a user.
+      description: |
+        Set *scratch-pad* binary data.
+      
+        *Scratch-pad* data is limited to 32KiB of temporary data.  Data is never be persisted and will only live in volatile memory: *working-data*.  *Scratch-pad* data is not qualified beyond authenticated *identity*: a single *scratch-pad* per identity.
+      tags:
+        - scratch-pad
+      parameters:
+        - in: body
+          name: payload
+          description: |
+            Data payload for scratch-pad.
+      security:
+        - Authorization Header: []
+      consumes:
+        - application/octet-stream
+      responses:
+        200:
+          description: |
+            Data successfully set.
+        400:
+          $ref: "#/responses/400"
+        401:
+           $ref: "#/responses/401"
+        409:
+          $ref: "#/responses/409-identity-conflict"
+        429:
+          $ref: "#/responses/429"          
   set data:
     options:
       summary: Set value of datastore-key.
