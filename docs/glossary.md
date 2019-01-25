@@ -212,7 +212,7 @@ It also contains private keys used to sign transactions on behalf of the public 
 
 > (canonical)
 >
-> A *keybiner* is a collection of *keyrings*.  A *keyring* is a mapping of crypto key-pairs or *wallet* references, to a particular *overhide* broker system, for a particular *service*.  I.e. a *keyring* is a set of keys for a particular purpose grouped together.
+> A *keybiner* is a collection of *keyrings*.  A *keyring* is a mapping of crypto key-pairs or *wallet* references, to a particular *overhide* broker system, for a particular *service*--or group of services a user decided to use the same *keyring* for.  I.e. a *keyring* is a set of keys for a particular purpose grouped together.
 >
 > An application will repetitively access a particular *overhide* broker instance with a particular blockchain public key (address) for identification.  The corresponding blockchain private key--unless provided by a *wallet*--is also needed on-hand--only in-browser--for signatures.  For convenience, better user experience, better application flow, it's desirable to store a mapping of all these identifiers and tokens on the client machine, e.g. in the client browser.  All these identifiers and tokens for a single purpose comprise a *keyring*.  Multiple such *keyrings* are stored in the client's *keybiner*.
 >
@@ -220,34 +220,44 @@ It also contains private keys used to sign transactions on behalf of the public 
 >
 > It's unlikely the private signing keys of a public blockchain will be made available to the *keybiner*, they will be kept in the user's *wallets*.  As such the *keyrings* may not store the keys themselves, but references to the keys in their particular *wallet*.
 >
-> The *overhide.js* JavaScript library injects the *keybiner* module for use by Web applications running in browsers.  The *keybiner* uses *localstorage* to store *keyrings*.  As such browser security restrictions imply *keyrings* are tied to a particular domain.
->
 > An example *keybiner* is reproduced below:
 >
 > ```
->  'keybiner': ['keyring1':{
->                  <tag>: {                  
->                    'brokerUrl':'..',
->                    'keys': [
->                      {'privateOrRef':'..',
->                      'public':'..',
->                      ..
->                      },
->                      ...
->                    ],
->                    'mnemonic':'..',
->                    'format':'..'
->                  },
->                  <tag>: {..}
+>  'keybiner': {'keyring1':{
+>                 'brokerUrl':'..',
+>                 'userAddress':'..',
+>                 'userPrivateKeyOrRef':'..',
+>                 'options': {..},
+>                 'mnemonic':'..',
 >               },
 >               'keyring2':{..},
 >               ...
->               'keyringN':{..}]
+>               'keyringN':{..}}
 > ```
 >
-> Each *keyring* has an alias; "keyring1", "keyring2", "keyringN".  These can be thought of as login names in traditional login schemes.  The *overhide.js* library provides utilities to symmetrically encrypt each *keyring*.  When a user provides the appropriate secret-phrase to decrypt a keyring (a login), access to the broker mapping and all the stored keys is granted.  Hence the alias and the symmetric secret-phrase are the access credentials--and they're never sent over the wire.  From this point forward the application has all the information it needs to synchronize with the specified *overhide* instance ('brokerUrl').  The application can access tagged sets of keys.  The keys may or may not be for a broker--the 'brokerUrl' is optional--the 'format' dictates implementation specific metadata about the keys.  
+> Each *keyring* has an alias; "keyring1", "keyring2", "keyringN" above.  These are user friendly names, they can be thought of as login names in traditional login schemes.  The *overhide.js* library provides utilities to symmetrically encrypt the value under each *keyring*: each value is AES 256 encrypted with the same *secret-phrase* that comprises an *identity* with the *userAddress*.  When a user provides the appropriate *secret-phrase* to decrypt a keyring (a login), access to the broker mapping and all the stored keys is granted.  Hence the alias and the symmetric *secret-phrase* are the access credentials--and they're never sent over the wire.  From this point forward the application has all the information it needs to synchronize with the specified *overhide* instance ('brokerUrl').  The application can leverage the keys via *overhide.js* methods.    
 >
-> Each *keyring* can be exported or re-setup from scratch--it's a convenience store to aid end-user experience.  An end-user can export their *keyring* as an encrypted payload, transfer to another *keybiner* running in another browser, import, provide secret-phrase, done.  To setup a new *keyring* from scratch--let's say in a new browser on a new computer--the end-user needs to remember their *overhide* broker system ('brokerUrl', likely dictated by the app, a UI dropdown), blockchain keys (likely using a *wallet*), and a mnemonic for other *secrets*.
+> The *overhide.js* JavaScript library makes available the *keybiner* module for use by Web applications running in browsers.  The *keybiner* uses *localstorage* to store *keyrings*.  As such browser security restrictions imply *keyrings* are tied to a particular domain.
+>
+> Each *keyring* can be exported or re-setup from scratch--it's a convenience store to aid end-user experience.  
+>
+> An end-user can export their *keyring* as an encrypted file and manually transfer to another *keybiner* running in another browser.  Alternativelly a user could use a broker's *scratch-pad* to transfer a *keyring* or a whole *keybiner* to any other client.
+>
+> To setup a new *keyring* from scratch--let's say in a new browser on a new computer--the end-user needs to remember their *overhide* broker system ('brokerUrl', likely dictated by the app, a UI dropdown), credentials making up their *identity* including blockchain keys and/or *wallet* references, and a mnemonic for generating *secrets*.
+
+#### scratch-pad
+
+A single *identity* specific data container for holding a small piece of data in *working-memory*.
+
+This data is volatile and not guaranteed:  it's only ever stored in *working-memory*.
+
+Think of it as a USB stick for quick transfers of a bit of data; using solely your *identity*.
+
+Possible use case:  transferring your *keybiner* from one device to another.
+
+> (canonical)
+>
+> In *working-data* volatile memory limited to 32KiB that doesn't survive broker instance restarts.
 
 #### domain-key
 
