@@ -1537,29 +1537,32 @@ paths:
           $ref: "#/responses/WIRE"
         code == 200:
           description: |
-            Messages enqueued at *datastore-key* (segment-key @ identity) in increasing *seq-id* order.
+            Messages enqueued at *datastore-key* (segment-key @ identity) ordered by increasing non-unique *unixtime-millis*.
 
-            Messages are in order of consecutivelly increasing message sequence ID (*seq-id*).  The message sequence IDs are internal system identifiers for the messages furnished by this *datastore-key*, they're unique to this *datastore-key* and consecutive.
+            Messages returned may not have unique *unixtime-millis*--more than one message may have the same *unixtime-millis*.  
 
-            | *syntax*        | *bytes* | *value* |
-            | ---             | ---     | ---     |
-            | loop {          |         |         |
-            |   seq-id        | 4       |         |
-            |   message-len   | 8       | ML = length(message) |
-            |   message       | *       |         |
-            | }               |         | ``      |
+            The broker guarantees that the messages in the payload comprise *all* unacknowledged message with a *unixtime-millis* 
+            up-to and including the highest *unixtime-millis*.
+
+            | *syntax*          | *bytes* | *value* |
+            | ---               | ---     | ---     |
+            | loop {            |         |         |
+            |   unixtime-millis | 8       |         |
+            |   message-len     | 8       | ML = length(message) |
+            |   message         | *       |         |
+            | }                 |         | ``      |
 
           schema:
             type: object
             required:
-              - seq-id
+              - unixtime-millis
               - message-len
               - message
             properties:
-              seq-id:
+              unixtime-millis:
                 type: number
                 description: |
-                  Consecutivelly increasing message sequence ID        
+                  Non-unique UNIX Epoch timestamp milliseconds of the message.
               message-len:
                 type: number
                 description: |
@@ -1578,9 +1581,9 @@ paths:
           $ref: "#/responses/429"
   acknowledge messages:
     options:
-      summary: Acknowledge all messages up to and including seq-id for given datastore-key.
+      summary: Acknowledge all messages with timestamps up to and including a specified unixtime-millis for given datastore-key.
       description: |
-        Acknowledge all messages up to and including seq-id have been handled.  All messages up to seq-id will be removed from the backchannel.
+        Acknowledge all messages with timestamp up to and including a specified *unixtime-millis* have been handled.  All messages up to and including the specified *unixtime-millis* will be removed from the backchannel.
 
         Acknowledge messages if [authorized identity](#security-definition-Authorization%20WSS) is the owner of the *datastore-key*.
 
@@ -1598,14 +1601,14 @@ paths:
             | *syntax*        | *bytes* | *value* |
             | ---             | ---     | ---     |
             | req-id          | 8       |         |            
-            | len             | 8       | SL + IL + 8 |
+            | len             | 8       | SL + IL + 12 |
             | opcode          | 1       | 0x06    |
             | segment-key-len | 1       | SL == length(segment-key) |
             | segment-key     | SL      |         |
             | identity-len    | 1       | IL == length(identity) |
             | identity        | IL      |         |
             | flags           | 1       |         |
-            | seq-id          | 4       | ``      |
+            | unixtime-millis | 8       | ``      |
           schema:
             type: object
             required:
@@ -1616,7 +1619,7 @@ paths:
               - segment-key
               - identity-len
               - flags
-              - seq-id
+              - unixtime-millis
             properties:
               req-id:
                 type: number
@@ -1661,10 +1664,10 @@ paths:
                   | --- | --- | --- |
                   | 0x04 | wait-until-persisted | `1`: wait until datastore-key changes are persisted |
                   | 0x08 | wait-until-shared | `1`: wait until datastore-key changes are shared on distributed persistence network |                  
-              seq-id:
+              unixtime-millis:
                 type: number
                 description: |
-                  *seq-id* up to which--inclusive--to acknowledge backchannel processing.
+                  *unixtime-millis* up to which--inclusive--to acknowledge backchannel processing.
       consumes:
         - application/octet-stream
       produces:
@@ -1693,7 +1696,7 @@ paths:
 
         Subscribes to *delegated* messages if [authorized identity](#security-definition-Authorization%20WSS) is not the owner of the *datastore-key* but is complementary with the *datastore-key's* [delegate configuration](#tag-datastore-key-settings).
 
-        If the *shunt* query parameter is not specified, subscription doesn't send actual message content, just notification of new messages with a new *seq-id*.
+        If the *shunt* query parameter is not specified, subscription doesn't send actual message content, just notification of new messages with a new *unixtime-millis*.
 
         If the *shunt* query parameter is specified, full message content is sent via subscription.  Unless the *auto-acknowledge* flag is set, the messages do have to be explicitly [acknowledged](#operation-acknowledge-messages-WIRE) to clear the backchannel queue.  Failure to acknowledge messages with *auto-acknowledge* off and [limit-bytes set](#definition-DatastoreKeySettings) may lead to a full backchannel queue and dropped messages; not forwarded to these live subscriptions.
 
@@ -1768,7 +1771,7 @@ paths:
 
                   | *value* | *name* | *description* |
                   | --- | --- | --- |
-                  | 0x01 | shunt | `0`: subscription doesn't send actual message content, just notification of new messages with a new *seq-id*.  `1`: full message content is sent via subscription. |
+                  | 0x01 | shunt | `0`: subscription doesn't send actual message content, just notification of new messages with a new *unixtime-millis*.  `1`: full message content is sent via subscription. |
                   | 0x02 | auto-acknowledge | `0`: explicit acknowledgment via [acknowledge](#operation-acknowledge-messages-WIRE) call required.  `1`: messages are auto-acknowledged, not queued.  This falg only applies in conjunction with the *shunt* flag |  
                   | 0x04 | wait-until-persisted | `1`: wait until datastore-key changes are persisted (only relevant if *auto-acknowledge* is `1`) |
                   | 0x08 | wait-until-shared | `1`: wait until datastore-key changes are shared on distributed persistence network (only relevant if *auto-acknowledge* is `1`) |                  
@@ -1791,30 +1794,30 @@ paths:
 
             An example event stream coming across the Web socket for a *non-shunt* subscription:
 
-            | *syntax*        | *bytes* | *value* |
-            | ---             | ---     | ---     |
-            | loop {          |         |         |
-            |   seq-id        | 4       |         |
-            | }               |         | ``      |
+            | *syntax*          | *bytes* | *value* |
+            | ---               | ---     | ---     |
+            | loop {            |         |         |
+            |   unixtime-millis | 8       |         |
+            | }                 |         | ``      |
 
-            The events stream are just *seq-id*s to be retrieved via [the getter](#operation-fetch-messages-WIRE).
+            The events stream are just *unixtime-millis*s, indicating messages are present to be retrieved via [the getter](#operation-fetch-messages-WIRE).
 
             An example event stream coming across the Web scoket for a *shunt* subscription:
 
-            | *syntax*        | *bytes* | *value* |
-            | ---             | ---     | ---     |
-            | flags           | 1       |         |
-            | loop {          |         |         |
-            |   seq-id        | 4       |         |
-            |   message-len   | 8       | ML = length(message) + 1 |
-            |   message       | *       |         |
-            | }               |         | ``      |
+            | *syntax*          | *bytes* | *value* |
+            | ---               | ---     | ---     |
+            | flags             | 1       |         |
+            | loop {            |         |         |
+            |   unixtime-millis | 8       |         |
+            |   message-len     | 8       | ML = length(message) + 1 |
+            |   message         | *       |         |
+            | }                 |         | ``      |
 
           schema:
             type: object
             required:
               - flags
-              - seq-id
+              - unixtime-millis
               - message-len
               - message
             properties:
@@ -1823,15 +1826,15 @@ paths:
                 description: |
                   A byte of flags.  
 
-                  The `0x80` (done) flag--if `1`--indicates that all messages in the descriptor loop are done; do not have fragment bytes outstanding.  A `0` value indicates that the last message in the descriptor loop is fragmented and bytes are still outstanding.  Those bytes will come down in the imediatelly following 222 subscription events.  The *seq-id* will be repeated for all fragments.  The aggregate fragments are all transmitted for the message if the `0x80` (done) flag comes down as a `1` or the fragmented message matching the *seq-id* is not the last message in the descriptor loop.
+                  The `0x80` (done) flag--if `1`--indicates that all messages in the descriptor loop are done; do not have fragment bytes outstanding.  A `0` value indicates that the last message in the descriptor loop is fragmented and bytes are still outstanding.  Those bytes will come down in the imediatelly following 222 subscription events.  The *unixtime-millis* will be repeated for all fragments.  The aggregate fragments are all transmitted for the message if the `0x80` (done) flag comes down as a `1` or the fragmented message is not the last message in the descriptor loop.
 
                   | *value* | *name* | *description* |
                   | ---  | ---  | --- |
                   | 0x80 | done | `1`: all the messages in the descriptor loop are done--do not have outstanding fragments--`0`: the last message in the descriptor loop has additional fragments, to come down in the imediatelly following 222 subscription events |
-              seq-id:
+              unixtime-millis:
                 type: number
                 description: |
-                  Consecutivelly increasing message sequence ID        
+                  Non-unique UNIX Epoch timestamp milliseconds of the message.        
               message-len:
                 type: number
                 description: |
@@ -3307,13 +3310,13 @@ definitions:
   Message:
     type: object
     required:
-      - seq-id
+      - unixtime-millis
       - message
     properties:
-      seq-id:
+      unixtime-millis
         type: integer
         description: |
-          Consecutivelly increasing message sequence ID
+          Non-unique UNIX Epoch timestamp milliseconds of the message.
       message:
         type: string
         description: |
@@ -3382,9 +3385,12 @@ definitions:
           description: |
             All messages from the backchannel at the givent datastore-key
 
-            Messages enqueued at *datastore-key* (segment-key @ identity) in increasing *seq-id* order.
+            Messages enqueued at *datastore-key* (segment-key @ identity) ordered by increasing non-unique *unixtime-millis*.
 
-            Messages are in order of consecutivelly increasing message sequence ID (*seq-id*).  The message sequence IDs are internal system identifiers for the messages furnished by this *datastore-key*, they're unique to this *datastore-key* and consecutive.
+            Messages returned may not have unique *unixtime-millis*--more than one message may have the same *unixtime-millis*.  
+
+            The broker guarantees that the messages in the payload comprise *all* unacknowledged message with a *unixtime-millis* 
+            up-to and including the highest *unixtime-millis*.
           required:
             - segment-key
             - messages
