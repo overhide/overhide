@@ -4,7 +4,7 @@ Although *overhide* enables pseudonimity, it absolutely requires the concept of 
 
 Identity is necessary for remuneration to brokers and preventing abuse.  Brokers do not want to know who's using them:  what service and which user.  But they do need to get reimbursed for services provided.  To the broker, there is nothing dictating it'll be used for a specific purpose.  A broker might be brought online to support a specific use, but there's nothing preventing anyone from using it for something completely unrelated.  But it doesn't matter at the end of the day: as long as the broker is reimbursed, there is no concept of abuse.
 
-Leveraging blockchains for remuneration is key to this reimbursement mechanism.
+Leveraging [ledgers](https://stage.ohledger.com/demo/why/why.html) for remuneration is key to this reimbursement mechanism.
 
 ## Desired Qualities for Identity
 
