@@ -2,7 +2,7 @@
 
 ## Opt-In
 
-By default all of a broker's data is stored in broker-local storage and not decentralized.
+By default all of a broker's data is stored in broker-local storage and not in decentralized persistence.
 
 A user has to either [opt-in all their data](broker.html#operation--auth-opt-in--agree--put) or [select *segment-keys*](broker.html#definition-DatastoreKeySettings) to 
 leverage the data decentralization discussed here.

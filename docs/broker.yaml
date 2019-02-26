@@ -2811,7 +2811,7 @@ paths:
         All data owned by the *identity* on the corresponding distributed persistence network--as per the provided current GUID--is tied to the new GUIDs.  
         New GUIDs are initialized by the broker and bound by this broker to the user.
 
-        This operation is useful to ensure no other broker can alter your data after a [broker transfer](#operation--all-data-post).  All other [stewards of your data](#tag-data-stewardship) will need to be [made aware of the GUID change](#operation--all-data-post).
+        This operation is useful to ensure no other broker can alter your data after a [broker transfer](#operation--opt-in-data-post).  All other [stewards of your data](#tag-data-stewardship) will need to be [made aware of the GUID change](#operation--opt-in-data-post).
 
         If this broker is not an active steward of data for *identity*, call fails with a 400 -- 
         "cannot write, broker not an active steward of user's data"
@@ -2850,7 +2850,7 @@ paths:
         Returns the *GUIDs* pointing to persisted data for the *identity*.  This broker must be the owner of whatever
         private metadata is necessary to furnish data to the persistence network at said *GUID*. 
 
-        This getter works in conjunction with the [all-data import POST](#operation--all-data-post) setter for data pinning/distribution.
+        This getter works in conjunction with the [opt-in-data import POST](#operation--opt-in-data-post) setter for data pinning/distribution.
       tags:
         - data-stewardship
       security:
