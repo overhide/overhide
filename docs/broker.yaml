@@ -81,7 +81,16 @@ tags:
       When the broker sends the last fragment of the aggregate message byte-stream, it sends it with a code of *200/OK*.  The client doesn't have to [acknowledge](#operation-acknowledge-WIRE) this last response as it's not a *206/fragment*.
   - name: broker-lookup
     description: |
-      TBD
+      Allow services to discover users' specific broker *host names* and *IPs* through [user-addresses](glossary.html#user-address).
+
+      Target broker specifics are [set](#operation--broker-lookup--remuneration-key---user-address--put) into the *broker-lookup* network by whichever broker enters [active steward](glossary.html#data-steward) mode by the user with either:
+
+      * [PUT /active-stewardship](#operation--active-stewardship-put)
+      * [PUT /pour-active-stewardship](#operation--pour-active-stewardship-put)
+
+      These APIs are optionally implemented by brokers.  The user's [active broker](glossary.html#data-steward) and the broker used to resolve a lookup (perhaps one and the same) need to support *broker-lookup* on a network with the same [remuneration-key](#/definitions/RemunerationKey): i.e. these APIs cannot return 405 -- "Method Not Allowed".
+
+      Read more on *broker-lookup* in the [reference implementation write-up](lookup.html).
   - name: auth
     description: |
       Authentication, authorization, and credential management:
