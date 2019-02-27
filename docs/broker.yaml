@@ -79,6 +79,9 @@ tags:
       The broker does so, looping through the 206-acknowledge exchanges.
 
       When the broker sends the last fragment of the aggregate message byte-stream, it sends it with a code of *200/OK*.  The client doesn't have to [acknowledge](#operation-acknowledge-WIRE) this last response as it's not a *206/fragment*.
+  - name: broker-lookup
+    description: |
+      TBD
   - name: auth
     description: |
       Authentication, authorization, and credential management:
@@ -129,7 +132,7 @@ tags:
       Stewardship of a users's data.
 
       Stewardship of data is important regardless whether an *identity* opts-in into decentralized storage or not.
-      All but [one](#operation--opt-in-data-post) of these APIs deal with stwardship regardless of decentralization opt-in selected: see 
+      All but [one](#operation--opt-in-data--type-key---guid--post) of these APIs deal with stwardship regardless of decentralization opt-in selected: see 
       [opt-in endpoint](#operation--auth-opt-in--agree--put) and [*segment-key* specific opt-in](#definition-DatastoreKeySettings).  
           
       * manage this broker's stewardship mode for an identity's data:  [active/passive stewardship](glossary.html#data-steward)
@@ -573,6 +576,36 @@ paths:
           $ref: "#/responses/400"
         429:
           $ref: "#/responses/429"
+  /capabilities/unixtime-millis:
+    get:
+      summary: Retrieve this broker's unixtime in milliseconds.
+      description: |
+        Retrieve this broker's unixtime in milliseconds.
+      tags:
+        - capabilities
+      produces:
+        - text/plain
+      responses:
+        200:
+          description: |
+            The number as string: this broker's UNIX epoch time in milliseconds.
+        429:
+          $ref: "#/responses/429"
+  /capabilities/address:
+    get:
+      summary: Retrieve this broker's broker-address for the remuneration-provider used by caller's identity.
+      description: |
+        Retrieve this broker's *broker-address* for the remuneration-provider used by caller's *identity*.
+      tags:
+        - capabilities
+      produces:
+        - text/plain
+      responses:
+        200:
+          description: |
+            This broker's broker-address for the remuneration-provider used by caller's identity.
+        429:
+          $ref: "#/responses/429"
   /auth/credentials:
     put:
       summary: Authenticate an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) returning a token.
@@ -595,6 +628,8 @@ paths:
               - secret-phrase
               - user-address
               - secret-phrase-signed
+              - unixtime-millis
+              - unixtime-millis-signed
             properties:
               remuneration-key:
                 type: string
@@ -622,6 +657,20 @@ paths:
 
                   The *secret-phrase* provided above signed with the private key corrsponding to the
                   *user-address*.
+
+                  Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+              unixtime-millis:
+                type: number
+                description: |
+                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis) as the source for this parameter.
+
+                  These parameters mitigate replay attacks.
+              unixtime-millis-signed:
+                type: string
+                description: |
+                  BASE64 encoded.
+
+                  The *unixtime-millis* provided above signed with the private key corrsponding to the *user-address* of *identity*.
 
                   Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
       consumes:
@@ -718,6 +767,8 @@ paths:
               - invitee-secret-phrase
               - invitee-user-address
               - invitee-secret-phrase-signed
+              - unixtime-millis
+              - unixtime-millis-signed
             properties:
               remuneration-key:
                 type: string
@@ -765,6 +816,20 @@ paths:
 
                   The *invitee-secret-phrase* provided above signed with the private key corrsponding to the
                   *invitee-user-address*.
+
+                  Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+              unixtime-millis:
+                type: number
+                description: |
+                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis) as the source for this parameter.
+
+                  These parameters mitigate replay attacks.
+              unixtime-millis-signed:
+                type: string
+                description: |
+                  BASE64 encoded.
+
+                  The *unixtime-millis* provided above signed with the private key corrsponding to the *user-address* of *identity*.
 
                   Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
               since:
@@ -825,6 +890,8 @@ paths:
               - new-secret-phrase
               - new-user-address
               - new-secret-phrase-signed
+              - unixtime-millis
+              - unixtime-millis-signed
             properties:
               new-remuneration-key:
                 type: string
@@ -852,6 +919,20 @@ paths:
 
                   The *new-secret-phrase* provided above signed with the private key corrsponding to the
                   *new-user-address*.
+
+                  Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+              unixtime-millis:
+                type: number
+                description: |
+                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis) as the source for this parameter.
+
+                  These parameters mitigate replay attacks.
+              unixtime-millis-signed:
+                type: string
+                description: |
+                  BASE64 encoded.
+
+                  The *unixtime-millis* provided above signed with the private key corrsponding to the *user-address* of *identity*.
 
                   Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
       security:
@@ -1004,12 +1085,16 @@ paths:
         200:
           description: |
             Data payload retrieved.
+        246:
+          $ref: "#/responses/246"
         400:
           $ref: "#/responses/400"
         401:
            $ref: "#/responses/401"
         409:
           $ref: "#/responses/409-identity-conflict"
+        422:
+          $ref: "#/responses/422"
         429:
           $ref: "#/responses/429"            
     put:
@@ -1050,8 +1135,7 @@ paths:
         For the *set* to succeed the *datastore-key* (segment-key @ identity) must
         either be brand new of already owned by authorization token owner.
 
-        If this broker is not an active steward of data for *identity*, call fails with a 400 -- 
-        "cannot write, broker not an active steward of user's data"
+        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for *identity*, call fails with a 400 -- "cannot write, broker not an active steward of user's data"
       tags:
         - data
       parameters:
@@ -1230,10 +1314,14 @@ paths:
             The value of *datastore-key* (segment-key @ identity).
         code == 206:
           $ref: "#/responses/206"
+        code == 246:
+          $ref: "#/responses/246"
         code == 400:
           $ref: "#/responses/400"
         code == 403:
           $ref: "#/responses/403"
+        code == 422:
+          $ref: "#/responses/422"
         code == 429:
           $ref: "#/responses/429"
   delete data:
@@ -1243,8 +1331,7 @@ paths:
         Delete *datastore-key* (segment-key @ identity).  The *datastore-key* must be
         owned by the token owner.
 
-        If this broker is not an active steward of data for *identity*, call fails with a 400 -- 
-        "cannot write, broker not an active steward of user's data"
+        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for *identity*, call fails with a 400 -- "cannot write, broker not an active steward of user's data"
       tags:
         - data
       parameters:
@@ -1344,8 +1431,7 @@ paths:
 
         See the [settings getter](#operation---segment-key--settings--get) for the above settings.
 
-        If this broker is not an active steward of data for *identity*, call fails with a 400 -- 
-        "cannot write, broker not an active steward of user's data"
+        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for *identity*, call fails with a 400 -- "cannot write, broker not an active steward of user's data"
       tags:
         - backchannel queues
       parameters:
@@ -1573,10 +1659,14 @@ paths:
                   The message byte stream value.
         code == 206:
           $ref: "#/responses/206"
+        code == 246:
+          $ref: "#/responses/246"
         code == 400:
           $ref: "#/responses/400"
         code == 403:
           $ref: "#/responses/403"
+        code == 422:
+          $ref: "#/responses/422"
         code == 429:
           $ref: "#/responses/429"
   acknowledge messages:
@@ -1589,8 +1679,7 @@ paths:
 
         Acknowledge *delegated* messages if [authorized identity](#security-definition-Authorization%20WSS) is not the owner of the *datastore-key* but is complementary with the *datastore-key's* [delegate configuration](#tag-datastore-key-settings).
 
-        If this broker is not an active steward of data for *identity*, call fails with a 400 -- 
-        "cannot write, broker not an active steward of user's data"
+        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for *identity*, call fails with a 400 -- "cannot write, broker not an active steward of user's data"
       tags:
         - backchannel queues
       parameters:
@@ -1700,8 +1789,7 @@ paths:
 
         If the *shunt* query parameter is specified, full message content is sent via subscription.  Unless the *auto-acknowledge* flag is set, the messages do have to be explicitly [acknowledged](#operation-acknowledge-messages-WIRE) to clear the backchannel queue.  Failure to acknowledge messages with *auto-acknowledge* off and [limit-bytes set](#definition-DatastoreKeySettings) may lead to a full backchannel queue and dropped messages; not forwarded to these live subscriptions.
 
-        If this broker is not an active steward of data for *identity* and the *auto-acknowledge* flag is set, call fails with a 400 -- 
-        "cannot write, broker not an active steward of user's data"
+        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for *identity* and the *auto-acknowledge* flag is set, call fails with a 400 --         "cannot write, broker not an active steward of user's data"
       tags:
         - backchannel queues
       parameters:
@@ -1860,8 +1948,7 @@ paths:
 
         A delegate can only write their value to this *segment-key* [settings on *segment-key* permitting](#definition-DatastoreKeySettings).  Only the delegate identified can write data.  The *settings* are solely to identify who the delegates can be.
 
-        If this broker is not an active steward of data for *identity*, call fails with a 400 -- 
-        "cannot write, broker not an active steward of user's data"
+        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for *identity*, call fails with a 400 -- "cannot write, broker not an active steward of user's data"
       tags:
         - delegate
       parameters:
@@ -2045,10 +2132,14 @@ paths:
             The value of *datastore-key* (segment-key @ identity).
         code == 206:
           $ref: "#/responses/206"
+        code == 246:
+          $ref: "#/responses/246"
         code == 400:
           $ref: "#/responses/400"
         code == 403:
           $ref: "#/responses/403"
+        code == 422:
+          $ref: "#/responses/422"
         code == 429:
           $ref: "#/responses/429"
   delete delegate data:
@@ -2063,8 +2154,7 @@ paths:
 
         The *datastore-key* must be owned by the [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from request parameter.
 
-        If this broker is not an active steward of data for *identity*, call fails with a 400 -- 
-        "cannot write, broker not an active steward of user's data"
+        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for *identity*, call fails with a 400 -- "cannot write, broker not an active steward of user's data"
       tags:
         - delegate
       parameters:
@@ -2265,10 +2355,14 @@ paths:
                   The message byte stream value.
         code == 206:
           $ref: "#/responses/206"
+        code == 246:
+          $ref: "#/responses/246"
         code == 400:
           $ref: "#/responses/400"
         code == 403:
           $ref: "#/responses/403"
+        code == 422:
+          $ref: "#/responses/422"
         code == 429:
           $ref: "#/responses/429"
   /{segment-key}/settings:
@@ -2277,8 +2371,7 @@ paths:
       description: |
         Setup data and backchannel settings for given *datastore-key* (*segment-key* @ *identity*).
 
-        If this broker is not an active steward of data for *identity*, call fails with a 400 -- 
-        "cannot write, broker not an active steward of user's data"
+        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for *identity*, call fails with a 400 -- "cannot write, broker not an active steward of user's data"
       tags:
         - datastore-key settings
       parameters:
@@ -2357,10 +2450,14 @@ paths:
             The value of *datastore-key* (segment-key @ identity).
           schema:
             $ref: "#/definitions/DatastoreKeySettings"
+        246:
+          $ref: "#/responses/246"
         400:
           $ref: "#/responses/400"
         403:
           $ref: "#/responses/403"
+        422:
+          $ref: "#/responses/422"
         429:
           $ref: "#/responses/429"
   /metrics:
@@ -2380,10 +2477,14 @@ paths:
             Metrics for all *datastore-keys* (*segment-keys* @ *identity*) of the user.
           schema:
             $ref: "#/definitions/Metrics"
+        246:
+          $ref: "#/responses/246"
         400:
           $ref: "#/responses/400"
         403:
           $ref: "#/responses/403"
+        422:
+          $ref: "#/responses/422"
         429:
           $ref: "#/responses/429"
   /{segment-key}/metrics:
@@ -2418,10 +2519,14 @@ paths:
             Metrics for this *datastore-key* (*segment-key* @ *identity*).
           schema:
             $ref: "#/definitions/Metrics"
+        246:
+          $ref: "#/responses/246"
         400:
           $ref: "#/responses/400"
         403:
           $ref: "#/responses/403"
+        422:
+          $ref: "#/responses/422"
         429:
           $ref: "#/responses/429"
   segment-keys:
@@ -2493,6 +2598,8 @@ paths:
       description: |
         All of the user's data with caller's *identity* is wiped and reset to the payload.
 
+        > When filling broker in [pour-active-steward](#operation--pour-active-stewardship-put) mode don't use this *import*--as it's indiscriminate--use [*fill*](#operation-fill-WIRE) instead.
+
         If transferring a *segment-key* with a public restricted identity (0 .. 9999), if the
         *segment-key* already exists at provided identity for a different *owner*, the message
         call fails with a 400 -- "datastore-key ownership conflict; segment-key @ identity already reserved".
@@ -2500,8 +2607,92 @@ paths:
         If the payload is malformated and cannot be imported the message call fails with a 
         400 -- "cannot process input", followed by additional optional verbiage.
 
-        If this broker is not an active steward of data for *identity*, call fails with a 400 -- 
-        "cannot write, broker not an active steward of user's data"
+        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for *identity*, call fails with a 400 -- "cannot write, broker not an active steward of user's data"
+      tags:
+        - data-stewardship
+      parameters:
+        - in: body
+          name: payload
+          description: |
+
+            | *syntax*        | *bytes* | *value* |
+            | ---             | ---     | ---     |
+            | req-id          | 8       |         |
+            | len             | 8       | SL + IL + length(payload) + 4 |
+            | opcode          | 1       | 0x0C    |
+            | flags           | 1       |         |
+            | payload         | *       | ``      |
+
+          schema:
+            type: object
+            required:
+              - req-id
+              - len
+              - opcode
+              - flags
+              - payload
+            properties:
+              req-id:
+                type: number
+                description: |
+                  Request ID: a connection specific unique identifier of the request/responses.  Has no meaning beyond connection.
+              len:
+                type: number
+                description: |
+                  Length in bytes constituting the remainder of this message: number of bytes that follow this *len*.
+              opcode:                  
+                type: bytes
+                description: |
+                  Operation code.
+              flags:
+                type: bytes
+                description: |
+                  A byte of flags.  
+
+                  | *value* | *name* | *description* |
+                  | --- | --- | --- |
+                  | 0x04 | wait-until-persisted | `1`: wait until datastore-key changes are persisted |
+                  | 0x08 | wait-until-shared | `1`: wait until datastore-key changes are shared on distributed persistence network |
+                  | 0x80 | done | `1`: this payload is not fragmented; `0`: this payload is a fragment and subsequent [continue](#operation-continue-WIRE) messages will follow after the broker responds with a *200*. |
+              payload:
+                description: |
+                  All data in JSON format with UTF-8 encoding.
+                
+                  *Payload* adheres to the [ImportExportPayload definition](#/definitions/ImportExportPayload).
+      consumes:
+        - application/octet-stream
+      produces:
+        - application/octet-stream
+      security:
+        - Authorization WSS: []
+      responses:
+        RESPONSE:
+          $ref: "#/responses/WIRE"
+        code == 200:
+          description: |
+            Success.  Empty.
+        code == 400:
+          $ref: "#/responses/400"
+        code == 403:
+          $ref: "#/responses/403"
+        code == 429:
+          $ref: "#/responses/429"
+  fill:
+    options:
+      summary: Set all user's data on the broker system to the provided payload unless data already on broker is deemed newer.
+      description: |
+        All of the user's data with caller's *identity* that is deemed older than the payload is wiped and reset to the payload.
+
+        If transferring a *segment-key* that already exists on the broker for caller's *identity* the *segment-key* in the payload is ignored.
+
+        If transferring a *segment-key* with a public restricted identity (0 .. 9999), if the
+        *segment-key* already exists at provided identity for a different *owner*, the message
+        call fails with a 400 -- "datastore-key ownership conflict; segment-key @ identity already reserved".
+
+        If the payload is malformated and cannot be imported the message call fails with a 
+        400 -- "cannot process input", followed by additional optional verbiage.
+
+        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for *identity*, call fails with a 400 -- "cannot write, broker not an active steward of user's data"
       tags:
         - data-stewardship
       parameters:
@@ -2629,18 +2820,17 @@ paths:
           $ref: "#/responses/403"
         429:
           $ref: "#/responses/429"              
-  /opt-in-data:
+  /opt-in-data/{type-key}/{guid}:
     post:
       summary: Set all user's opt-in data from a connected persistence network.
       description: |
         For all *segment-keys* available on the decentralized persistence, data in this broker's  *segment-keys* is wiped and reset to data available at the same *identity* on the specificed persistence network.  The network data is identified by the provided *GUID*.  The broker must be able to exchange data on the network that's identified by *type-key*.
 
-        Note that the only *segment-keys* imported are ones explicitly opted-in on the [active steward](glossary.html#data-steward) with either the [opt-in endpoint](#operation--auth-opt-in--agree--put) or the [*segment-key* specific opt-in]().
+        This message can only be called on a [passive or pour-active steward](#tag-data-stewardship).  Calling this message on an [active steward](#tag-data-stewardship) will result in error code 400 -- "cannot continue, invalid stewardship mode".
 
-        This setter works in conjunction with the [*GUIDs* getter](#operation--guids-get), which is to be called against the source broker instance.  The source broker is a broker currently furnishing the data to 
-        the network.
+        Note that the only *segment-keys* imported are ones explicitly opted-in on some [active steward](glossary.html#data-steward) (other than this steward) with either the [opt-in endpoint](#operation--auth-opt-in--agree--put) or the [*segment-key* specific opt-in]().
 
-        The broker is returned to being a "passive" steward of data for the *identity*.  The caller must [re-enable active stewardship](#operation--active-stewardship-put)        if desired.
+        This setter works in conjunction with the [*GUIDs* getter](#operation--guids-get), which is to be called against the source broker instance.  The source broker is a broker currently furnishing the data to the network.
 
         If transferring a *segment-key* with a public restricted identity (0 .. 9999), if the
         *segment-key* already exists at provided identity for a different *owner*, the message
@@ -2723,7 +2913,146 @@ paths:
 
         Once activated, the user can write data to their *datastore-keys*.
 
+        Stops pulling updates *from* decentralized storage and starts pushing updates *to* decentralized storage.
+
+        This call is idempotent: call this to change from [pour-active-stewardship](#operation--pour-active-stewardship-put).
+
         WARNING: having more than one "active" data-steward may lead to write race-conditions on the distributed persistence network with unknown consequences.
+      parameters:
+        - in: body
+          name: activation
+          description: |
+            Activation parameters.
+          schema:
+            type: object
+            properties:
+              broker-address-signed:
+                type: string
+                description: |
+                  BASE64 encoded.
+
+                  This parameter can only be provided if *unixtime-millis* and *unixtime-millis-signed* are also provided.
+
+                  The *broker-address* on the reumneration-provider matching caller's *identity*--as provided by [/capabilities/address](#operation--capabilities-address)--signed with the private key corrsponding to the *user-address* of *identity*.
+
+                  Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+
+                  Providing this parameter means we want to advertise this broker as the caller's *user-address*' [activeHost](glossary.html#data-steward) to the [lookup network](#tag-broker-lookup) corresponding to the *remuneration-key* used for this *identity*.
+
+                  If the [lookup network](#tag-broker-lookup) currently has a *drainHost* entry, the *drainHost* entry is removed from the [lookup network](#tag-broker-lookup).
+              unixtime-millis:
+                type: number
+                description: |
+                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis) as the source for this parameter.
+
+                  If this parameter is provided, *unixtime-millis-signed* must be provided as well.
+
+                  These parameters mitigate replay attacks.
+              unixtime-millis-signed:
+                type: string
+                description: |
+                  BASE64 encoded.
+
+                  The *unixtime-millis* provided above signed with the private key corrsponding to the *user-address* of *identity*.
+
+                  Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+      tags:
+        - data-stewardship
+      security:
+        - Authorization Header: []
+      consumes:
+        - application/json
+      responses:
+        200:
+          description: |
+            Stewardship status change successful.
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
+  /pour-active-stewardship:
+    put:
+      summary: Make this broker an active-steward of the user's data with caveats allowing for safe sync of data from some passive-steward.
+      description: |
+        All of the user's data with caller's *identity* is now under this broker's [active-stewardship](glossary.html#data-steward) with caveats:
+
+        * *getter methods* will return [246/Inconclusive](#/responses/246) on successful reads of *segment-keys* that weren't explicitly written to: see [response status code *246*](#/responses/246).  This is important for continuity of data-access during migrations:
+            1. finishing up any persistence storage network synchronization from a previously [active-steward](glossary.html#data-steward) before making this broker a [regular active-steward](#operation--active-stewardship-put).  See [data-stewardship](#tag-data-stewardship) for use-cases.
+            1. allowing for time-consuming explicit export from a previously [active-steward](glossary.html#data-steward) and explicit [fill](#operation-fill-WIRE) of this broker; before making this broker a [regular active-steward](#operation--active-stewardship-put).  See [data-stewardship](#tag-data-stewardship) for use-cases.
+        * accepts decentralized storage data changes until an explicit API write to a *segment-key*:
+            * overwrites data in that *segment-key* as usual (see [response code *246](#/responses/246))
+            * causes the *segment-key* to stops being overwritten by decentralized storage changes
+            * causes the *segment-key* to start returning 200/OK on *getter methods* instead of [246/Inconclusive](#/responses/246)
+        
+        Once activated, the user can write data to their *datastore-keys*.
+
+        Ensures updates *from* decentralized storage continue to be pulled; stops pushing updates *to* decentralized storage.
+
+        This call is idempotent: call this to change from [passive or active stewardship](#tag-data-stewardship).
+
+        Note that this *pour-active stewardship* mode is complementary with the [fill endpoint](#operation-fill-WIRE) when not leveraging distributed persistence.
+
+        When in this *pour-active stewardship* mode while waiting for persistence network to synchronize data from a [passive-steward](glossary.html#data-steward); this *pour-active steward* can be safely transitioned to an [active steward](#operation--active-stewardship-put) when the [passive-steward](glossary.html#data-steward) and this broker both return the same identifier from [GET /latest-snapshot-id](#operation--latest-snapshot-id-get).
+        
+        WARNING: having more than one "active" data-steward may lead to write race-conditions on the distributed persistence network with unknown consequences.
+      parameters:
+        - in: body
+          name: activation
+          description: |
+            Activation parameters.
+          schema:
+            type: object
+            properties:
+              drain-host:
+                type: string
+                description: |
+                  This parameter can only be provided if *drain-host-signed*, *unixtime-millis*, *unixtime-millis-signed*, and *broker-address-signed* are also provided.
+
+                  This is the host name or IP address of [passive-steward broker](glossary.html#data-steward) we're draining data from into this broker.  
+
+                  This host name or IP address--if properly signed by *drain-host-signed*--will be pushed to the [lookup network](#tag-broker-lookup) corresponding to the *remuneration-key* used for this *identity*.
+
+                  Once the [lookup network](#tag-broker-lookup) has this *drainHost* it can aid all data-access during a [migration](#tag-data-stewardship).
+              drain-host-signed:
+                type: string
+                description: |
+                  BASE64 encoded.
+
+                  This parameter can only be provided if *unixtime-millis*, *unixtime-millis-signed*, and *broker-address-signed* are also provided.
+
+                  The *drain-host* provided above signed with the private key corrsponding to the *user-address* of *identity*.
+
+                  Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+              broker-address-signed:
+                type: string
+                description: |
+                  BASE64 encoded.
+
+                  This parameter can only be provided if *unixtime-millis* and *unixtime-millis-signed* are also provided.
+
+                  The *broker-address* on the reumneration-provider matching caller's *identity*--as provided by [/capabilities/address](#operation--capabilities-address)--signed with the private key corrsponding to the *user-address* of *identity*.
+
+                  Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+
+                  Providing this parameter means we want to advertise this broker as the caller's *user-address*' [activeHost](glossary.html#data-steward) to the [lookup network](#tag-broker-lookup) corresponding to the *remuneration-key* used for this *identity*.
+              unixtime-millis:
+                type: number
+                description: |
+                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis) as the source for this parameter.
+
+                  If this parameter is provided, *unixtime-millis-signed* must be provided as well.
+
+                  These parameters mitigate replay attacks.
+              unixtime-millis-signed:
+                type: string
+                description: |
+                  BASE64 encoded.
+
+                  The *unixtime-millis* provided above signed with the private key corrsponding to the *user-address* of *identity*.
+
+                  Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
       tags:
         - data-stewardship
       security:
@@ -2796,10 +3125,14 @@ paths:
             The content-hashes for the *datastore-key* (segment-key @ identity).
           schema:
             $ref: "#/definitions/PersistenceStatus"
+        246:
+          $ref: "#/responses/246"
         400:
           $ref: "#/responses/400"
         403:
           $ref: "#/responses/403"
+        422:
+          $ref: "#/responses/422"
         429:
           $ref: "#/responses/429"      
   /guids:
@@ -2811,10 +3144,9 @@ paths:
         All data owned by the *identity* on the corresponding distributed persistence network--as per the provided current GUID--is tied to the new GUIDs.  
         New GUIDs are initialized by the broker and bound by this broker to the user.
 
-        This operation is useful to ensure no other broker can alter your data after a [broker transfer](#operation--opt-in-data-post).  All other [stewards of your data](#tag-data-stewardship) will need to be [made aware of the GUID change](#operation--opt-in-data-post).
+        This operation is useful to ensure no other broker can alter your data after a [broker transfer](#operation--opt-in-data--type-key---guid--post).  All other [stewards of your data](#tag-data-stewardship) will need to be [made aware of the GUID change](#operation--opt-in-data--type-key---guid--post).
 
-        If this broker is not an active steward of data for *identity*, call fails with a 400 -- 
-        "cannot write, broker not an active steward of user's data"
+        If this broker is not an [active steward](#operation--active-stewardship-put) of data for *identity*, call fails with a 400 -- "cannot write, broker not an active steward of user's data".  Note that [pour-active-stewards](#operation--pour-active-stewardship-put) are considered *passive* stewards for this call.
       tags:
         - data-stewardship
       parameters:
@@ -2850,7 +3182,7 @@ paths:
         Returns the *GUIDs* pointing to persisted data for the *identity*.  This broker must be the owner of whatever
         private metadata is necessary to furnish data to the persistence network at said *GUID*. 
 
-        This getter works in conjunction with the [opt-in-data import POST](#operation--opt-in-data-post) setter for data pinning/distribution.
+        This getter works in conjunction with the [opt-in-data import POST](#operation--opt-in-data--type-key---guid--post) setter for data pinning/distribution.
       tags:
         - data-stewardship
       security:
@@ -3454,15 +3786,21 @@ responses:
           description: |
             For most error *codes* this is a UTF-8 encoded string with error text.
 
-            For *codes* *200*, *206*, *222*, and *413*, this is a response byte-stream.
+            For *codes* *200*, [*206*](#/responses/206), *222*, [*246*](#/responses/246), and *413*, this is a response byte-stream.
             
             Each *WIRE* event's *RESPONSES* section details which response *codes* apply; specifying the syntax and semantics of this *response* byte-stream descriptor.
 
-            `Codes 200 and 206`
+            **Codes 200 and [206](#/responses/206)**
             
-            *Code 200* signifies the response is complete.  For unfragmented responses only one response message is returned and it has a *code* of *200*.  A fragmented response returns one or more *code 206* events followed by a final *code 200* response; signalling end of fragments--at which point the aggregate payload can be reconstituted.  
+            *Code 200* signifies the response is complete.  For unfragmented responses only one response message is returned and it has a *code* of *200*.  A fragmented response returns one or more [*code 206*](#/responses/206) events followed by a final *code 200* response; signalling end of fragments--at which point the aggregate payload can be reconstituted.  
 
-            For code *206* the *response* is a non-final fragment of an aggregate response.  A code *206* event from the broker needs to be [acknowledged](#operation-acknowledge-WIRE) by the client.
+            For [*code 206*](#/responses/206) the *response* is a non-final fragment of an aggregate response.  A [*code 206*](#/responses/206) event from the broker needs to be [acknowledged](#operation-acknowledge-WIRE) by the client.
+
+            **[Code 246](#/responses/246)**
+
+            Under certain conditions [*code 246*](#/responses/246) will be returned instead of *code 200*.  Both *code 200* and [*code 246*](#/responses/246) signify successful completion of a response.
+
+            See section on [*code 246*](#/responses/246) for the *decision matrix* of when the *code* is returned instead of *code 200*.
       description: |
         WebSocket Requests may have one or more response events (this).  Each response event from the *overhide* broker is a byte-stream in the following format:
 
@@ -3481,22 +3819,49 @@ responses:
       Subsequent *206* responses may follow--in-order for reconstituting the response byte stream--until the aggregate response is finalized with a *200* response code.
 
       Every *206* response must be [acknowledged](#operation-acknowledge-WIRE) by the client before the broker will send subsequent fragments.
+  246:
+    description: |
+      Inconclusive - check other broker for newer data.
+
+      The *246* status code has the same structure as a *200/OK* and indicates success, but requires caller to second-guess this result.  
+      
+      It is always returned by *getter calls* on: 
+
+      * [passive hosts](#tag-data-stewardship) in cases where an [active host](#tag-data-stewardship) would return a *200/OK*.
+      * [pour-active-stewardship hosts](#operation--pour-active-stewardship-put) when request is for data in a *segment-key* that hasn't been explicitly written to via [data](#tag-data), [backchannel](#tag-backchannel-queues), or [scratch-pad](#operation--scratch-pad-put) APIs.  Once a *segment-key* is written to by one of these APIs--since the broker was put into [*pour-active-stewardship*](#operation--pour-active-stewardship-put) mode for an *identity*--the [*pour-active-steward*](#operation--pour-active-stewardship-put) will return a *200/OK*.
+
+      Upon receipt of a *246* status code as a response to a *getter call* the client must check whichever complementary broker is reported by [broker-lookup](#tag-broker-lookup)--if any.  A complementary broker to an *active* *pour* host is the *passive* *drain* host and vice versa.  
+
+      Once both complimentary hosts--reported by [broker-lookup](#tag-broker-lookup)--respond with a value and a status code, consult the following decision matrix as to which broker's value to use :
+
+      |   | *200/OK from ACTIVE (pour)* | *246/Inconclusive from ACTIVE (pour)* | *422/Unprocessable from ACTIVE (pour)* | *246/Inconclusive from PASSIVE (drain)* | *ERROR from PASSIVE (drain)* | *PASSIVE (drain) not set* |
+      | *200/OK from ACTIVE (pour)* | X | X | X | use ACTIVE's value | use ACTIVE's value | use ACTIVE's value |
+      | *246/Inconclusive from ACTIVE (pour)* | X | X | X | use PASSIVE's value | use ACTIVE's value | use ACTIVE's value |
+      | *422/Unprocessable from ACTIVE (pour)* | X | X | X | use PASSIVE's value | ERROR | ERROR |
+      | *246/Inconclusive from PASSIVE (drain)* | use ACTIVE's value | use PASSIVE's value | use PASSIVE's value | X | X | X |
+      | *ERROR from PASSIVE (drain)* | use ACTIVE's value | use ACTIVE's value | ERROR | X | X | X |
+      | *PASSIVE (drain) not set* | use ACTIVE's value | use ACTIVE's value | ERROR | X | X | X |
+
+      The decision which broker's value to use as source of truth depends on their returned status codes.
+
   400:
     description: |
       A bad request from the client results in one or more of the following error message strings:
 
-      - invalid remuneration-key, doesn't match broker system capabilities
-      - address incompatible with remuneration provider
-      - invalid signature
-      - invalid secret-phrase
-      - no handshake
-      - message outside handshake constraints
-      - invalid datastore-key requested; segment-key or identity mismatch
-      - datastore-key ownership conflict; segment-key @ identity already reserved
-      - cannot write, broker not an active steward of user's data
-      - invalid type-key, doesn't match broker system capabilities
-      - cannot reach data
-      - cannot process input
+      * invalid remuneration-key, doesn't match broker system capabilities
+      * address incompatible with remuneration provider
+      * invalid signature
+      * invalid secret-phrase
+      * no handshake
+      * message outside handshake constraints
+      * invalid datastore-key requested; segment-key or identity mismatch
+      * datastore-key ownership conflict; segment-key @ identity already reserved
+      * invalid type-key, doesn't match broker system capabilities
+      * cannot reach data
+      * cannot process input
+      * cannot write, broker not an active steward of user's data
+          * check broker-lookup to find active steward and write there
+      * cannot continue, invalid stewardship mode
 
       The message enum might be extended by broker system.
   401:
@@ -3534,6 +3899,15 @@ responses:
       Occurs when a data set operation includes a *write-gate* parameter that has a SHA256 value which does not match the SHA256 hash of the current (in-datastore) value of a *segment-key*.
 
       A data write is requested on a *segment-key* that has an unexpected value in the datastore.  Implies there is a concurrent write issue. 
+  422:
+    description: |
+      Unprocessable - not filled yet, check draining host for data.
+
+      When a *getter* method called on a [pour-active-steward](#operation--pour-active-stewardship-put) doesn't find a *segment-key* for an *identity* it returns this status code instead of a 400/BAD-REQUEST (with "invalid datastore-key requested; segment-key or identity mismatch" for the reason).
+
+      Upon receipt of a *422* status code as a response to a *getter call* the client must attempt the *getter call* with the complementary *draining* *passive* broker as reported by [broker-lookup](#tag-broker-lookup)--if any.
+
+      Refer to write-up on the [*246* status code](#/responses/206) for a decision matrix as to what the client should do.
   429:
     description: |
       Client is calling the API too frequently.
