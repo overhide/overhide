@@ -467,3 +467,11 @@ If the latest value of a *datastore-key* is only in volatile memory (RAM) of the
 If the latest value of a *datastore-key* has been persisted to the broker's non-volatile storage (HDD/NAS), it's considered to be in "permanent-memory".  Reads against other passive *data-stewards* will not return the latest value.  The value will be lost if the broker's permanent storage is corrupted.
 
 If the latest value of a *datastore-key* has been shared to the decentralized persistence network--making it available to other peers--it's considered to be in "shared-memory"--reads against other passive *data-stewards* will return this latest value.  
+
+#### broker lookup
+
+Given an *user-address* or a *service-address*, provides ability to lookup that address' *active steward* broker's host name or IP.
+
+Since *user-addresses* and *service-addresses* are ledger specific (remuneration provider specific) the *broker lookup* network is specific to a [remuneration-key](broker.html#/definitions/RemunerationKey).
+
+See the [broker lookup](lookup.md) write-up.

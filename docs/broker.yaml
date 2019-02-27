@@ -10,7 +10,7 @@ info:
 
     ![overhide component model](https://github.com/JakubNer/overhide/raw/master/docs/images/provided.png)
 
-    Read this API with reference to the [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md).
+    Read this API with reference to the [glossary](glossary.html).
 
     ***
       #### A note on schemes used in the API.  
@@ -62,7 +62,7 @@ tags:
 
       Before the *client* can exchange data with the *overhide broker* it needs to authenticate and handshake.
 
-      The first synchronous HTTPS call is a PUT to [*/auth/credentials*](#operation--auth-credentials-put); returning an [*identity*](identity.html).  Subsequently, when the client establishes a Websocket connection with the broker (*Websocket connect(identity)*) it provides the *identity* as per [WSS Auth](#security-definition-Authorization%20WSS).
+      The first synchronous HTTPS call is a PUT to [*/auth/credentials*](#operation--auth-credentials-put); returning an [identity](glossary.html#identity).  Subsequently, when the client establishes a Websocket connection with the broker (*Websocket connect(identity)*) it provides the [identity](glossary.html#identity) as per [WSS Auth](#security-definition-Authorization%20WSS).
 
       From this point on the exchanges take place over the Websocket protocol, ursng *WIRE* events as documented here.
 
@@ -90,10 +90,10 @@ tags:
         the system and invitees of subscribers of the system.
       * work with  authority levels.
       * opt-in persistence network storage
-      * change *identity* credentials.  Setting *identity* for the first time is
+      * change [identity](glossary.html#identity) credentials.  Setting [identity](glossary.html#identity) for the first time is
       done with the [authenticate endpoint](#operation--auth-credentials-put).
       * work with subscription details for a supported remuneration API and a
-      given *identity*.
+      given [identity](glossary.html#identity).
   - name: scratch-pad 
     description: |
       A single identity specific data container for holding a small piece of data in working-memory.
@@ -109,9 +109,9 @@ tags:
       Publishing messages to backchannel queues, subscribing to notifications, and de-queueing the messages.
   - name: delegate
     description: |
-      Delegate data in a *segment-key* is data qualified by an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) that is different from the owner.
+      Delegate data in a [segment-key](glossary.html#segment-key) is data qualified by an [identity](glossary.html#identity) that is different from the owner.
 
-      Each delegate keeps their data completely separate from other delegates under the same *segment-key*.
+      Each delegate keeps their data completely separate from other delegates under the same [segment-key](glossary.html#segment-key).
 
       Delegates may be alloted delegated *backchannel-queues*:  these are qualified via *delegate* query parameters on [the backchannel endpoints](#tag-backchannel-queues)
   - name: datastore-key settings
@@ -126,12 +126,12 @@ tags:
       * opt-in for decentralized storge
   - name: metrics
     description: |
-      Usage metrics for specific *datastore-keys* or overall for the *identity*.
+      Usage metrics for specific *datastore-keys* or overall for the [identity](glossary.html#identity).
   - name: data-stewardship
     description: |
       Stewardship of a users's data.
 
-      Stewardship of data is important regardless whether an *identity* opts-in into decentralized storage or not.
+      Stewardship of data is important regardless whether an [identity](glossary.html#identity) opts-in into decentralized storage or not.
       All but [one](#operation--opt-in-data--type-key---guid--post) of these APIs deal with stwardship regardless of decentralization opt-in selected: see 
       [opt-in endpoint](#operation--auth-opt-in--agree--put) and [*segment-key* specific opt-in](#definition-DatastoreKeySettings).  
           
@@ -594,7 +594,7 @@ paths:
     get:
       summary: Retrieve this broker's broker-address for the remuneration-provider used by caller's identity.
       description: |
-        Retrieve this broker's *broker-address* for the remuneration-provider used by caller's *identity*.
+        Retrieve this broker's [broker-address](glossary.html#broker-address) for the remuneration-provider used by caller's [identity](glossary.html#identity).
       tags:
         - capabilities
       produces:
@@ -602,7 +602,7 @@ paths:
       responses:
         200:
           description: |
-            This broker's broker-address for the remuneration-provider used by caller's identity.
+            This broker's [broker-address](glossary.html#broker-address) for the remuneration-provider used by caller's identity.
         429:
           $ref: "#/responses/429"
   /broker-lookup:
@@ -629,54 +629,39 @@ paths:
     put:
       summary: Populate broker-lookup entry on the network for the calling identity's remuneration-key.
       description: |
-        Populate *broker-lookup* entry from payload.
-
-        The calling *identity* is for a *user-address* on a sepcific ledger with its own [remuneration-key](#/definitions/RemunerationKey)
+        Populate [broker-lookup](glossary.html#broker-lookup) entry for network indicated by the [remuneration-key](#/definitions/RemunerationKey); corrsponding to calling [identity](glossary.html#identity)'s'[user-address](glossary.html#user-address).
       tags:
-        - auth
+        - broker-lookup
       parameters:
         - in: body
-          name: authentication
+          name: lookup
           description: |
-            Authentication parameters.
+            Lookup parameters.
           schema:
             type: object
             required:
-              - remuneration-key
-              - secret-phrase
-              - user-address
-              - secret-phrase-signed
+              - active-broker-address-signed
               - unixtime-millis
               - unixtime-millis-signed
             properties:
-              remuneration-key:
-                type: string
-                description: |
-                  [Key](#/definitions/RemunerationKey) from remuneration-providers which contains subscription payment(s) from the
-                  provided *user-address* to this broker's *broker-address*.
-
-                  Must be one of the remuneration provider keys from this broker's [capabilities](#operation--capabilities-remuneration-providers-get).
-              secret-phrase:
+              active-broker-address-signed:
                 type: string
                 description: |
                   BASE64 encoded.
 
-                  A secret phrase for the specified user-address.  Once a user authenticates against the broker with a secret-phrase and a user-address, the secret-phrase is tied to the user-address indefinitely, unless changed by [changed-credentials](#operation--auth-changed-credentials-put).  Using the incorrect *scecret-phrase* will result in a 400 -- "invalid secret-phrase".  ([more information](identity.html#identity-tracked-by-broker))
-              user-address:
-                type: string
-                description: |
-                  A public user-address to verify an active subscription to this broker's broker-address.
+                  Signature of this brokers address as retrieved with [GET /capabilities/address](#operation--capabilities-address).
 
-                  Must be an address for the remuneration provider indicated in *remuneration-key*.
-              secret-phrase-signed:
-                type: string
-                description: |
-                  BASE64 encoded.
+                  The broker's address is signed by the calling *identity's* [user-address](glossary.html#user-address).
 
-                  The *secret-phrase* provided above signed with the private key corrsponding to the
-                  *user-address*.
+                  The signing [user-address](glossary.html#user-address) and the signed broker's address must be for ledger corresponding to [remuneration-key](#/definitions/RemunerationKey) of calling [identity](glossary.html#identity).                   
 
                   Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+              active-host:
+                type: string
+                description: |
+                  A public *address* of this broker--as can be retrieved with [GET /capabilities/address](#operation--capabilities-address) to verify an active subscription to this broker's [broker-address](glossary.html#broker-address).
+
+                  Must be an address for the remuneration provider indicated in *remuneration-key*.
               unixtime-millis:
                 type: number
                 description: |
@@ -688,7 +673,7 @@ paths:
                 description: |
                   BASE64 encoded.
 
-                  The *unixtime-millis* provided above signed with the private key corrsponding to the *user-address* of *identity*.
+                  The *unixtime-millis* provided above signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
 
                   Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
       consumes:
@@ -714,16 +699,16 @@ paths:
             Payment Required -- Remuneration provider indicates insufficient transactions to the broker system to meet a
             service tier subscription requirements.
 
-            See [subscriptions write-up](https://github.com/JakubNer/overhide/blob/master/docs/identity.md#subscriptions).
+            See [subscriptions write-up](glossary.html#identity#subscriptions).
         409:
           $ref: "#/responses/409-identity-conflict"
         429:
           $ref: "#/responses/429"
   /auth/credentials:
     put:
-      summary: Authenticate an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) returning a token.
+      summary: Authenticate an [identity](glossary.html#identity) returning a token.
       description: |
-        Authenticate an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) returning a token to be used for [token
+        Authenticate an [identity](glossary.html#identity) returning a token to be used for [token
         authentication](#security-definition-Authorization Header) in the rest of the API.
         
         > Note that the token will be returned as part of a *200/OK* result code or a *302/FOUND* result code.
@@ -748,7 +733,7 @@ paths:
                 type: string
                 description: |
                   [Key](#/definitions/RemunerationKey) from remuneration-providers which contains subscription payment(s) from the
-                  provided *user-address* to this broker's *broker-address*.
+                  provided *user-address* to this broker's [broker-address](glossary.html#broker-address).
 
                   Must be one of the remuneration provider keys from this broker's [capabilities](#operation--capabilities-remuneration-providers-get).
               secret-phrase:
@@ -756,11 +741,11 @@ paths:
                 description: |
                   BASE64 encoded.
 
-                  A secret phrase for the specified user-address.  Once a user authenticates against the broker with a secret-phrase and a user-address, the secret-phrase is tied to the user-address indefinitely, unless changed by [changed-credentials](#operation--auth-changed-credentials-put).  Using the incorrect *scecret-phrase* will result in a 400 -- "invalid secret-phrase".  ([more information](identity.html#identity-tracked-by-broker))
+                  A secret phrase for the specified *user-address*.  Once a user authenticates against the broker with a secret-phrase and a *user-address*, the secret-phrase is tied to the *user-address* indefinitely, unless changed by [changed-credentials](#operation--auth-changed-credentials-put).  Using the incorrect *scecret-phrase* will result in a 400 -- "invalid secret-phrase".  ([more information](glossary.html#identity#identity-tracked-by-broker))
               user-address:
                 type: string
                 description: |
-                  A public user-address to verify an active subscription to this broker's broker-address.
+                  A public *user-address* to verify an active subscription to this broker's [broker-address](glossary.html#broker-address).
 
                   Must be an address for the remuneration provider indicated in *remuneration-key*.
               secret-phrase-signed:
@@ -783,7 +768,7 @@ paths:
                 description: |
                   BASE64 encoded.
 
-                  The *unixtime-millis* provided above signed with the private key corrsponding to the *user-address* of *identity*.
+                  The *unixtime-millis* provided above signed with the private key corrsponding to the *user-address* of [identity](glossary.html#identity).
 
                   Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
       consumes:
@@ -809,22 +794,22 @@ paths:
             Payment Required -- Remuneration provider indicates insufficient transactions to the broker system to meet a
             service tier subscription requirements.
 
-            See [subscriptions write-up](https://github.com/JakubNer/overhide/blob/master/docs/identity.md#subscriptions).
+            See [subscriptions write-up](glossary.html#identity#subscriptions).
         409:
           $ref: "#/responses/409-identity-conflict"
         429:
           $ref: "#/responses/429"
   /auth/authorities:
     get:
-      summary: Retrieves authorities for an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
+      summary: Retrieves authorities for an [identity](glossary.html#identity).
       description: |
-        Retrieve authorities for an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).  Authorities are rates and limits as specified by [the *Authorities* return object](#definition-Authorities).
+        Retrieve authorities for an [identity](glossary.html#identity).  Authorities are rates and limits as specified by [the *Authorities* return object](#definition-Authorities).
 
-        If an *identity* has multiple transactions with a reumneration provider, the transactions are added to yield the best service tier.
+        If an [identity](glossary.html#identity) has multiple transactions with a reumneration provider, the transactions are added to yield the best service tier.
 
         Authorities are valid for the duration of the [security token](#security-definition-Authorization Header).
 
-        See [identities write-up](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) for more information.
+        See [identities write-up](glossary.html#identity) for more information.
       tags:
         - auth
       security:
@@ -845,25 +830,25 @@ paths:
     put:
       summary: Authenticate an invitee's user-address as a guest of a subscriber's user-address.
       description: |
-        Authenticate an invitee's user-address as a guest of a subscriber's user-address.
+        Authenticate an invitee's [user-address](glossary.html#user-address) as a guest of a subscriber's [user-address](glossary.html#user-address).
 
         An invitee into the system must provide a valid address on an [accepted remuneration provider](#operation--capabilities-remuneration-providers-get).  An invitee must prove ownership of said valid address.
 
-        Transactions--on a supported remuneration-provider--from the *invitee-user-address* to the provided *inviter-user-address* are part of the state of the returned access token by this call.  The *inviter* may set [fee expectations](#definition-DatastoreKeySettings) on *segment-keys*.  If fees paid are expected, the *invitee* must necessairly have transacted with the *inviter*.
+        Transactions--on a supported remuneration-provider--from the *invitee-user-address* to the provided *inviter-user-address* are part of the state of the returned access token by this call.  The *inviter* may set [fee expectations](#definition-DatastoreKeySettings) on [segment-key](glossary.html#segment-key).  If fees paid are expected, the *invitee* must necessairly have transacted with the *inviter*.
 
-        The inviting subscriber must expose their *user-address* and a *shared-phrase* that's used to hash their *user-address*
-        into an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).  The *shared-phrase* is equivalent to the
+        The inviting subscriber must expose their [user-address](glossary.html#user-address) and a *shared-phrase* that's used to hash their [user-address](glossary.html#user-address)
+        into an [identity](glossary.html#identity).  The *shared-phrase* is equivalent to the
         *secret-phrase* passed into the [authenticate endpoint](#operation--auth-credentials-put): except it's not kept secret by the 
         inviting user.  This is necessary to authorize the invitee to the inviting subscriber, and to ensure the inviting subscriber's 
-        *user-address* does in fact hash to the desired indentity: we don't want to just pass the inviting subscriber's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md),
+        [user-address](glossary.html#user-address) does in fact hash to the desired indentity: we don't want to just pass the inviting subscriber's [identity](glossary.html#identity),
         we want to calculate it.
 
         Returns an "invitee" token to be used for [token authentication](#security-definition-Authorization Header) in the rest of the API.
         
         > Note that the token will be returned as part of a *200/OK* result code or a *302/FOUND* result code.
 
-        The *invitee-user-address*  hashed by *invitee-secret-phrase* is the invitee's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md)
-        for the purposes of [write/publish permissions](#definition-DatastoreKeySettings) on *segment-keys*.
+        The *invitee-user-address*  hashed by *invitee-secret-phrase* is the invitee's [identity](glossary.html#identity)
+        for the purposes of [write/publish permissions](#definition-DatastoreKeySettings) on [segment-key](glossary.html#segment-key).
       tags:
         - auth
       parameters:
@@ -887,7 +872,7 @@ paths:
                 type: string
                 description: |
                   [Key](#/definitions/RemunerationKey) from remuneration-providers which contains subscription payment(s) from the
-                  provided *user-address* to this broker's *broker-address*.
+                  provided [user-address](glossary.html#user-address) to this broker's [broker-address](glossary.html#broker-address).
 
                   Must be one of the remuneration provider keys from this broker's [capabilities](#operation--capabilities-remuneration-providers-get).
               shared-phrase:
@@ -895,13 +880,13 @@ paths:
                 description: |
                   BASE64 Encoded.
 
-                  A shared phrase by the inviter to the invitee for the specified inviter-user-address.  The *shared-phrase* and the *inviter-user-address*
-                  must compute to an authorized [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) on the system.  This is
+                  A shared phrase by the inviter to the invitee for the specified *inviter-user-address*.  The *shared-phrase* and the *inviter-user-address*
+                  must compute to an authorized [identity](glossary.html#identity) on the system.  This is
                   the identity inviting the invitee.
               inviter-user-address:
                 type: string
                 description: |
-                  A public user-address to verify an active subscription to this broker's broker-address.
+                  A public [user-address](glossary.html#user-address) to verify an active subscription to this broker's [broker-address](glossary.html#broker-address).
 
                   Must be an address for the remuneration provider indicated in *remuneration-key*.
 
@@ -919,9 +904,9 @@ paths:
               invitee-user-address:
                 type: string
                 description: |
-                  A public user-address, must be an address for the remuneration provider indicated in *remuneration-key*.
+                  A public [user-address](glossary.html#user-address), must be an address for the remuneration provider indicated in *remuneration-key*.
 
-                  Transactions from this address to *inviter-user-address* are stored in the returned access token to [check fees](#definition-DatastoreKeySettings) on invitee-accessed *segment-keys*.
+                  Transactions from this address to *inviter-user-address* are stored in the returned access token to [check fees](#definition-DatastoreKeySettings) on invitee-accessed [segment-key](glossary.html#segment-key).
               invitee-secret-phrase-signed:
                 type: string
                 description: |
@@ -942,13 +927,13 @@ paths:
                 description: |
                   BASE64 encoded.
 
-                  The *unixtime-millis* provided above signed with the private key corrsponding to the *user-address* of *identity*.
+                  The *unixtime-millis* provided above signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
 
                   Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
               since:
                 type: string
                 description: |
-                  If an [*entry-fee*](#tag-datastore-key-settings) is specified for a *datastore-key*, transactions from *invitee-user-address*
+                  If an [*entry-fee*](#tag-datastore-key-settings) is specified for a [datastore-key](glossary.html#datastore-key), transactions from *invitee-user-address*
                   to *inviter-user-address* need to be tallied.  All historical transactions are tallied unless this parameter is specified.
 
                   Retrieve transactions since this date-time (inclusive) until now.
@@ -976,7 +961,7 @@ paths:
           description: |
             Payment Required -- Remuneration provider indicates no transactions exist between the user addresses in parameters.
 
-            See [subscriptions write-up](https://github.com/JakubNer/overhide/blob/master/docs/identity.md#subscriptions).
+            See [subscriptions write-up](glossary.html#identity#subscriptions).
         409:
           $ref: "#/responses/409-identity-conflict"
         429:
@@ -991,10 +976,10 @@ paths:
         - in: body
           name: new-authentication
           description: |
-            New authentication credentials for user indicated by the *identity* in the [security header](#security-definition-Authorization Header).
+            New authentication credentials for user indicated by the [identity](glossary.html#identity) in the [security header](#security-definition-Authorization Header).
 
             NOTE:  If the user's data is [tracked by multiple brokers](glossary.html#data-steward) the user's identity has to be changed on all 
-            [data-stewards](glossary.html#data-steward) of the user's data.  Changing *identity* on one [data-steward](glossary.html#data-steward) and 
+            [data-stewards](glossary.html#data-steward) of the user's data.  Changing [identity](glossary.html#identity) on one [data-steward](glossary.html#data-steward) and 
             failing to do same on the rest yields brokers that track stale data.
           schema:
             type: object
@@ -1010,7 +995,7 @@ paths:
                 type: string
                 description: |
                   [Key](#/definitions/RemunerationKey) from remuneration-providers which contains subscription payment(s) from the
-                  provided *new-user-address* to this broker's *broker-address*.
+                  provided *new-user-address* to this broker's [broker-address](glossary.html#broker-address).
 
                   Must be one of the remuneration provider keys from this broker's [capabilities](#operation--capabilities-remuneration-providers-get).
               new-secret-phrase:
@@ -1018,11 +1003,11 @@ paths:
                 description: |
                   BASE64 Encoded.
 
-                  A new secret phrase for the new user-address.  Once credentials are changed successfully; the *new-secret-phrase* is tied to the *new-user-address* indefinitely, unless changed again by [changed-credentials](#operation--auth-changed-credentials-put).
+                  A new secret phrase for the new [user-address](glossary.html#user-address).  Once credentials are changed successfully; the *new-secret-phrase* is tied to the *new-user-address* indefinitely, unless changed again by [changed-credentials](#operation--auth-changed-credentials-put).
               new-user-address:
                 type: string
                 description: |
-                  A public user-address to verify an active subscription to this broker's broker-address.
+                  A public [user-address](glossary.html#user-address) to verify an active subscription to this broker's [broker-address](glossary.html#broker-address).
 
                   Must be an address for the remuneration provider indicated in *new-remuneration-key*.
               new-secret-phrase-signed:
@@ -1045,7 +1030,7 @@ paths:
                 description: |
                   BASE64 encoded.
 
-                  The *unixtime-millis* provided above signed with the private key corrsponding to the *user-address* of *identity*.
+                  The *unixtime-millis* provided above signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
 
                   Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
       security:
@@ -1068,9 +1053,9 @@ paths:
     put:
       summary:  Opt-in to store all data for an identity via the broker's decentralized persistence.
       description: |
-        Opt-in to store all data for an *identity* via the broker's decentralized persistence.
+        Opt-in to store all data for an [identity](glossary.html#identity) via the broker's decentralized persistence.
 
-        By default all data for an *identity* is stored on this broker's local persistence.
+        By default all data for an [identity](glossary.html#identity) is stored on this broker's local persistence.
 
         Unless opted-in, data is not decentralized: it does not end up on the broker's decentralized persistence.
 
@@ -1079,7 +1064,7 @@ paths:
         You can still inspect all your data; [import](#operation-import-WIRE) or [export](#operation-export-WIRE) it manually.
 
         To automatically make all of an *identity's* data eventually consistent with the decentralized persistence network, 
-        ensure to opt-in that *identity* with this endpoint.
+        ensure to opt-in that [identity](glossary.html#identity) with this endpoint.
       tags:
         - auth
       parameters:
@@ -1090,7 +1075,7 @@ paths:
             Truthy string such as 'true' matching the regex `/t/i` will opt-in.  To opt-out send in a falsey string such as 'false' not matching
             that regex.
 
-            All data for authenticated *identity* will be opted in.
+            All data for authenticated [identity](glossary.html#identity) will be opted in.
           type: string
       security:
         - Authorization Header: []
@@ -1187,7 +1172,7 @@ paths:
       description: |
         Retrieve *scratch-pad* data.
       
-        *Scratch-pad* data is limited to 32KiB of temporary data.  Data is never be persisted and will only live in volatile memory: *working-data*.  *Scratch-pad* data is not qualified beyond authenticated *identity*: a single *scratch-pad* per identity.
+        *Scratch-pad* data is limited to 32KiB of temporary data.  Data is never be persisted and will only live in volatile memory: *working-data*.  *Scratch-pad* data is not qualified beyond authenticated [identity](glossary.html#identity): a single *scratch-pad* per identity.
       tags:
         - scratch-pad
       security:
@@ -1215,7 +1200,7 @@ paths:
       description: |
         Set *scratch-pad* binary data.
       
-        *Scratch-pad* data is limited to 32KiB of temporary data.  Data is never be persisted and will only live in volatile memory: *working-data*.  *Scratch-pad* data is not qualified beyond authenticated *identity*: a single *scratch-pad* per identity.
+        *Scratch-pad* data is limited to 32KiB of temporary data.  Data is never be persisted and will only live in volatile memory: *working-data*.  *Scratch-pad* data is not qualified beyond authenticated [identity](glossary.html#identity): a single *scratch-pad* per identity.
       tags:
         - scratch-pad
       parameters:
@@ -1243,12 +1228,12 @@ paths:
     options:
       summary: Set value of datastore-key.
       description: |
-        Payload contents is written as a new value into *datastore-key* (segment-key @ identity).
+        Payload contents is written as a new value into [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)).
 
-        For the *set* to succeed the *datastore-key* (segment-key @ identity) must
+        For the *set* to succeed the [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)) must
         either be brand new of already owned by authorization token owner.
 
-        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for *identity*, call fails with a 400 -- "cannot write, broker not an active steward of user's data"
+        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for [identity](glossary.html#identity), call fails with a 400 -- "cannot write, broker not an active steward of user's data"
       tags:
         - data
       parameters:
@@ -1301,17 +1286,17 @@ paths:
               segment-key:
                 type: bytes
                 description: |
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+                  See [glossary](glossary.html#segment-key).
               identity-len:
                 type: number
                 description: |
-                  Length in bytes of *identity*.
+                  Length in bytes of [identity](glossary.html#identity).
               identity:
                 type: bytes
                 description: |
                   Optional identity.  If not provided, identity is that of token owner.
 
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+                  See [glossary](glossary.html#identity).
               flags:
                 type: bytes
                 description: |
@@ -1356,7 +1341,7 @@ paths:
     options:
       summary: Get value of datastore-key.
       description: |
-        Get value of *datastore-key* (segment-key @ identity).
+        Get value of [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)).
       tags:
         - data
       parameters:
@@ -1402,17 +1387,17 @@ paths:
               segment-key:
                 type: bytes
                 description: |
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+                  See [glossary](glossary.html#segment-key).
               identity-len:
                 type: number
                 description: |
-                  Length in bytes of *identity*.
+                  Length in bytes of [identity](glossary.html#identity).
               identity:
                 type: bytes
                 description: |
                   Optional identity.  If not provided, identity is that of token owner.
 
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+                  See [glossary](glossary.html#identity).
       consumes:
         - application/octet-stream
       produces:
@@ -1424,7 +1409,7 @@ paths:
           $ref: "#/responses/WIRE"
         code == 200:
           description: |
-            The value of *datastore-key* (segment-key @ identity).
+            The value of [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)).
         code == 206:
           $ref: "#/responses/206"
         code == 246:
@@ -1441,10 +1426,10 @@ paths:
     options:
       summary: Delete datastore-key.
       description: |
-        Delete *datastore-key* (segment-key @ identity).  The *datastore-key* must be
+        Delete [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)).  The [datastore-key](glossary.html#datastore-key) must be
         owned by the token owner.
 
-        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for *identity*, call fails with a 400 -- "cannot write, broker not an active steward of user's data"
+        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for [identity](glossary.html#identity), call fails with a 400 -- "cannot write, broker not an active steward of user's data"
       tags:
         - data
       parameters:
@@ -1492,17 +1477,17 @@ paths:
               segment-key:
                 type: bytes
                 description: |
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+                  See [glossary](glossary.html#segment-key).
               identity-len:
                 type: number
                 description: |
-                  Length in bytes of *identity*.
+                  Length in bytes of [identity](glossary.html#identity).
               identity:
                 type: bytes
                 description: |
                   Optional identity.  If not provided, identity is that of token owner.
 
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+                  See [glossary](glossary.html#identity).
               flags:
                 type: bytes
                 description: |
@@ -1534,17 +1519,17 @@ paths:
     options:
       summary: Enqueue a message to a given datastore-key backchannel.
       description: |
-        Enqueue a message to a given *datastore-key* (*segment-key* @ *identity*) backchannel.
+        Enqueue a message to a given [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)) backchannel.
 
-        If the *datastore-key*'s *allow-publish* setting is "self", the *identity* in the authentication token must match the *datastore-key* owner.
+        If the [datastore-key](glossary.html#datastore-key)'s *allow-publish* setting is "self", the [identity](glossary.html#identity) in the authentication token must match the [datastore-key](glossary.html#datastore-key) owner.
 
-        If the *datastore-key*'s *allow-publish* setting is "signed", the author of the backchannel message is the *identity* tied ot the authorization token passed to this API.  Message author's *identity* is present in the token and compared to the *allowed-publishers* list--if any--for this *datastore-key*.
+        If the [datastore-key](glossary.html#datastore-key)'s *allow-publish* setting is "signed", the author of the backchannel message is the [identity](glossary.html#identity) tied ot the authorization token passed to this API.  Message author's [identity](glossary.html#identity) is present in the token and compared to the *allowed-publishers* list--if any--for this [datastore-key](glossary.html#datastore-key).
 
-        If the *datastore-key*'s *allow-publish* setting is "any", the *identity* in the authentication token must simply be valid: a valid broker system user is publishing.
+        If the [datastore-key](glossary.html#datastore-key)'s *allow-publish* setting is "any", the [identity](glossary.html#identity) in the authentication token must simply be valid: a valid broker system user is publishing.
 
         See the [settings getter](#operation---segment-key--settings--get) for the above settings.
 
-        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for *identity*, call fails with a 400 -- "cannot write, broker not an active steward of user's data"
+        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for [identity](glossary.html#identity), call fails with a 400 -- "cannot write, broker not an active steward of user's data"
       tags:
         - backchannel queues
       parameters:
@@ -1597,17 +1582,17 @@ paths:
               segment-key:
                 type: bytes
                 description: |
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+                  See [glossary](glossary.html#segment-key).
               identity-len:
                 type: number
                 description: |
-                  Length in bytes of *identity*.
+                  Length in bytes of [identity](glossary.html#identity).
               identity:
                 type: bytes
                 description: |
                   Optional identity.  If provided, must be complementary to the *delegate* parameter,  or one of public restricted identities:  0 .. 9999.  If not provided, identity is that of [token owner](#security-definition-Authorization%20WSS).
 
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+                  See [glossary](glossary.html#identity).
               delegate-len:
                 type: number
                 description: |
@@ -1615,13 +1600,13 @@ paths:
               delegate:
                 type: bytes
                 description: |
-                  Qualifies that this backchannel message is meant for a [delegate](#tag-delegate) of *segment-key*.  The value is the delegate's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
+                  Qualifies that this backchannel message is meant for a [delegate](#tag-delegate) of *segment-key*.  The value is the delegate's [identity](glossary.html#identity).
 
                   This value could be a glob `*`.  The `*` glob value means the message is posted to all delegates:  it's enqueued on all their queues.
 
-                  The *delegate* is the message recepient and must satisfy [settings on the *segment-key*](#definition-DatastoreKeySettings) allowing delegate publication of mesages.
+                  The *delegate* is the message recepient and must satisfy [settings on the [segment-key](glossary.html#segment-key)](#definition-DatastoreKeySettings) allowing delegate publication of mesages.
 
-                  If this parameter is present, the *identity* request parameter is mandatory.  The *segment-key* and the *identity* request parameters constitute the *datstore-key*.
+                  If this parameter is present, the [identity](glossary.html#identity) request parameter is mandatory.  The [segment-key](glossary.html#segment-key) and the [identity](glossary.html#identity) request parameters constitute the *datstore-key*.
 
                   The [authorized](#security-definition-Authorization%20WSS) user is the sender.
               flags:
@@ -1660,11 +1645,11 @@ paths:
     options:
       summary: Retrieve all messages from the backchannel at the givent datastore-key.
       description: |
-        Retrieve all messages from the backchannel at the given *datastore-key* (*segment-key* @ *identity*).
+        Retrieve all messages from the backchannel at the given [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)).
 
-        Retrieves messages if [authorized identity](#security-definition-Authorization%20WSS) is the owner of the *datastore-key*.
+        Retrieves messages if [authorized identity](#security-definition-Authorization%20WSS) is the owner of the [datastore-key](glossary.html#datastore-key).
 
-        Retrieves *delegated* messages if [authorized identity](#security-definition-Authorization%20WSS) is not the owner of the *datastore-key* but is complementary with the *datastore-key's* [delegate configuration](#tag-datastore-key-settings).
+        Retrieves *delegated* messages if [authorized identity](#security-definition-Authorization%20WSS) is not the owner of the [datastore-key](glossary.html#datastore-key) but is complementary with the *datastore-key's* [delegate configuration](#tag-datastore-key-settings).
       tags:
         - backchannel queues
       parameters:
@@ -1710,21 +1695,21 @@ paths:
               segment-key:
                 type: bytes
                 description: |
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+                  See [glossary](glossary.html#segment-key).
               identity-len:
                 type: number
                 description: |
-                  Length in bytes of *identity*.
+                  Length in bytes of [identity](glossary.html#identity).
               identity:
                 type: bytes
                 description: |
-                  Optional identity.  If provided, qualifies the *datastore-key* owner--complementary to delegation.  
+                  Optional identity.  If provided, qualifies the [datastore-key](glossary.html#datastore-key) owner--complementary to delegation.  
                   
                   May be one of public identities:  0 .. 9999.  
                   
                   If not provided, [authorized identity](#security-definition-Authorization%20WSS) defaults as owner.
 
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+                  See [glossary](glossary.html#identity).
       consumes:
         - application/octet-stream
       produces:
@@ -1736,7 +1721,7 @@ paths:
           $ref: "#/responses/WIRE"
         code == 200:
           description: |
-            Messages enqueued at *datastore-key* (segment-key @ identity) ordered by increasing non-unique *unixtime-millis*.
+            Messages enqueued at [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)) ordered by increasing non-unique *unixtime-millis*.
 
             Messages returned may not have unique *unixtime-millis*--more than one message may have the same *unixtime-millis*.  
 
@@ -1788,11 +1773,11 @@ paths:
       description: |
         Acknowledge all messages with timestamp up to and including a specified *unixtime-millis* have been handled.  All messages up to and including the specified *unixtime-millis* will be removed from the backchannel.
 
-        Acknowledge messages if [authorized identity](#security-definition-Authorization%20WSS) is the owner of the *datastore-key*.
+        Acknowledge messages if [authorized identity](#security-definition-Authorization%20WSS) is the owner of the [datastore-key](glossary.html#datastore-key).
 
-        Acknowledge *delegated* messages if [authorized identity](#security-definition-Authorization%20WSS) is not the owner of the *datastore-key* but is complementary with the *datastore-key's* [delegate configuration](#tag-datastore-key-settings).
+        Acknowledge *delegated* messages if [authorized identity](#security-definition-Authorization%20WSS) is not the owner of the [datastore-key](glossary.html#datastore-key) but is complementary with the *datastore-key's* [delegate configuration](#tag-datastore-key-settings).
 
-        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for *identity*, call fails with a 400 -- "cannot write, broker not an active steward of user's data"
+        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for [identity](glossary.html#identity), call fails with a 400 -- "cannot write, broker not an active steward of user's data"
       tags:
         - backchannel queues
       parameters:
@@ -1842,21 +1827,21 @@ paths:
               segment-key:
                 type: bytes
                 description: |
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+                  See [glossary](glossary.html#segment-key).
               identity-len:
                 type: number
                 description: |
-                  Length in bytes of *identity*.
+                  Length in bytes of [identity](glossary.html#identity).
               identity:
                 type: bytes
                 description: |
-                  Optional identity.  If provided, qualifies the *datastore-key* owner--complementary to delegation.  
+                  Optional identity.  If provided, qualifies the [datastore-key](glossary.html#datastore-key) owner--complementary to delegation.  
                   
                   May be one of public identities:  0 .. 9999.  
                   
                   If not provided, [authorized identity](#security-definition-Authorization%20WSS) defaults as owner.
 
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+                  See [glossary](glossary.html#identity).
               flags:
                 type: bytes
                 description: |
@@ -1892,17 +1877,17 @@ paths:
     options:
       summary:  Owner--identified in token--subscribes to notifications of new messages in datastore-key.
       description: |
-        Owner--identified in token--subscribes to notifications of new messages in *datastore-key* (*segment-key* @ *identity*).  
+        Owner--identified in token--subscribes to notifications of new messages in [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)).  
 
-        Subscribes to messages if [authorized identity](#security-definition-Authorization%20WSS) is the owner of the *datastore-key*.
+        Subscribes to messages if [authorized identity](#security-definition-Authorization%20WSS) is the owner of the [datastore-key](glossary.html#datastore-key).
 
-        Subscribes to *delegated* messages if [authorized identity](#security-definition-Authorization%20WSS) is not the owner of the *datastore-key* but is complementary with the *datastore-key's* [delegate configuration](#tag-datastore-key-settings).
+        Subscribes to *delegated* messages if [authorized identity](#security-definition-Authorization%20WSS) is not the owner of the [datastore-key](glossary.html#datastore-key) but is complementary with the *datastore-key's* [delegate configuration](#tag-datastore-key-settings).
 
         If the *shunt* query parameter is not specified, subscription doesn't send actual message content, just notification of new messages with a new *unixtime-millis*.
 
         If the *shunt* query parameter is specified, full message content is sent via subscription.  Unless the *auto-acknowledge* flag is set, the messages do have to be explicitly [acknowledged](#operation-acknowledge-messages-WIRE) to clear the backchannel queue.  Failure to acknowledge messages with *auto-acknowledge* off and [limit-bytes set](#definition-DatastoreKeySettings) may lead to a full backchannel queue and dropped messages; not forwarded to these live subscriptions.
 
-        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for *identity* and the *auto-acknowledge* flag is set, call fails with a 400 --         "cannot write, broker not an active steward of user's data"
+        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for [identity](glossary.html#identity) and the *auto-acknowledge* flag is set, call fails with a 400 --         "cannot write, broker not an active steward of user's data"
       tags:
         - backchannel queues
       parameters:
@@ -1950,21 +1935,21 @@ paths:
               segment-key:
                 type: bytes
                 description: |
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+                  See [glossary](glossary.html#segment-key).
               identity-len:
                 type: number
                 description: |
-                  Length in bytes of *identity*.
+                  Length in bytes of [identity](glossary.html#identity).
               identity:
                 type: bytes
                 description: |
-                  Optional identity.  If provided, qualifies the *datastore-key* owner--complementary to delegation.  
+                  Optional identity.  If provided, qualifies the [datastore-key](glossary.html#datastore-key) owner--complementary to delegation.  
                   
                   May be one of public identities:  0 .. 9999.  
                   
                   If not provided, [authorized identity](#security-definition-Authorization%20WSS) defaults as owner.
 
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+                  See [glossary](glossary.html#identity).
               flags:
                 type: bytes
                 description: |
@@ -2051,17 +2036,17 @@ paths:
     options:
       summary: A delegate sets their specific value under this datastore-key.
       description: |
-        Payload contents is written as a new value into *datastore-key* (segment-key @ identity) qualified by the caller's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).  
+        Payload contents is written as a new value into [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)) qualified by the caller's [identity](glossary.html#identity).  
         
-        This call requires two identities:  the *segment-key* and [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) request parameters constitute the *datastore-key*.  The [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from the [authorization header](#security-definition-Authorization Header)
-        is used to qualify the data stored at the *segment-key*: this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is the delegate.
+        This call requires two identities:  the [segment-key](glossary.html#segment-key) and [identity](glossary.html#identity) request parameters constitute the [datastore-key](glossary.html#datastore-key).  The [identity](glossary.html#identity) from the [authorization header](#security-definition-Authorization Header)
+        is used to qualify the data stored at the [segment-key](glossary.html#segment-key): this [identity](glossary.html#identity) is the delegate.
 
-        For the *set* to succeed the *datastore-key* (segment-key @ identity) must exist and be owned by the [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md)
+        For the *set* to succeed the [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)) must exist and be owned by the [identity](glossary.html#identity)
         from the request parameter.
 
-        A delegate can only write their value to this *segment-key* [settings on *segment-key* permitting](#definition-DatastoreKeySettings).  Only the delegate identified can write data.  The *settings* are solely to identify who the delegates can be.
+        A delegate can only write their value to this [segment-key](glossary.html#segment-key) [settings on *segment-key* permitting](#definition-DatastoreKeySettings).  Only the delegate identified can write data.  The *settings* are solely to identify who the delegates can be.
 
-        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for *identity*, call fails with a 400 -- "cannot write, broker not an active steward of user's data"
+        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for [identity](glossary.html#identity), call fails with a 400 -- "cannot write, broker not an active steward of user's data"
       tags:
         - delegate
       parameters:
@@ -2115,17 +2100,17 @@ paths:
               segment-key:
                 type: bytes
                 description: |
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+                  See [glossary](glossary.html#segment-key).
               identity-len:
                 type: number
                 description: |
-                  Length in bytes of *identity*.
+                  Length in bytes of [identity](glossary.html#identity).
               identity:
                 type: bytes
                 description: |
-                  Required identity of *segment-key* owner--[authorization header](#security-definition-Authorization Header) [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is used for qualifying the delegate.
+                  Required identity of *segment-key* owner--[authorization header](#security-definition-Authorization Header) [identity](glossary.html#identity) is used for qualifying the delegate.
 
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+                  See [glossary](glossary.html#identity).
               flags:
                 type: bytes
                 description: |
@@ -2170,10 +2155,10 @@ paths:
     options:
       summary: A delegate retrieves their specific value under this datastore-key.
       description: |  
-        Retrieve contents from *datastore-key* (segment-key @ identity) qualified by the caller's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).  
+        Retrieve contents from [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)) qualified by the caller's [identity](glossary.html#identity).  
 
-        This call requires two identities:  the *segment-key* and [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) request parameters constitute the *datastore-key*.  The [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from the [authorization header](#security-definition-Authorization Header)
-        is used to qualify the data stored at the *segment-key*: this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is the delegate.        
+        This call requires two identities:  the [segment-key](glossary.html#segment-key) and [identity](glossary.html#identity) request parameters constitute the [datastore-key](glossary.html#datastore-key).  The [identity](glossary.html#identity) from the [authorization header](#security-definition-Authorization Header)
+        is used to qualify the data stored at the [segment-key](glossary.html#segment-key): this [identity](glossary.html#identity) is the delegate.        
       tags:
         - delegate
       parameters:
@@ -2220,17 +2205,17 @@ paths:
               segment-key:
                 type: bytes
                 description: |
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+                  See [glossary](glossary.html#segment-key).
               identity-len:
                 type: number
                 description: |
-                  Length in bytes of *identity*.
+                  Length in bytes of [identity](glossary.html#identity).
               identity:
                 type: bytes
                 description: |
-                  Required identity of *segment-key* owner--[authorization header](#security-definition-Authorization Header) [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is used for qualifying the delegate.
+                  Required identity of *segment-key* owner--[authorization header](#security-definition-Authorization Header) [identity](glossary.html#identity) is used for qualifying the delegate.
 
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+                  See [glossary](glossary.html#identity).
       consumes:
         - application/octet-stream
       produces:
@@ -2242,7 +2227,7 @@ paths:
           $ref: "#/responses/WIRE"
         code == 200:
           description: |
-            The value of *datastore-key* (segment-key @ identity).
+            The value of [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)).
         code == 206:
           $ref: "#/responses/206"
         code == 246:
@@ -2259,15 +2244,15 @@ paths:
     options:
       summary: A delegate deletes their specific data under this datastore-key.
       description: |
-        Delete delegate's data filed under the *datastore-key* (segment-key @ identity).  
+        Delete delegate's data filed under the [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)).  
 
-        This call requires two identities:  the *segment-key* and [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) request parameters constitute 
-        the *datastore-key*.  The [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from the [authorization header](#security-definition-Authorization Header)
-        is used to qualify the data stored at the *segment-key*: this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is the delegate.
+        This call requires two identities:  the [segment-key](glossary.html#segment-key) and [identity](glossary.html#identity) request parameters constitute 
+        the [datastore-key](glossary.html#datastore-key).  The [identity](glossary.html#identity) from the [authorization header](#security-definition-Authorization Header)
+        is used to qualify the data stored at the [segment-key](glossary.html#segment-key): this [identity](glossary.html#identity) is the delegate.
 
-        The *datastore-key* must be owned by the [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) from request parameter.
+        The [datastore-key](glossary.html#datastore-key) must be owned by the [identity](glossary.html#identity) from request parameter.
 
-        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for *identity*, call fails with a 400 -- "cannot write, broker not an active steward of user's data"
+        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for [identity](glossary.html#identity), call fails with a 400 -- "cannot write, broker not an active steward of user's data"
       tags:
         - delegate
       parameters:
@@ -2316,17 +2301,17 @@ paths:
               segment-key:
                 type: bytes
                 description: |
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+                  See [glossary](glossary.html#segment-key).
               identity-len:
                 type: number
                 description: |
-                  Length in bytes of *identity*.
+                  Length in bytes of [identity](glossary.html#identity).
               identity:
                 type: bytes
                 description: |
-                  Required identity of *segment-key* owner--[authorization header](#security-definition-Authorization Header) [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is used for qualifying the delegate.
+                  Required identity of *segment-key* owner--[authorization header](#security-definition-Authorization Header) [identity](glossary.html#identity) is used for qualifying the delegate.
 
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+                  See [glossary](glossary.html#identity).
               flags:
                 type: bytes
                 description: |
@@ -2359,10 +2344,10 @@ paths:
     options:
       summary: Retrieves all delegate data under segment-key as map of delegate identities to content.
       description: |
-        Retrieve all delegate data under *datastore-key* (segment-key @ identity) as map of delegate
+        Retrieve all delegate data under [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)) as map of delegate
         identities to content.
 
-        The *segment-key* and [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) request parameters constitute the *datastore-key*.
+        The [segment-key](glossary.html#segment-key) and [identity](glossary.html#identity) request parameters constitute the [datastore-key](glossary.html#datastore-key).
       tags:
         - delegate
       parameters:
@@ -2409,17 +2394,17 @@ paths:
               segment-key:
                 type: bytes
                 description: |
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+                  See [glossary](glossary.html#segment-key).
               identity-len:
                 type: number
                 description: |
-                  Length in bytes of *identity*.
+                  Length in bytes of [identity](glossary.html#identity).
               identity:
                 type: bytes
                 description: |
                   Required identity of *segment-key* owner.
 
-                  See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+                  See [glossary](glossary.html#identity).
       consumes:
         - application/octet-stream
       produces:
@@ -2431,7 +2416,7 @@ paths:
           $ref: "#/responses/WIRE"
         code == 200:
           description: |
-            List of all delegate data under the *datastore-key*.
+            List of all delegate data under the [datastore-key](glossary.html#datastore-key).
 
             | *syntax*        | *bytes* | *value* |
             | ---             | ---     | ---     |
@@ -2457,7 +2442,7 @@ paths:
               delegate:
                 type: bytes
                 description: |
-                  Qualifies which [delegate](#tag-delegate) of *segment-key* this message corresponds to.  The value is the delegate's [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
+                  Qualifies which [delegate](#tag-delegate) of [segment-key](glossary.html#segment-key) this message corresponds to.  The value is the delegate's [identity](glossary.html#identity).
               message-len:
                 type: number
                 description: |
@@ -2480,11 +2465,11 @@ paths:
           $ref: "#/responses/429"
   /{segment-key}/settings:
     put:
-      summary: Setup settings for given datastore-key (segment-key @ identity).
+      summary: Setup settings for given datastore-key ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)).
       description: |
-        Setup data and backchannel settings for given *datastore-key* (*segment-key* @ *identity*).
+        Setup data and backchannel settings for given [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)).
 
-        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for *identity*, call fails with a 400 -- "cannot write, broker not an active steward of user's data"
+        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for [identity](glossary.html#identity), call fails with a 400 -- "cannot write, broker not an active steward of user's data"
       tags:
         - datastore-key settings
       parameters:
@@ -2504,19 +2489,19 @@ paths:
           description: |
             Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
 
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+            See [glossary](glossary.html#identity).
           type: string
         - in: query
           name: wait-until-persisted
           required: false
           description: |
-            Optional request to synchronously block result until change to *datastore-key* is persisted.
+            Optional request to synchronously block result until change to [datastore-key](glossary.html#datastore-key) is persisted.
           type: boolean
         - in: query
           name: wait-until-shared
           required: false
           description: |
-            Optional request to synchronously block result until change to *datastore-key* is shared on distributed persistence network.
+            Optional request to synchronously block result until change to [datastore-key](glossary.html#datastore-key) is shared on distributed persistence network.
           type: boolean
       security:
         - Authorization Header: []
@@ -2535,7 +2520,7 @@ paths:
     get:
       summary: Returns settings for a given datastore-key.
       description: |
-        Returns data and backchannel settings for a given *datastore-key* (*segment-key* @ *identity*).
+        Returns data and backchannel settings for a given [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)).
       tags:
         - datastore-key settings
       parameters:
@@ -2543,7 +2528,7 @@ paths:
           name: segment-key
           required: true
           description: |
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+            See [glossary](glossary.html#segment-key).
           type: string
         - in: query
           name: identity
@@ -2551,7 +2536,7 @@ paths:
           description: |
             Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
 
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+            See [glossary](glossary.html#identity).
           type: string
       security:
         - Authorization Header: []
@@ -2560,7 +2545,7 @@ paths:
       responses:
         200:
           description: |
-            The value of *datastore-key* (segment-key @ identity).
+            The value of [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)).
           schema:
             $ref: "#/definitions/DatastoreKeySettings"
         246:
@@ -2587,7 +2572,7 @@ paths:
       responses:
         200:
           description: |
-            Metrics for all *datastore-keys* (*segment-keys* @ *identity*) of the user.
+            Metrics for all *datastore-keys* ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)) of the user.
           schema:
             $ref: "#/definitions/Metrics"
         246:
@@ -2604,7 +2589,7 @@ paths:
     get:
       summary: Returns metrics for a given datastore-key.
       description: |
-        Returns data and backchannel metrics for a given *datastore-key* (*segment-key* @ *identity*).
+        Returns data and backchannel metrics for a given [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)).
       tags:
         - metrics
       parameters:
@@ -2620,7 +2605,7 @@ paths:
           description: |
             Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
 
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+            See [glossary](glossary.html#identity).
           type: string
       security:
         - Authorization Header: []
@@ -2629,7 +2614,7 @@ paths:
       responses:
         200:
           description: |
-            Metrics for this *datastore-key* (*segment-key* @ *identity*).
+            Metrics for this [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)).
           schema:
             $ref: "#/definitions/Metrics"
         246:
@@ -2709,18 +2694,18 @@ paths:
     options:
       summary: Set all user's data on the broker system to the provided payload.
       description: |
-        All of the user's data with caller's *identity* is wiped and reset to the payload.
+        All of the user's data with caller's [identity](glossary.html#identity) is wiped and reset to the payload.
 
         > When filling broker in [pour-active-steward](#operation--pour-active-stewardship-put) mode don't use this *import*--as it's indiscriminate--use [*fill*](#operation-fill-WIRE) instead.
 
-        If transferring a *segment-key* with a public restricted identity (0 .. 9999), if the
-        *segment-key* already exists at provided identity for a different *owner*, the message
+        If transferring a [segment-key](glossary.html#segment-key) with a public restricted identity (0 .. 9999), if the
+        [segment-key](glossary.html#segment-key) already exists at provided identity for a different *owner*, the message
         call fails with a 400 -- "datastore-key ownership conflict; segment-key @ identity already reserved".
 
         If the payload is malformated and cannot be imported the message call fails with a 
         400 -- "cannot process input", followed by additional optional verbiage.
 
-        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for *identity*, call fails with a 400 -- "cannot write, broker not an active steward of user's data"
+        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for [identity](glossary.html#identity), call fails with a 400 -- "cannot write, broker not an active steward of user's data"
       tags:
         - data-stewardship
       parameters:
@@ -2794,18 +2779,18 @@ paths:
     options:
       summary: Set all user's data on the broker system to the provided payload unless data already on broker is deemed newer.
       description: |
-        All of the user's data with caller's *identity* that is deemed older than the payload is wiped and reset to the payload.
+        All of the user's data with caller's [identity](glossary.html#identity) that is deemed older than the payload is wiped and reset to the payload.
 
-        If transferring a *segment-key* that already exists on the broker for caller's *identity* the *segment-key* in the payload is ignored.
+        If transferring a [segment-key](glossary.html#segment-key) that already exists on the broker for caller's [identity](glossary.html#identity) the [segment-key](glossary.html#segment-key) in the payload is ignored.
 
-        If transferring a *segment-key* with a public restricted identity (0 .. 9999), if the
-        *segment-key* already exists at provided identity for a different *owner*, the message
+        If transferring a [segment-key](glossary.html#segment-key) with a public restricted identity (0 .. 9999), if the
+        [segment-key](glossary.html#segment-key) already exists at provided identity for a different *owner*, the message
         call fails with a 400 -- "datastore-key ownership conflict; segment-key @ identity already reserved".
 
         If the payload is malformated and cannot be imported the message call fails with a 
         400 -- "cannot process input", followed by additional optional verbiage.
 
-        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for *identity*, call fails with a 400 -- "cannot write, broker not an active steward of user's data"
+        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for [identity](glossary.html#identity), call fails with a 400 -- "cannot write, broker not an active steward of user's data"
       tags:
         - data-stewardship
       parameters:
@@ -2879,7 +2864,7 @@ paths:
     options:
       summary: Extract all user's data from the broker system.
       description: |
-        Extract all of the caller's data, based on caller's *identity*.
+        Extract all of the caller's data, based on caller's [identity](glossary.html#identity).
       tags:
         - data-stewardship
       parameters:
@@ -2937,16 +2922,16 @@ paths:
     post:
       summary: Set all user's opt-in data from a connected persistence network.
       description: |
-        For all *segment-keys* available on the decentralized persistence, data in this broker's  *segment-keys* is wiped and reset to data available at the same *identity* on the specificed persistence network.  The network data is identified by the provided *GUID*.  The broker must be able to exchange data on the network that's identified by *type-key*.
+        For all [segment-key](glossary.html#segment-key) available on the decentralized persistence, data in this broker's  [segment-key](glossary.html#segment-key) is wiped and reset to data available at the same [identity](glossary.html#identity) on the specificed persistence network.  The network data is identified by the provided *GUID*.  The broker must be able to exchange data on the network that's identified by *type-key*.
 
         This message can only be called on a [passive or pour-active steward](#tag-data-stewardship).  Calling this message on an [active steward](#tag-data-stewardship) will result in error code 400 -- "cannot continue, invalid stewardship mode".
 
-        Note that the only *segment-keys* imported are ones explicitly opted-in on some [active steward](glossary.html#data-steward) (other than this steward) with either the [opt-in endpoint](#operation--auth-opt-in--agree--put) or the [*segment-key* specific opt-in]().
+        Note that the only [segment-key](glossary.html#segment-key) imported are ones explicitly opted-in on some [active steward](glossary.html#data-steward) (other than this steward) with either the [opt-in endpoint](#operation--auth-opt-in--agree--put) or the [*segment-key* specific opt-in](#definition-DatastoreKeySettings).
 
         This setter works in conjunction with the [*GUIDs* getter](#operation--guids-get), which is to be called against the source broker instance.  The source broker is a broker currently furnishing the data to the network.
 
-        If transferring a *segment-key* with a public restricted identity (0 .. 9999), if the
-        *segment-key* already exists at provided identity for a different *owner*, the message
+        If transferring a [segment-key](glossary.html#segment-key) with a public restricted identity (0 .. 9999), if the
+        [segment-key](glossary.html#segment-key) already exists at provided identity for a different *owner*, the message
         call fails with a 400 -- "datastore-key ownership conflict; segment-key @ identity already reserved".
 
         If the *type-key* requested is not supported by this broker system the message call fails with
@@ -2990,7 +2975,7 @@ paths:
     delete:
       summary: Delete all user's data on the broker system.
       description: |
-        Delete all user's data on the broker system, based on *identity* passed in.
+        Delete all user's data on the broker system, based on [identity](glossary.html#identity) passed in.
       tags:
         - data-stewardship
       parameters:
@@ -2998,13 +2983,13 @@ paths:
           name: wait-until-persisted
           required: false
           description: |
-            Optional request to synchronously block result until change to *datastore-key* is persisted.
+            Optional request to synchronously block result until change to [datastore-key](glossary.html#datastore-key) is persisted.
           type: boolean
         - in: query
           name: wait-until-shared
           required: false
           description: |
-            Optional request to synchronously block result until change to *datastore-key* is shared on distributed persistence network.
+            Optional request to synchronously block result until change to [datastore-key](glossary.html#datastore-key) is shared on distributed persistence network.
           type: boolean
       security:
         - Authorization Header: []
@@ -3022,7 +3007,7 @@ paths:
     put:
       summary: Make this broker an active-steward of the user's data.
       description: |
-        All of the user's data with caller's *identity* is now under this broker's [active-stewardship](glossary.html#data-steward).
+        All of the user's data with caller's [identity](glossary.html#identity) is now under this broker's [active-stewardship](glossary.html#data-steward).
 
         Once activated, the user can write data to their *datastore-keys*.
 
@@ -3046,11 +3031,11 @@ paths:
 
                   This parameter can only be provided if *unixtime-millis* and *unixtime-millis-signed* are also provided.
 
-                  The *broker-address* on the reumneration-provider matching caller's *identity*--as provided by [/capabilities/address](#operation--capabilities-address)--signed with the private key corrsponding to the *user-address* of *identity*.
+                  The [broker-address](glossary.html#broker-address) on the reumneration-provider matching caller's [identity](glossary.html#identity)--as provided by [/capabilities/address](#operation--capabilities-address)--signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
 
                   Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
 
-                  Providing this parameter means we want to advertise this broker as the caller's *user-address*' [activeHost](glossary.html#data-steward) to the [lookup network](#tag-broker-lookup) corresponding to the [remuneration-key](#/definitions/RemunerationKey) used for this *identity*.
+                  Providing this parameter means we want to advertise this broker as the caller's [user-address](glossary.html#user-address)' [activeHost](glossary.html#data-steward) to the [lookup network](#tag-broker-lookup) corresponding to the [remuneration-key](#/definitions/RemunerationKey) used for this [identity](glossary.html#identity).
 
                   If the [lookup network](#tag-broker-lookup) currently has a *drainHost* entry, the *drainHost* entry is removed from the [lookup network](#tag-broker-lookup).
               unixtime-millis:
@@ -3066,7 +3051,7 @@ paths:
                 description: |
                   BASE64 encoded.
 
-                  The *unixtime-millis* provided above signed with the private key corrsponding to the *user-address* of *identity*.
+                  The *unixtime-millis* provided above signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
 
                   Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
       tags:
@@ -3089,15 +3074,15 @@ paths:
     put:
       summary: Make this broker an active-steward of the user's data with caveats allowing for safe sync of data from some passive-steward.
       description: |
-        All of the user's data with caller's *identity* is now under this broker's [active-stewardship](glossary.html#data-steward) with caveats:
+        All of the user's data with caller's [identity](glossary.html#identity) is now under this broker's [active-stewardship](glossary.html#data-steward) with caveats:
 
-        * *getter methods* will return [246/Inconclusive](#/responses/246) on successful reads of *segment-keys* that weren't explicitly written to: see [response status code *246*](#/responses/246).  This is important for continuity of data-access during migrations:
+        * *getter methods* will return [246/Inconclusive](#/responses/246) on successful reads of [segment-key](glossary.html#segment-key) that weren't explicitly written to: see [response status code *246*](#/responses/246).  This is important for continuity of data-access during migrations:
             1. finishing up any persistence storage network synchronization from a previously [active-steward](glossary.html#data-steward) before making this broker a [regular active-steward](#operation--active-stewardship-put).  See [data-stewardship](#tag-data-stewardship) for use-cases.
             1. allowing for time-consuming explicit export from a previously [active-steward](glossary.html#data-steward) and explicit [fill](#operation-fill-WIRE) of this broker; before making this broker a [regular active-steward](#operation--active-stewardship-put).  See [data-stewardship](#tag-data-stewardship) for use-cases.
-        * accepts decentralized storage data changes until an explicit API write to a *segment-key*:
-            * overwrites data in that *segment-key* as usual (see [response code *246](#/responses/246))
-            * causes the *segment-key* to stops being overwritten by decentralized storage changes
-            * causes the *segment-key* to start returning 200/OK on *getter methods* instead of [246/Inconclusive](#/responses/246)
+        * accepts decentralized storage data changes until an explicit API write to a [segment-key](glossary.html#segment-key):
+            * overwrites data in that [segment-key](glossary.html#segment-key) as usual (see [response code *246](#/responses/246))
+            * causes the [segment-key](glossary.html#segment-key) to stops being overwritten by decentralized storage changes
+            * causes the [segment-key](glossary.html#segment-key) to start returning 200/OK on *getter methods* instead of [246/Inconclusive](#/responses/246)
         
         Once activated, the user can write data to their *datastore-keys*.
 
@@ -3125,7 +3110,7 @@ paths:
 
                   This is the host name or IP address of [passive-steward broker](glossary.html#data-steward) we're draining data from into this broker.  
 
-                  This host name or IP address--if properly signed by *drain-host-signed*--will be pushed to the [lookup network](#tag-broker-lookup) corresponding to the [remuneration-key](#/definitions/RemunerationKey) used for this *identity*.
+                  This host name or IP address--if properly signed by *drain-host-signed*--will be pushed to the [lookup network](#tag-broker-lookup) corresponding to the [remuneration-key](#/definitions/RemunerationKey) used for this [identity](glossary.html#identity).
 
                   Once the [lookup network](#tag-broker-lookup) has this *drainHost* it can aid all data-access during a [migration](#tag-data-stewardship).
               drain-host-signed:
@@ -3135,7 +3120,7 @@ paths:
 
                   This parameter can only be provided if *unixtime-millis*, *unixtime-millis-signed*, and *broker-address-signed* are also provided.
 
-                  The *drain-host* provided above signed with the private key corrsponding to the *user-address* of *identity*.
+                  The *drain-host* provided above signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
 
                   Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
               broker-address-signed:
@@ -3145,11 +3130,11 @@ paths:
 
                   This parameter can only be provided if *unixtime-millis* and *unixtime-millis-signed* are also provided.
 
-                  The *broker-address* on the reumneration-provider matching caller's *identity*--as provided by [/capabilities/address](#operation--capabilities-address)--signed with the private key corrsponding to the *user-address* of *identity*.
+                  The [broker-address](glossary.html#broker-address) on the reumneration-provider matching caller's [identity](glossary.html#identity)--as provided by [/capabilities/address](#operation--capabilities-address)--signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
 
                   Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
 
-                  Providing this parameter means we want to advertise this broker as the caller's *user-address*' [activeHost](glossary.html#data-steward) to the [lookup network](#tag-broker-lookup) corresponding to the [remuneration-key](#/definitions/RemunerationKey) used for this *identity*.
+                  Providing this parameter means we want to advertise this broker as the caller's [user-address](glossary.html#user-address)' [activeHost](glossary.html#data-steward) to the [lookup network](#tag-broker-lookup) corresponding to the [remuneration-key](#/definitions/RemunerationKey) used for this [identity](glossary.html#identity).
               unixtime-millis:
                 type: number
                 description: |
@@ -3163,7 +3148,7 @@ paths:
                 description: |
                   BASE64 encoded.
 
-                  The *unixtime-millis* provided above signed with the private key corrsponding to the *user-address* of *identity*.
+                  The *unixtime-millis* provided above signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
 
                   Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
       tags:
@@ -3185,7 +3170,7 @@ paths:
     delete:
       summary: Make this broker a passive-steward of the user's data
       description: |
-        All of the user's data with caller's *identity* is now under this broker's [passive-stewardship](glossary.html#data-steward).
+        All of the user's data with caller's [identity](glossary.html#identity) is now under this broker's [passive-stewardship](glossary.html#data-steward).
 
         Data--as available on the distributed persistence network--will be pinned/hosted by this broker.  It will be eventually consistent with 
         data as written to an [active-steward](glossary.html#data-steward) on the network.
@@ -3210,7 +3195,7 @@ paths:
       summary: Retrieve content hashes at different memory levels.
       description: |
         Returns content-hashes representing latest content stored at each [memory level](glossary.html#working-memory-permanent-memory-shared-memory-persistence-status)
-        for a given *datastore-key* (*segment-key* @ *identity*).
+        for a given [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)).
       tags:
         - data-stewardship
       parameters:
@@ -3226,7 +3211,7 @@ paths:
           description: |
             Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
 
-            See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+            See [glossary](glossary.html#identity).
           type: string
       security:
         - Authorization Header: []
@@ -3235,7 +3220,7 @@ paths:
       responses:
         200:
           description: |
-            The content-hashes for the *datastore-key* (segment-key @ identity).
+            The content-hashes for the [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)).
           schema:
             $ref: "#/definitions/PersistenceStatus"
         246:
@@ -3252,14 +3237,14 @@ paths:
     put:
       summary: Generate new GUIDs for user's data.
       description: |
-        Replace current GUIDs by new generated GUIDs.  Tie the new GUIDs to the authenticated *identity* making this call.
+        Replace current GUIDs by new generated GUIDs.  Tie the new GUIDs to the authenticated [identity](glossary.html#identity) making this call.
 
-        All data owned by the *identity* on the corresponding distributed persistence network--as per the provided current GUID--is tied to the new GUIDs.  
+        All data owned by the [identity](glossary.html#identity) on the corresponding distributed persistence network--as per the provided current GUID--is tied to the new GUIDs.  
         New GUIDs are initialized by the broker and bound by this broker to the user.
 
         This operation is useful to ensure no other broker can alter your data after a [broker transfer](#operation--opt-in-data--type-key---guid--post).  All other [stewards of your data](#tag-data-stewardship) will need to be [made aware of the GUID change](#operation--opt-in-data--type-key---guid--post).
 
-        If this broker is not an [active steward](#operation--active-stewardship-put) of data for *identity*, call fails with a 400 -- "cannot write, broker not an active steward of user's data".  Note that [pour-active-stewards](#operation--pour-active-stewardship-put) are considered *passive* stewards for this call.
+        If this broker is not an [active steward](#operation--active-stewardship-put) of data for [identity](glossary.html#identity), call fails with a 400 -- "cannot write, broker not an active steward of user's data".  Note that [pour-active-stewards](#operation--pour-active-stewardship-put) are considered *passive* stewards for this call.
       tags:
         - data-stewardship
       parameters:
@@ -3292,7 +3277,7 @@ paths:
     get:
       summary: Retrieve GUIDs to user's data on connected persistence networks.
       description: |
-        Returns the *GUIDs* pointing to persisted data for the *identity*.  This broker must be the owner of whatever
+        Returns the *GUIDs* pointing to persisted data for the [identity](glossary.html#identity).  This broker must be the owner of whatever
         private metadata is necessary to furnish data to the persistence network at said *GUID*. 
 
         This getter works in conjunction with the [opt-in-data import POST](#operation--opt-in-data--type-key---guid--post) setter for data pinning/distribution.
@@ -3355,7 +3340,7 @@ definitions:
   RemunerationKey:
     type: string
     description: |
-      Tag representing a ledger network on which all addresses operate: *user-address*, broker, service, invitee/visitor addresses.
+      Tag representing a ledger network on which all addresses operate: [user-address](glossary.html#user-address), [broker-address](glossary.html#broker-address), [service-address](glossary.html#service-address), and [invitee/visitor](glossary.html#invitee) addresses.
 
       **Accepted Values:**
 
@@ -3419,7 +3404,7 @@ definitions:
         description: |
           This broker's specific public payment address with the reumneration
           provider.  This is the public address to which a subscription payment
-          needs to be made from a user [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md).
+          needs to be made from a user [identity](glossary.html#identity).
       description-md:
         type: string
         description: |
@@ -3475,21 +3460,21 @@ definitions:
       storage-used:
         type: integer
         description: |
-          Amount of data in bytes stored by this *identity* on this broker system.
+          Amount of data in bytes stored by this [identity](glossary.html#identity) on this broker system.
       storage-limit:
         type: integer
         description: |
-          Maximum amoun tof data in bytes that can be stored by this *identity* on this
+          Maximum amoun tof data in bytes that can be stored by this [identity](glossary.html#identity) on this
           broker system at the current subscription level.
 
           If negative, storage is unlimited.
       active-until:
         type: string
         description: |
-          Date-time until when this *identity* has an 'active' subscription at the currently
+          Date-time until when this [identity](glossary.html#identity) has an 'active' subscription at the currently
           authorized level.
 
-          It's possible once this subscription level expires the *identity* continues to
+          It's possible once this subscription level expires the [identity](glossary.html#identity) continues to
           hava a subscription at a reduced level.  A subscription level expiry indicates
           some remuneration provider transaction to the broker has lapsed.  The  remuneration provider
           might indicate other transactions to the broker that haven't expired.
@@ -3500,7 +3485,7 @@ definitions:
       available-until:
         type: string
         description: |
-          Date-time until when data belonging to this *identity* will be retained within the
+          Date-time until when data belonging to this [identity](glossary.html#identity) will be retained within the
           broker system.
 
           The date-time is a string in [ISO 8601/RFC3339 format](https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14).
@@ -3528,14 +3513,14 @@ definitions:
         type: string
         enum: [self, signed, invitee]
         description: |
-          Indicate who is allowed to write to the *datastore-key*.  The "self" value is default and means only owner of *segment-key* has write rights.
+          Indicate who is allowed to write to the [datastore-key](glossary.html#datastore-key).  The "self" value is default and means only owner of [segment-key](glossary.html#segment-key) has write rights.
 
-          Value of "signed" indicates *allowed-writers* property must necessairly list [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) allowed to write into this *segment-key*.  
-          Other users using this broker system attempting to write to this *segment-key* have their *authentication token* checked against 
-          the [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) in *allowed-writers* list.  These could be real authenticated
-          broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](#operation--auth-guest-credentials-put).
+          Value of "signed" indicates *allowed-writers* property must necessairly list [identities](glossary.html#identity) allowed to write into this [segment-key](glossary.html#segment-key).  
+          Other users using this broker system attempting to write to this [segment-key](glossary.html#segment-key) have their *authentication token* checked against 
+          the [identities](glossary.html#identity) in *allowed-writers* list.  These could be real authenticated
+          broker [identities](glossary.html#identity) or [invitee *identities*](#operation--auth-guest-credentials-put).
 
-          Value of "invitee" indicates an invitee of this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is allowed to write, see
+          Value of "invitee" indicates an invitee of this [identity](glossary.html#identity) is allowed to write, see
           the [guest credentials endpoint](#operation--auth-guest-credentials-put): no *allowed-writers* check.
       allowed-writers:
         type: array
@@ -3547,26 +3532,26 @@ definitions:
             identity:
               type: string
               description: |
-                [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) identifying user allowed to write data.
+                [identity](glossary.html#identity) identifying user allowed to write data.
         description: |
           If *allow-write* is "self" this parameter is ignored.
 
-          If *allow-write* is "signed", this parameter is a list of [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) to identify users allowed to write data to this *datastore-key* (*segment-key* @ *identity*).
-          These could be real authenticated broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](#operation--auth-guest-credentials-put). 
+          If *allow-write* is "signed", this parameter is a list of [identities](glossary.html#identity) to identify users allowed to write data to this [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)).
+          These could be real authenticated broker [identities](glossary.html#identity) or [invitee *identities*](#operation--auth-guest-credentials-put). 
 
-          Other users using this broker system attempting to write to this *segment-key* have their *authentication token* checked against the [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) in this list.
+          Other users using this broker system attempting to write to this [segment-key](glossary.html#segment-key) have their *authentication token* checked against the [identities](glossary.html#identity) in this list.
       allow-publish:
         type: string
         enum: [self, any, signed, invitee]
         description: |
-          Indicate who is allowed to publish messages to the *datastore-key*'s backchannel'.  The "self" value is default and means only owner of *segment-key* has publish rights.
+          Indicate who is allowed to publish messages to the [datastore-key](glossary.html#datastore-key)'s backchannel'.  The "self" value is default and means only owner of [segment-key](glossary.html#segment-key) has publish rights.
 
-          Value of "signed" indicates *allowed-publishers* property must necessairly list [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) allowed to publish messages into this *segment-key*.  
-          Other users using this broker system attempting to publish to this *segment-key* have their *authentication token* checked against 
-          the [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) in *allowed-publishers* list.  These could be real authenticated
-          broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](#operation--auth-guest-credentials-put).
+          Value of "signed" indicates *allowed-publishers* property must necessairly list [identities](glossary.html#identity) allowed to publish messages into this [segment-key](glossary.html#segment-key).  
+          Other users using this broker system attempting to publish to this [segment-key](glossary.html#segment-key) have their *authentication token* checked against 
+          the [identities](glossary.html#identity) in *allowed-publishers* list.  These could be real authenticated
+          broker [identities](glossary.html#identity) or [invitee *identities*](#operation--auth-guest-credentials-put).
 
-          Value of "invitee" indicates an invitee of this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) is allowed to publish, see
+          Value of "invitee" indicates an invitee of this [identity](glossary.html#identity) is allowed to publish, see
           the [guest credentials endpoint](#operation--auth-guest-credentials-put).
       allowed-publishers:
         type: array
@@ -3578,25 +3563,25 @@ definitions:
             identity:
               type: string
               description: |
-                [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) identifying user allowed to write data.
+                [identity](glossary.html#identity) identifying user allowed to write data.
         description: |
           if *allow-publish* is "self" or "any" this parameter is ignored.
 
-          If *allow-publish* is "signed", this parameter is a list of [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) to identify users allowed to publish messages to this *datastore-key* (*segment-key* @ *identity*).
-          These could be real authenticated broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](#operation--auth-guest-credentials-put).
+          If *allow-publish* is "signed", this parameter is a list of [identities](glossary.html#identity) to identify users allowed to publish messages to this [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)).
+          These could be real authenticated broker [identities](glossary.html#identity) or [invitee *identities*](#operation--auth-guest-credentials-put).
 
-          Other users using this broker system attempting to publish to this *segment-key* have their *authentication token* checked against the [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) in this list.
+          Other users using this broker system attempting to publish to this [segment-key](glossary.html#segment-key) have their *authentication token* checked against the [identities](glossary.html#identity) in this list.
       allow-delegation:
         type: string
         enum: [none, any, signed, invitee]
         description: |
-          Indicate who is allowed to [write data](#tag-delegate) to this *segment-key* as a delegate
-          and who's allowed to work with delegate-qualified backchannels on this *segment-key*:  it's
+          Indicate who is allowed to [write data](#tag-delegate) to this [segment-key](glossary.html#segment-key) as a delegate
+          and who's allowed to work with delegate-qualified backchannels on this [segment-key](glossary.html#segment-key):  it's
           the same group.
 
-          Value of "signed" indicates *allowed-delegates* property must necessairly list [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) allowed to act as delegates for this *segment-key*.  Delegates attempting to use this *segment-key* have their [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) checked against the *allowed-delegates* list.
+          Value of "signed" indicates *allowed-delegates* property must necessairly list [identities](glossary.html#identity) allowed to act as delegates for this [segment-key](glossary.html#segment-key).  Delegates attempting to use this [segment-key](glossary.html#segment-key) have their [identity](glossary.html#identity) checked against the *allowed-delegates* list.
 
-          Value of "invitee" indicates an invitee of this [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) are allowed to be delegates, see
+          Value of "invitee" indicates an invitee of this [identity](glossary.html#identity) are allowed to be delegates, see
           the [guest credentials endpoint](#operation--auth-guest-credentials-put).
       allowed-delegates:
         type: array
@@ -3608,14 +3593,14 @@ definitions:
             identity:
               type: string
               description: |
-                [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) identifying user allowed to become delegates.
+                [identity](glossary.html#identity) identifying user allowed to become delegates.
         description: |
           if *allow-delegation* is "none" or "any" this parameter is ignored.
 
-          If *allow-delegation* is "signed", this parameter is a list of [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) to identify users allowed to be delegates for this *datastore-key* (*segment-key* @ *identity*).
-          These could be real authenticated broker [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) or [invitee *identities*](#operation--auth-guest-credentials-put).
+          If *allow-delegation* is "signed", this parameter is a list of [identities](glossary.html#identity) to identify users allowed to be delegates for this [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)).
+          These could be real authenticated broker [identities](glossary.html#identity) or [invitee *identities*](#operation--auth-guest-credentials-put).
 
-          Delegates attempting to use this *segment-key* have their *authentication token* checked against the [identities](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) in this list.  
+          Delegates attempting to use this [segment-key](glossary.html#segment-key) have their *authentication token* checked against the [identities](glossary.html#identity) in this list.  
       allow-others-publish-all-delegates:
         type: boolean
         description: |
@@ -3636,7 +3621,7 @@ definitions:
             value:
               type: number
               description: |
-                Amount of currency--as per [remuneration-key](#/definitions/RemunerationKey) required to be able to write/publish to this *segment-key*.
+                Amount of currency--as per [remuneration-key](#/definitions/RemunerationKey) required to be able to write/publish to this [segment-key](glossary.html#segment-key).
             since:
               type: string
               description: |
@@ -3653,7 +3638,7 @@ definitions:
           if *allow-publish* or *allow-write* is "self", "any", "signed" this parameter is ignored.
 
           If *allow-publish* or *allow-write* is "invitee", this parameter the minimum remuneration value required to be able to write the write/publish operations
-          on this *segment-key*.      
+          on this [segment-key](glossary.html#segment-key).      
       duplicate-delegate-policy:
         type: string
         description: |
@@ -3661,7 +3646,7 @@ definitions:
 
           Note: enforcement of this policy is dependant on a broker-specific hash of the *invitee-user-address* being available in the [visitor's authentication token](#security-definition-Authorization%20Header).  This hashed *invitee-user-address* is not stored off outside the broker's metadata (i.e. on the distributed persistence network). 
 
-          What should the system do if a visitor delegate attempts to use the same *invitee-user-address* with a different visitor *identity*?  Allowed values:
+          What should the system do if a visitor delegate attempts to use the same *invitee-user-address* with a different visitor [identity](glossary.html#identity)?  Allowed values:
 
           | *key* | *description* |
           | ---   | ---  |
@@ -3672,7 +3657,7 @@ definitions:
       limit-bytes:
         type: number
         description: |
-          Maximum number of bytes of total content allowed for this *segment-key* (if not delegated) or per delegate of this *segment-key* (if delegated).  This includes the written value as well as all published messages.  If the *segment-key* has delegates, the value is per delegate:  the actual limit is multiplied by the number of delegates.
+          Maximum number of bytes of total content allowed for this [segment-key](glossary.html#segment-key) (if not delegated) or per delegate of this [segment-key](glossary.html#segment-key) (if delegated).  This includes the written value as well as all published messages.  If the [segment-key](glossary.html#segment-key) has delegates, the value is per delegate:  the actual limit is multiplied by the number of delegates.
       overlimit-publish-action:
         type: string
         description: |
@@ -3686,27 +3671,27 @@ definitions:
       limit-others-read-rate:
         type: number
         description: |
-          Maximum rate of bytes/hour each user, other than the owner,is allowed to read at from this *segment-key*.
+          Maximum rate of bytes/hour each user, other than the owner,is allowed to read at from this [segment-key](glossary.html#segment-key).
 
           Once reached by a user, reads might drop in priority, be throttled, or be denied with a 403 response code
       limit-others-write-rate:
         type: number
         description: |
-          Maximum rate of bytes/hour each user, other than the owner,is allowed to write or publish at to this *segment-key*.
+          Maximum rate of bytes/hour each user, other than the owner,is allowed to write or publish at to this [segment-key](glossary.html#segment-key).
 
           Once reached by a user, writes might drop in priority, be throttled, or be denied with a 403 response code
       limit-delegates:
         type: number
         description: |
-          Number of delegates allowed for the *segment-key*.
+          Number of delegates allowed for the [segment-key](glossary.html#segment-key).
       delegate-data-ttl-seconds:
         type: number
         description: |
-          Time-to-live--in seconds--of [delegate data](#tag-delegate) before it is elegible for cleanup.  Refreshed on any activity on the *segment-key* qualified by the delegate.  
+          Time-to-live--in seconds--of [delegate data](#tag-delegate) before it is elegible for cleanup.  Refreshed on any activity on the [segment-key](glossary.html#segment-key) qualified by the delegate.  
       opt-in:
         type: boolean
         description: |
-          Opt-in this *segment-key* to be stored on this broker's decentralized persistence.  
+          Opt-in this [segment-key](glossary.html#segment-key) to be stored on this broker's decentralized persistence.  
   Metrics:
     type: object
     required:
@@ -3834,13 +3819,13 @@ definitions:
             segment-key:
               type: string
               description: |
-                See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+                See [glossary](glossary.html#segment-key).
             identity:
               type: string
               description: |
                 Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
 
-                See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+                See [glossary](glossary.html#identity).
             settings:
               $ref: "#/definitions/DatastoreKeySettings"
       values:
@@ -3856,17 +3841,17 @@ definitions:
             segment-key:
               type: string
               description: |
-                See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+                See [glossary](glossary.html#segment-key).
             identity:
               type: string
               description: |
                 Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
 
-                See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+                See [glossary](glossary.html#identity).
             delegate:
               type: string
               description: |
-                If value is for a delegate of this *segment-key*, this is the delegate's identity.
+                If value is for a delegate of this [segment-key](glossary.html#segment-key), this is the delegate's identity.
             bytes:
               type: string
               description: |
@@ -3878,7 +3863,7 @@ definitions:
           description: |
             All messages from the backchannel at the givent datastore-key
 
-            Messages enqueued at *datastore-key* (segment-key @ identity) ordered by increasing non-unique *unixtime-millis*.
+            Messages enqueued at [datastore-key](glossary.html#datastore-key) ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)) ordered by increasing non-unique *unixtime-millis*.
 
             Messages returned may not have unique *unixtime-millis*--more than one message may have the same *unixtime-millis*.  
 
@@ -3891,17 +3876,17 @@ definitions:
             segment-key:
               type: string
               description: |
-                See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#segment-key).
+                See [glossary](glossary.html#segment-key).
             identity:
               type: string
               description: |
                 Optional identity.  If provided, must be one of public restricted identities:  0 .. 9999.  If not provided, identity is that of token owner.
 
-                See [glossary](https://github.com/JakubNer/overhide/blob/master/docs/glossary.md#identity).
+                See [glossary](glossary.html#identity).
             delegate:
               type: string
               description: |
-                If messages are for a delegate of this *segment-key*, this is the delegate's identity.
+                If messages are for a delegate of this [segment-key](glossary.html#segment-key), this is the delegate's identity.
             messages:
               type: array
               items:
@@ -3989,7 +3974,7 @@ responses:
       It is always returned by *getter calls* on: 
 
       * [passive hosts](#tag-data-stewardship) in cases where an [active host](#tag-data-stewardship) would return a *200/OK*.
-      * [pour-active-stewardship hosts](#operation--pour-active-stewardship-put) when request is for data in a *segment-key* that hasn't been explicitly written to via [data](#tag-data), [backchannel](#tag-backchannel-queues), or [scratch-pad](#operation--scratch-pad-put) APIs.  Once a *segment-key* is written to by one of these APIs--since the broker was put into [*pour-active-stewardship*](#operation--pour-active-stewardship-put) mode for an *identity*--the [*pour-active-steward*](#operation--pour-active-stewardship-put) will return a *200/OK*.
+      * [pour-active-stewardship hosts](#operation--pour-active-stewardship-put) when request is for data in a [segment-key](glossary.html#segment-key) that hasn't been explicitly written to via [data](#tag-data), [backchannel](#tag-backchannel-queues), or [scratch-pad](#operation--scratch-pad-put) APIs.  Once a [segment-key](glossary.html#segment-key) is written to by one of these APIs--since the broker was put into [*pour-active-stewardship*](#operation--pour-active-stewardship-put) mode for an [identity](glossary.html#identity)--the [*pour-active-steward*](#operation--pour-active-stewardship-put) will return a *200/OK*.
 
       Upon receipt of a *246* status code as a response to a *getter call* the client must check whichever complementary broker is reported by [broker-lookup](#tag-broker-lookup)--if any.  A complementary broker to an *active* *pour* host is the *passive* *drain* host and vice versa.  
 
@@ -4030,10 +4015,10 @@ responses:
       For an endpoint protected with the [token security definition](#security-definition-Authorization Header), an "Authorization" header was not provided a valid token--as returned from the [authenticate endpoint](#operation--auth-credentials-put).
   403:
     description: |
-      There is an access violation for this valid and authenticated *identity* against this valid *datastore-key*.
+      There is an access violation for this valid and authenticated [identity](glossary.html#identity) against this valid [datastore-key](glossary.html#datastore-key).
 
-      1. The authenticated *identity* has insufficient access rights to this valid *datastore-key* for the operation.  Review the [access rights](#definition-DatastoreKeySettings) as manipulated with the [settings endpoints](#tag-datastore-key-settings).
-      1. The API request would exceed rates and limits as set out within the authorities at the current [subscription plan](#operation--capabilities--remuneration-key--tiers-get) or *datastore-key* [entry-fee](#definition-DatastoreKeySettings).
+      1. The authenticated [identity](glossary.html#identity) has insufficient access rights to this valid [datastore-key](glossary.html#datastore-key) for the operation.  Review the [access rights](#definition-DatastoreKeySettings) as manipulated with the [settings endpoints](#tag-datastore-key-settings).
+      1. The API request would exceed rates and limits as set out within the authorities at the current [subscription plan](#operation--capabilities--remuneration-key--tiers-get) or [datastore-key](glossary.html#datastore-key) [entry-fee](#definition-DatastoreKeySettings).
 
       Errors equally apply to "inviee" *identities*.
 
@@ -4052,19 +4037,19 @@ responses:
     description: |
       Go play a lottery:  the generated identity conflicts with some other identity or ended up being a restricted number <10000.
 
-      *User-address* hashed with its *secret-phrase* must be unique within the system.  Another *user-address*/*secret-phrase* already in the system hashes to the same hash as the provided *user-address*/*secret-phrase*.
+      [user-address](glossary.html#user-address) hashed with its *secret-phrase* must be unique within the system.  Another [user-address](glossary.html#user-address)/*secret-phrase* already in the system hashes to the same hash as the provided [user-address](glossary.html#user-address)/*secret-phrase*.
 
       Try a different *secret-phrase*.
   409-write-conflict:
     description: |
-      Occurs when a data set operation includes a *write-gate* parameter that has a SHA256 value which does not match the SHA256 hash of the current (in-datastore) value of a *segment-key*.
+      Occurs when a data set operation includes a *write-gate* parameter that has a SHA256 value which does not match the SHA256 hash of the current (in-datastore) value of a [segment-key](glossary.html#segment-key).
 
-      A data write is requested on a *segment-key* that has an unexpected value in the datastore.  Implies there is a concurrent write issue. 
+      A data write is requested on a [segment-key](glossary.html#segment-key) that has an unexpected value in the datastore.  Implies there is a concurrent write issue. 
   422:
     description: |
       Unprocessable - not filled yet, check draining host for data.
 
-      When a *getter* method called on a [pour-active-steward](#operation--pour-active-stewardship-put) doesn't find a *segment-key* for an *identity* it returns this status code instead of a 400/BAD-REQUEST (with "invalid datastore-key requested; segment-key or identity mismatch" for the reason).
+      When a *getter* method called on a [pour-active-steward](#operation--pour-active-stewardship-put) doesn't find a [segment-key](glossary.html#segment-key) for an [identity](glossary.html#identity) it returns this status code instead of a 400/BAD-REQUEST (with "invalid datastore-key requested; segment-key or identity mismatch" for the reason).
 
       Upon receipt of a *422* status code as a response to a *getter call* the client must attempt the *getter call* with the complementary *draining* *passive* broker as reported by [broker-lookup](#tag-broker-lookup)--if any.
 
@@ -4087,9 +4072,9 @@ securityDefinitions:
 
       The tokens are whitelisted by the *overhide* broker until revoked or expired (at broker's purview).  
       
-      The token contains the *identity*--hashed in implementation specific ways--to help with access control for the rest of the API.  
+      The token contains the [identity](glossary.html#identity)--hashed in implementation specific ways--to help with access control for the rest of the API.  
       
-      Details in the [*identity write-up*](https://github.com/JakubNer/overhide/blob/master/docs/identity.md#authenticated-sessions).
+      Details in the [*identity write-up*](glossary.html#identity#authenticated-sessions).
   Authorization WSS:
     type: apiKey
     in: query
