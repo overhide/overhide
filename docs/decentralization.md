@@ -51,7 +51,7 @@ The intent of *overhide* is to go as far as possible to bring decentralization t
 
 ![overhide.js as library](images/oh-js-as-lib.gif) 
 
-## [Broker API](broker.html) Support For Decentralization
+## [Broker API](broker.html) Support For Data-Stewardship
 
 Refer to the [Broker API](broker.html#tag-data-stewardship) to read about how the APIs support data decentralization.
 

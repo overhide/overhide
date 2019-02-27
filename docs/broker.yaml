@@ -624,6 +624,10 @@ paths:
             type: array
             items:
               $ref: "#/definitions/RemunerationProvider"
+        404:
+          $ref: "#/responses/404-cannot-resolve"
+        405:
+          $ref: "#/responses/405"
         429:
           $ref: "#/responses/429"
     put:
@@ -649,23 +653,33 @@ paths:
                 description: |
                   BASE64 encoded.
 
-                  Signature of this brokers address as retrieved with [GET /capabilities/address](#operation--capabilities-address).
+                  Signature of this brokers address as retrieved with [GET /capabilities/address](#operation--capabilities-address-get).
 
                   The broker's address is signed by the calling *identity's* [user-address](glossary.html#user-address).
 
                   The signing [user-address](glossary.html#user-address) and the signed broker's address must be for ledger corresponding to [remuneration-key](#/definitions/RemunerationKey) of calling [identity](glossary.html#identity).                   
 
                   Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
-              active-host:
+              drain-broker-host:
                 type: string
                 description: |
-                  A public *address* of this broker--as can be retrieved with [GET /capabilities/address](#operation--capabilities-address) to verify an active subscription to this broker's [broker-address](glossary.html#broker-address).
+                  A host name or IP of a broker we want to advertise as the [drain-host](glossary.html#drain-host): this can be retrieved with [GET /capabilities/address](#operation--capabilities-address) on the origin [passive steward](#tag-data-stewardship).
+              drain-broker-host-signed:
+                type: string
+                description: |
+                  BASE64 encoded.
 
-                  Must be an address for the remuneration provider indicated in *remuneration-key*.
+                  Signature of the above *drain-broker-host*.
+
+                  Must be signed by the calling *identity's* [user-address](glossary.html#user-address).
+
+                  The signing [user-address](glossary.html#user-address) must be for ledger corresponding to [remuneration-key](#/definitions/RemunerationKey) of calling [identity](glossary.html#identity).                   
+
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
               unixtime-millis:
                 type: number
                 description: |
-                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis) as the source for this parameter.
+                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
 
                   These parameters mitigate replay attacks.
               unixtime-millis-signed:
@@ -678,30 +692,14 @@ paths:
                   Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
       consumes:
         - application/json
-      produces:
-        - application/json
       responses:
         200:
           description: |
-            Authentication token is returned to be used in subsequent calls into
-            overhide broker.
-          schema:
-            type: string
-        302:
-          description: |
-            Found -- the *login* succeeded and the authentication token is returned in the payload as per 200/OK.  For subsequent interaction with the API--including engaging the [WIRE connection](#security-definition-Authorization%20WSS)--you must use the URL in the returned `Location: <url>` header.
-            
-            This return code is to be expected when the broker is being load-balanced.
+            Set OK.
         400:
           $ref: "#/responses/400"
-        402:
-          description: |
-            Payment Required -- Remuneration provider indicates insufficient transactions to the broker system to meet a
-            service tier subscription requirements.
-
-            See [subscriptions write-up](glossary.html#identity#subscriptions).
-        409:
-          $ref: "#/responses/409-identity-conflict"
+        405:
+          $ref: "#/responses/405"
         429:
           $ref: "#/responses/429"
   /auth/credentials:
@@ -710,8 +708,6 @@ paths:
       description: |
         Authenticate an [identity](glossary.html#identity) returning a token to be used for [token
         authentication](#security-definition-Authorization Header) in the rest of the API.
-        
-        > Note that the token will be returned as part of a *200/OK* result code or a *302/FOUND* result code.
       tags:
         - auth
       parameters:
@@ -760,7 +756,7 @@ paths:
               unixtime-millis:
                 type: number
                 description: |
-                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis) as the source for this parameter.
+                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
 
                   These parameters mitigate replay attacks.
               unixtime-millis-signed:
@@ -782,11 +778,6 @@ paths:
             overhide broker.
           schema:
             type: string
-        302:
-          description: |
-            Found -- the *login* succeeded and the authentication token is returned in the payload as per 200/OK.  For subsequent interaction with the API--including engaging the [WIRE connection](#security-definition-Authorization%20WSS)--you must use the URL in the returned `Location: <url>` header.
-            
-            This return code is to be expected when the broker is being load-balanced.
         400:
           $ref: "#/responses/400"
         402:
@@ -845,8 +836,6 @@ paths:
 
         Returns an "invitee" token to be used for [token authentication](#security-definition-Authorization Header) in the rest of the API.
         
-        > Note that the token will be returned as part of a *200/OK* result code or a *302/FOUND* result code.
-
         The *invitee-user-address*  hashed by *invitee-secret-phrase* is the invitee's [identity](glossary.html#identity)
         for the purposes of [write/publish permissions](#definition-DatastoreKeySettings) on [segment-key](glossary.html#segment-key).
       tags:
@@ -919,7 +908,7 @@ paths:
               unixtime-millis:
                 type: number
                 description: |
-                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis) as the source for this parameter.
+                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
 
                   These parameters mitigate replay attacks.
               unixtime-millis-signed:
@@ -950,11 +939,6 @@ paths:
             overhide broker.
           schema:
             type: string
-        302:
-          description: |
-            Found -- the *login* succeeded and the authentication token is returned in the payload as per 200/OK.  For subsequent interaction with the API--including engaging the [WIRE connection](#security-definition-Authorization%20WSS)--you must use the URL in the returned `Location: <url>` header.
-            
-            This return code is to be expected when the broker is being load-balanced.            
         400:
           $ref: "#/responses/400"
         402:
@@ -1022,7 +1006,7 @@ paths:
               unixtime-millis:
                 type: number
                 description: |
-                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis) as the source for this parameter.
+                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
 
                   These parameters mitigate replay attacks.
               unixtime-millis-signed:
@@ -1334,7 +1318,7 @@ paths:
         code == 403:
           $ref: "#/responses/403"
         code == 409:
-          $ref: "#/responses/409-write-conflict"
+          $ref: "#/responses/409"
         code == 429:
           $ref: "#/responses/429"
   get data:
@@ -1418,6 +1402,8 @@ paths:
           $ref: "#/responses/400"
         code == 403:
           $ref: "#/responses/403"
+        code == 404:
+          $ref: "#/responses/404-datastore-key"
         code == 422:
           $ref: "#/responses/422"
         code == 429:
@@ -1513,6 +1499,8 @@ paths:
           $ref: "#/responses/400"
         code == 403:
           $ref: "#/responses/403"
+        code == 404:
+          $ref: "#/responses/404-datastore-key"
         code == 429:
           $ref: "#/responses/429"
   post message:
@@ -1639,6 +1627,8 @@ paths:
           $ref: "#/responses/400"
         code == 403:
           $ref: "#/responses/403"
+        code == 404:
+          $ref: "#/responses/404-datastore-key"
         code == 429:
           $ref: "#/responses/429"
   fetch messages:
@@ -1763,6 +1753,8 @@ paths:
           $ref: "#/responses/400"
         code == 403:
           $ref: "#/responses/403"
+        code == 404:
+          $ref: "#/responses/404-datastore-key"
         code == 422:
           $ref: "#/responses/422"
         code == 429:
@@ -1871,6 +1863,8 @@ paths:
           $ref: "#/responses/400"
         code == 403:
           $ref: "#/responses/403"
+        code == 404:
+          $ref: "#/responses/404-datastore-key"
         code == 429:
           $ref: "#/responses/429"
   subscribe:
@@ -2031,6 +2025,8 @@ paths:
                   The message byte stream value.
         code == 400:
           $ref: "#/responses/400"
+        code == 404:
+          $ref: "#/responses/404-datastore-key"
 
   set delegate data:
     options:
@@ -2148,7 +2144,7 @@ paths:
         code == 403:
           $ref: "#/responses/403"
         code == 409:
-          $ref: "#/responses/409-write-conflict"
+          $ref: "#/responses/409"
         code == 429:
           $ref: "#/responses/429"
   get delegate data:
@@ -2236,6 +2232,8 @@ paths:
           $ref: "#/responses/400"
         code == 403:
           $ref: "#/responses/403"
+        code == 404:
+          $ref: "#/responses/404-datastore-key"
         code == 422:
           $ref: "#/responses/422"
         code == 429:
@@ -2337,6 +2335,8 @@ paths:
           $ref: "#/responses/400"
         code == 403:
           $ref: "#/responses/403"
+        code == 404:
+          $ref: "#/responses/404-datastore-key"
         code == 429:
           $ref: "#/responses/429"
   
@@ -2459,6 +2459,8 @@ paths:
           $ref: "#/responses/400"
         code == 403:
           $ref: "#/responses/403"
+        code == 404:
+          $ref: "#/responses/404-datastore-key"
         code == 422:
           $ref: "#/responses/422"
         code == 429:
@@ -2515,6 +2517,8 @@ paths:
           $ref: "#/responses/400"
         403:
           $ref: "#/responses/403"
+        404:
+          $ref: "#/responses/404-datastore-key"
         429:
           $ref: "#/responses/429"
     get:
@@ -2554,6 +2558,8 @@ paths:
           $ref: "#/responses/400"
         403:
           $ref: "#/responses/403"
+        404:
+          $ref: "#/responses/404-datastore-key"
         422:
           $ref: "#/responses/422"
         429:
@@ -2581,6 +2587,8 @@ paths:
           $ref: "#/responses/400"
         403:
           $ref: "#/responses/403"
+        404:
+          $ref: "#/responses/404-datastore-key"
         422:
           $ref: "#/responses/422"
         429:
@@ -2623,6 +2631,8 @@ paths:
           $ref: "#/responses/400"
         403:
           $ref: "#/responses/403"
+        404:
+          $ref: "#/responses/404-datastore-key"
         422:
           $ref: "#/responses/422"
         429:
@@ -2938,7 +2948,7 @@ paths:
         a 400 -- "invalid type-key, doesn't match broker system capabilities".
 
         If data from the remote *GUID* cannot be extracted or in otherwise unavailable the message call fails with a 
-        400 -- "cannot reach data".
+        502 -- "cannot reach data".
 
         If the payload from the other broker is malformated and cannot be imported the message call fails 
         with a 400 -- "cannot process input", followed by additional optional verbiage.
@@ -2972,6 +2982,8 @@ paths:
           $ref: "#/responses/403"
         429:
           $ref: "#/responses/429"
+        502:
+          $ref: "#/responses/502"
     delete:
       summary: Delete all user's data on the broker system.
       description: |
@@ -3037,11 +3049,11 @@ paths:
 
                   Providing this parameter means we want to advertise this broker as the caller's [user-address](glossary.html#user-address)' [activeHost](glossary.html#data-steward) to the [lookup network](#tag-broker-lookup) corresponding to the [remuneration-key](#/definitions/RemunerationKey) used for this [identity](glossary.html#identity).
 
-                  If the [lookup network](#tag-broker-lookup) currently has a *drainHost* entry, the *drainHost* entry is removed from the [lookup network](#tag-broker-lookup).
+                  If the [lookup network](#tag-broker-lookup) currently has a [drain-host](glossary.html#drain-host) entry, the [drain-host](glossary.html#drain-host) entry is removed from the [lookup network](#tag-broker-lookup).
               unixtime-millis:
                 type: number
                 description: |
-                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis) as the source for this parameter.
+                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
 
                   If this parameter is provided, *unixtime-millis-signed* must be provided as well.
 
@@ -3092,7 +3104,7 @@ paths:
 
         Note that this *pour-active stewardship* mode is complementary with the [fill endpoint](#operation-fill-WIRE) when not leveraging distributed persistence.
 
-        When in this *pour-active stewardship* mode while waiting for persistence network to synchronize data from a [passive-steward](glossary.html#data-steward); this *pour-active steward* can be safely transitioned to an [active steward](#operation--active-stewardship-put) when the [passive-steward](glossary.html#data-steward) and this broker both return the same identifier from [GET /latest-snapshot-id](#operation--latest-snapshot-id--guid-).
+        When in this *pour-active stewardship* mode while waiting for persistence network to synchronize data from a [passive-steward](glossary.html#data-steward); this *pour-active steward* can be safely transitioned to an [active steward](#operation--active-stewardship-put) when the [passive-steward](glossary.html#data-steward) and this broker both return the same identifier from [GET /latest-snapshot-id](#operation--latest-snapshot-id--guid--get).
         
         WARNING: having more than one "active" data-steward may lead to write race-conditions on the distributed persistence network with unknown consequences.
       parameters:
@@ -3112,7 +3124,7 @@ paths:
 
                   This host name or IP address--if properly signed by *drain-host-signed*--will be pushed to the [lookup network](#tag-broker-lookup) corresponding to the [remuneration-key](#/definitions/RemunerationKey) used for this [identity](glossary.html#identity).
 
-                  Once the [lookup network](#tag-broker-lookup) has this *drainHost* it can aid all data-access during a [migration](#tag-data-stewardship).
+                  Once the [lookup network](#tag-broker-lookup) has this *drain-host* it can aid all data-access during a [migration](#tag-data-stewardship).
               drain-host-signed:
                 type: string
                 description: |
@@ -3138,7 +3150,7 @@ paths:
               unixtime-millis:
                 type: number
                 description: |
-                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis) as the source for this parameter.
+                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
 
                   If this parameter is provided, *unixtime-millis-signed* must be provided as well.
 
@@ -3229,6 +3241,8 @@ paths:
           $ref: "#/responses/400"
         403:
           $ref: "#/responses/403"
+        404:
+          $ref: "#/responses/404-datastore-key"
         422:
           $ref: "#/responses/422"
         429:
@@ -3976,7 +3990,7 @@ responses:
       * [passive hosts](#tag-data-stewardship) in cases where an [active host](#tag-data-stewardship) would return a *200/OK*.
       * [pour-active-stewardship hosts](#operation--pour-active-stewardship-put) when request is for data in a [segment-key](glossary.html#segment-key) that hasn't been explicitly written to via [data](#tag-data), [backchannel](#tag-backchannel-queues), or [scratch-pad](#operation--scratch-pad-put) APIs.  Once a [segment-key](glossary.html#segment-key) is written to by one of these APIs--since the broker was put into [*pour-active-stewardship*](#operation--pour-active-stewardship-put) mode for an [identity](glossary.html#identity)--the [*pour-active-steward*](#operation--pour-active-stewardship-put) will return a *200/OK*.
 
-      Upon receipt of a *246* status code as a response to a *getter call* the client must check whichever complementary broker is reported by [broker-lookup](#tag-broker-lookup)--if any.  A complementary broker to an *active* *pour* host is the *passive* *drain* host and vice versa.  
+      Upon receipt of a *246* status code as a response to a *getter call* the client must check whichever complementary broker is reported by [broker-lookup](#tag-broker-lookup)--if any.  A complementary broker to an [*active* *pour* host](#operation--pour-active-stewardship-put) is the [*passive* *drain* host](glossary.html#drain-host) and vice versa.  
 
       Once both complimentary hosts--reported by [broker-lookup](#tag-broker-lookup)--respond with a value and a status code, consult the following decision matrix as to which broker's value to use :
 
@@ -4000,10 +4014,7 @@ responses:
       * invalid secret-phrase
       * no handshake
       * message outside handshake constraints
-      * invalid datastore-key requested; segment-key or identity mismatch
-      * datastore-key ownership conflict; segment-key @ identity already reserved
       * invalid type-key, doesn't match broker system capabilities
-      * cannot reach data
       * cannot process input
       * cannot write, broker not an active steward of user's data
           * check broker-lookup to find active steward and write there
@@ -4033,6 +4044,17 @@ responses:
       The message enum might be extended by broker system.
 
       Broker systems might not throw up this response when read and write rates are exceeded.  Instead a broker system might start throttling responses or responding at a lower-priority.
+  404-datastore-key: 
+    description: |
+      Invalid datastore-key requested; [segment-key](glossary.html#segment-key) or [identity](glossary.html#identity) mismatch.
+  404-cannot-resolve: 
+    description: |
+      Cannot resolve address.
+  405: 
+    description: |
+      Method not allowed.
+
+      The [broker-lookup](#tag-broker-lookup) subsystem is not provided/enabled by this broker.
   409-identity-conflict:
     description: |
       Go play a lottery:  the generated identity conflicts with some other identity or ended up being a restricted number <10000.
@@ -4040,18 +4062,26 @@ responses:
       [user-address](glossary.html#user-address) hashed with its *secret-phrase* must be unique within the system.  Another [user-address](glossary.html#user-address)/*secret-phrase* already in the system hashes to the same hash as the provided [user-address](glossary.html#user-address)/*secret-phrase*.
 
       Try a different *secret-phrase*.
-  409-write-conflict:
+  409:
     description: |
-      Occurs when a data set operation includes a *write-gate* parameter that has a SHA256 value which does not match the SHA256 hash of the current (in-datastore) value of a [segment-key](glossary.html#segment-key).
+      Setter encountered a conflict.  Consult error message:
 
-      A data write is requested on a [segment-key](glossary.html#segment-key) that has an unexpected value in the datastore.  Implies there is a concurrent write issue. 
+      * write-conflict:
+
+          Occurs when a data set operation includes a *write-gate* parameter that has a SHA256 value which does not match the SHA256 hash of the current (in-datastore) value of a [segment-key](glossary.html#segment-key).
+
+          A data write is requested on a [segment-key](glossary.html#segment-key) that has an unexpected value in the datastore.  Implies there is a concurrent write issue. 
+
+      * datastore-key conflict:
+
+          Datastore-key ownership conflict; [segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)  already reserved.
   422:
     description: |
       Unprocessable - not filled yet, check draining host for data.
 
       When a *getter* method called on a [pour-active-steward](#operation--pour-active-stewardship-put) doesn't find a [segment-key](glossary.html#segment-key) for an [identity](glossary.html#identity) it returns this status code instead of a 400/BAD-REQUEST (with "invalid datastore-key requested; segment-key or identity mismatch" for the reason).
 
-      Upon receipt of a *422* status code as a response to a *getter call* the client must attempt the *getter call* with the complementary *draining* *passive* broker as reported by [broker-lookup](#tag-broker-lookup)--if any.
+      Upon receipt of a *422* status code as a response to a *getter call* the client must attempt the *getter call* with the complementary [*draining* *passive* broker](glossary.html#drain-host) as reported by [broker-lookup](#tag-broker-lookup)--if any.
 
       Refer to write-up on the [*246* status code](#/responses/206) for a decision matrix as to what the client should do.
   429:
@@ -4059,6 +4089,9 @@ responses:
       Client is calling the API too frequently.
 
       Conditions for this response to occur are broker system dependant.
+  502:
+    description: |
+      Cannot reach data.
 securityDefinitions:
   Authorization Header:
     type: apiKey
