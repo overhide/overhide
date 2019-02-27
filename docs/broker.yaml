@@ -103,7 +103,7 @@ tags:
       In working-data volatile memory limited to 32KiB that doesn't survive broker instance restarts.
   - name: data
     description: |
-      Data key-value CRUD operations; modifying data values in *datastore-keys*.
+      Data key-value CRUD operations; modifying data values in [datastore-keys](glossary.html#datastore-key).
   - name: backchannel queues
     description: |
       Publishing messages to backchannel queues, subscribing to notifications, and de-queueing the messages.
@@ -116,7 +116,7 @@ tags:
       Delegates may be alloted delegated *backchannel-queues*:  these are qualified via *delegate* query parameters on [the backchannel endpoints](#tag-backchannel-queues)
   - name: datastore-key settings
     description: |
-      Setting access metadata for *datastore-keys*.
+      Setting access metadata for [datastore-keys](glossary.html#datastore-key).
 
       * write rights
       * publish rights
@@ -126,7 +126,7 @@ tags:
       * opt-in for decentralized storge
   - name: metrics
     description: |
-      Usage metrics for specific *datastore-keys* or overall for the [identity](glossary.html#identity).
+      Usage metrics for specific [datastore-keys](glossary.html#datastore-key) or overall for the [identity](glossary.html#identity).
   - name: data-stewardship
     description: |
       Stewardship of a users's data.
@@ -421,7 +421,7 @@ paths:
       description: |
         Any fragmented sending or receiving--as per the [continue](#operation-continue-WIRE) or [acknowledge](#operation-acknowledge-WIRE) endpoints--may be halted.
 
-        A halt means further fragments should not be sent, should be dropped.
+        A halt signals further fragments should not be sent, should be dropped.
 
         Only the client can initiate a halt.  The broker may similarly halt on timeout conditions as per [handshake](#operation-handshake-WIRE).
       tags:
@@ -605,25 +605,59 @@ paths:
             This broker's [broker-address](glossary.html#broker-address) for the remuneration-provider used by caller's identity.
         429:
           $ref: "#/responses/429"
-  /broker-lookup:
+  /broker-lookup/{remuneration-key}/{user-address}:
     get:
-      summary: List of remuneration providers supported.
+      summary: Resolve user-addres to broker host name or IP.
       description: |
-        Mapping of remuneration providers to the broker's public address for given
-        provider.
+        Resolve a [user-address](glossary.html#user-address) from a ledger represented by the provided [remuneration-key](#/definitions/RemunerationKey) to a broker host name or IP.
+
+        The returned broker information points to the user's currently [active steward](#tag-data-stewardship) and [drain-host](glossary.html#drain-host), if any.
+      parameters:
+        - in: path
+          name: remuneration-key
+          required: true
+          schema:
+            $ref: "#/definitions/RemunerationKey"
+        - in: path
+          name: user-address
+          required: true
+          description: |
+            A public *user-address* whom to lookup.
+
+            Must be an address for the remuneration provider indicated in *remuneration-key*.
       tags:
-        - capabilities
-      operationId: getRemunerationProviders
+        - broker-lookup
       produces:
         - application/json
       responses:
         200:
           description: |
-            Array of objects each defining one remuneration provider mapping.
-          schema:
-            type: array
-            items:
-              $ref: "#/definitions/RemunerationProvider"
+            Returns broker information for the [user-address](glossary.html#user-address):
+
+            ```
+            {
+              "address": "..",      
+              "activeBrokerAddress": "..",       
+              "activeBrokerAddressSigned": "..", 
+              "activeBrokerHost": "..",
+              "activeBrokerHostSigned": "..",    
+              "drainBrokerHost": "..",
+              "drainBrokerHostSigned": ".."      
+            }
+            ```
+
+            * *address* is the [user-address](glossary.html#user-address).
+            * *activeBrokerAddress* is the [broker-address](glossary.html#broker-address) of the [active steward](glossary.html#data-steward).
+            * *activeBrokerAddressSigned* is *activeBrokerAddress* signed by *address*
+                * since *address* signs *activeBrokerAddress*, only the owner of this [user-address](glossary.html#user-address) can update their [active steward's](glossary.html#data-steward) [broker-address](glossary.html#broker-address).
+            * *activeBrokerHost* is the *host name* or *IP* of [active steward](glossary.html#data-steward) broker.
+                * this is the *host name* or *IP* to use for the rest of these API calls.
+            * *activeBrokerHostSigned* is *activeBrokerHost* signed by *activeBrokerAddress*
+                * since *activeBrokerAddress* signs *activeBrokerHost*, the [active steward](glossary.html#data-steward) can change the *host name* or *IP* without involving the user.
+                * this indirection is useful for load-balancing and other operations aspects of the broker.
+            * *drainBrokerHost* is the *host name* or *IP* of the [drain-host](glossary.html#drain-host), if any.
+            * *drainBrokerHostSigned* is *drainBrokerHost* signed by *address*
+                * since *address* signs *drainBrokerHost*, only the owner of this [user-address](glossary.html#user-address) can update their [drain-host](glossary.html#drain-host).
         404:
           $ref: "#/responses/404-cannot-resolve"
         405:
@@ -631,7 +665,7 @@ paths:
         429:
           $ref: "#/responses/429"
     put:
-      summary: Populate broker-lookup entry on the network for the calling identity's remuneration-key.
+      summary: Populate broker-lookup entry on the network.
       description: |
         Populate [broker-lookup](glossary.html#broker-lookup) entry for network indicated by the [remuneration-key](#/definitions/RemunerationKey); corrsponding to calling [identity](glossary.html#identity)'s'[user-address](glossary.html#user-address).
       tags:
@@ -663,7 +697,7 @@ paths:
               drain-broker-host:
                 type: string
                 description: |
-                  A host name or IP of a broker we want to advertise as the [drain-host](glossary.html#drain-host): this can be retrieved with [GET /capabilities/address](#operation--capabilities-address) on the origin [passive steward](#tag-data-stewardship).
+                  A host name or IP of a broker we want to advertise as the [drain-host](glossary.html#drain-host): this can be retrieved with [GET /capabilities/address](#operation--capabilities-address-get) on the origin [passive steward](#tag-data-stewardship).
               drain-broker-host-signed:
                 type: string
                 description: |
@@ -679,7 +713,7 @@ paths:
               unixtime-millis:
                 type: number
                 description: |
-                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
+                  Non-unique UNIX Epoch timestamp (milliseconds) that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of tolerance either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
 
                   These parameters mitigate replay attacks.
               unixtime-millis-signed:
@@ -756,7 +790,7 @@ paths:
               unixtime-millis:
                 type: number
                 description: |
-                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
+                  Non-unique UNIX Epoch timestamp (milliseconds) that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of tolerance either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
 
                   These parameters mitigate replay attacks.
               unixtime-millis-signed:
@@ -889,7 +923,7 @@ paths:
 
                   The broker shall allow the same *invitee-user-address* to be used with multiple different *invitee-secret-phrases*.  The broker can hash the *invitee-user-address* in a broker-specific way and make this hashed version available in the [visitor's authentication token](#security-definition-Authorization%20Header) for use with this API: for duplicate delegate-identity checks.  The hashed *invitee-user-address* is not stored off outside the broker's metadata (i.e. on the distributed persistence network). 
                   
-                  See also the [*duplicate-delegate-policy* configuration point](#tag-datastore-key-settings) for *datastore-keys*.
+                  See also the [*duplicate-delegate-policy* configuration point](#tag-datastore-key-settings) for [datastore-keys](glossary.html#datastore-key).
               invitee-user-address:
                 type: string
                 description: |
@@ -908,7 +942,7 @@ paths:
               unixtime-millis:
                 type: number
                 description: |
-                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
+                  Non-unique UNIX Epoch timestamp (milliseconds) that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of tolerance either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
 
                   These parameters mitigate replay attacks.
               unixtime-millis-signed:
@@ -1006,7 +1040,7 @@ paths:
               unixtime-millis:
                 type: number
                 description: |
-                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
+                  Non-unique UNIX Epoch timestamp (milliseconds) that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of tolerance either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
 
                   These parameters mitigate replay attacks.
               unixtime-millis-signed:
@@ -1736,7 +1770,7 @@ paths:
               unixtime-millis:
                 type: number
                 description: |
-                  Non-unique UNIX Epoch timestamp milliseconds of the message.
+                  Non-unique UNIX Epoch timestamp (milliseconds) of the message.
               message-len:
                 type: number
                 description: |
@@ -1966,7 +2000,7 @@ paths:
           $ref: "#/responses/WIRE"
         code == 222:
           description: |
-            For as long as the connection remains opened, all *datastore-keys*--subscribed to using this *subscribe* request--may emit 222 responses.
+            For as long as the connection remains opened, all [datastore-keys](glossary.html#datastore-key)--subscribed to using this *subscribe* request--may emit 222 responses.
 
             Each 222 event requires a subsequent [acknowledgment](#operation-acknowledge-WIRE) by the client.
 
@@ -2014,7 +2048,7 @@ paths:
               unixtime-millis:
                 type: number
                 description: |
-                  Non-unique UNIX Epoch timestamp milliseconds of the message.        
+                  Non-unique UNIX Epoch timestamp (milliseconds) of the message.        
               message-len:
                 type: number
                 description: |
@@ -2568,7 +2602,7 @@ paths:
     get:
       summary: Returns metrics for all datastore-keys owned by an identity.
       description: |
-        Returns overall metrics for all *datastore-keys* (segment-keys @ identity) owned by an *identitiy*.
+        Returns overall metrics for all [datastore-keys](glossary.html#datastore-key) ([segment-keys](glossary.html#segment-key) @ [identity](glossary.html#identity)) owned by an *identitiy*.
       tags:
         - metrics
       security:
@@ -2578,7 +2612,7 @@ paths:
       responses:
         200:
           description: |
-            Metrics for all *datastore-keys* ([segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity)) of the user.
+            Metrics for all [datastore-keys](glossary.html#datastore-key) ([segment-keys](glossary.html#segment-key) @ [identity](glossary.html#identity)) of the user.
           schema:
             $ref: "#/definitions/Metrics"
         246:
@@ -2653,7 +2687,7 @@ paths:
             | ---             | ---     | ---     |
             | req-id          | 8       |         |
             | len             | 8       | IL + 1  |
-            | opcode          | 1       | 0x0E    |
+            | opcode          | 1       | 0x0F    |
           schema:
             type: object
             required:
@@ -2702,7 +2736,7 @@ paths:
 
   import:
     options:
-      summary: Set all user's data on the broker system to the provided payload.
+      summary: Indiscriminately Set all user's data on the broker system.
       description: |
         All of the user's data with caller's [identity](glossary.html#identity) is wiped and reset to the payload.
 
@@ -2710,7 +2744,7 @@ paths:
 
         If transferring a [segment-key](glossary.html#segment-key) with a public restricted identity (0 .. 9999), if the
         [segment-key](glossary.html#segment-key) already exists at provided identity for a different *owner*, the message
-        call fails with a 400 -- "datastore-key ownership conflict; segment-key @ identity already reserved".
+        call fails with a 409 -- "datastore-key ownership conflict; [segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity) already reserved".
 
         If the payload is malformated and cannot be imported the message call fails with a 
         400 -- "cannot process input", followed by additional optional verbiage.
@@ -2787,20 +2821,20 @@ paths:
           $ref: "#/responses/429"
   fill:
     options:
-      summary: Set all user's data on the broker system to the provided payload unless data already on broker is deemed newer.
+      summary: Discriminately set all user's data on the broker system.
       description: |
         All of the user's data with caller's [identity](glossary.html#identity) that is deemed older than the payload is wiped and reset to the payload.
 
-        If transferring a [segment-key](glossary.html#segment-key) that already exists on the broker for caller's [identity](glossary.html#identity) the [segment-key](glossary.html#segment-key) in the payload is ignored.
+        If transferring a [segment-key](glossary.html#segment-key) that already exists on the broker for caller's [identity](glossary.html#identity), the [segment-key](glossary.html#segment-key) in the payload is ignored.
 
         If transferring a [segment-key](glossary.html#segment-key) with a public restricted identity (0 .. 9999), if the
         [segment-key](glossary.html#segment-key) already exists at provided identity for a different *owner*, the message
-        call fails with a 400 -- "datastore-key ownership conflict; segment-key @ identity already reserved".
+        call fails with a 409 -- "datastore-key ownership conflict; [segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity) already reserved".
 
         If the payload is malformated and cannot be imported the message call fails with a 
         400 -- "cannot process input", followed by additional optional verbiage.
 
-        If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for [identity](glossary.html#identity), call fails with a 400 -- "cannot write, broker not an active steward of user's data"
+        If this broker is not a [(pour) active steward](#tag-data-stewardship) of data for [identity](glossary.html#identity), call fails with a 400 -- "cannot write, broker not an active steward of user's data"
       tags:
         - data-stewardship
       parameters:
@@ -2812,7 +2846,7 @@ paths:
             | ---             | ---     | ---     |
             | req-id          | 8       |         |
             | len             | 8       | SL + IL + length(payload) + 4 |
-            | opcode          | 1       | 0x0C    |
+            | opcode          | 1       | 0x0D    |
             | flags           | 1       |         |
             | payload         | *       | ``      |
 
@@ -2886,7 +2920,7 @@ paths:
             | ---             | ---     | ---     |
             | req-id          | 8       |         |
             | len             | 8       | SL + IL + 3 |
-            | opcode          | 1       | 0x0D    |
+            | opcode          | 1       | 0x0E    |
           schema:
             type: object
             required:
@@ -2942,7 +2976,7 @@ paths:
 
         If transferring a [segment-key](glossary.html#segment-key) with a public restricted identity (0 .. 9999), if the
         [segment-key](glossary.html#segment-key) already exists at provided identity for a different *owner*, the message
-        call fails with a 400 -- "datastore-key ownership conflict; segment-key @ identity already reserved".
+        call fails with a 409 -- "datastore-key ownership conflict; [segment-key](glossary.html#segment-key) @ [identity](glossary.html#identity) already reserved".
 
         If the *type-key* requested is not supported by this broker system the message call fails with
         a 400 -- "invalid type-key, doesn't match broker system capabilities".
@@ -3021,7 +3055,7 @@ paths:
       description: |
         All of the user's data with caller's [identity](glossary.html#identity) is now under this broker's [active-stewardship](glossary.html#data-steward).
 
-        Once activated, the user can write data to their *datastore-keys*.
+        Once activated, the user can write data to their [datastore-keys](glossary.html#datastore-key).
 
         Stops pulling updates *from* decentralized storage and starts pushing updates *to* decentralized storage.
 
@@ -3043,114 +3077,17 @@ paths:
 
                   This parameter can only be provided if *unixtime-millis* and *unixtime-millis-signed* are also provided.
 
-                  The [broker-address](glossary.html#broker-address) on the reumneration-provider matching caller's [identity](glossary.html#identity)--as provided by [/capabilities/address](#operation--capabilities-address)--signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
+                  The [broker-address](glossary.html#broker-address) on the reumneration-provider matching caller's [identity](glossary.html#identity)--as provided by [/capabilities/address](#operation--capabilities-address-get)--signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
 
                   Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
 
-                  Providing this parameter means we want to advertise this broker as the caller's [user-address](glossary.html#user-address)' [activeHost](glossary.html#data-steward) to the [lookup network](#tag-broker-lookup) corresponding to the [remuneration-key](#/definitions/RemunerationKey) used for this [identity](glossary.html#identity).
+                  Providing this parameter signals we want to advertise this broker as the caller's [user-address](glossary.html#user-address)' [activeHost](glossary.html#data-steward) to the [lookup network](#tag-broker-lookup) corresponding to the [remuneration-key](#/definitions/RemunerationKey) used for this [identity](glossary.html#identity).
 
                   If the [lookup network](#tag-broker-lookup) currently has a [drain-host](glossary.html#drain-host) entry, the [drain-host](glossary.html#drain-host) entry is removed from the [lookup network](#tag-broker-lookup).
               unixtime-millis:
                 type: number
                 description: |
-                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
-
-                  If this parameter is provided, *unixtime-millis-signed* must be provided as well.
-
-                  These parameters mitigate replay attacks.
-              unixtime-millis-signed:
-                type: string
-                description: |
-                  BASE64 encoded.
-
-                  The *unixtime-millis* provided above signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
-
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
-      tags:
-        - data-stewardship
-      security:
-        - Authorization Header: []
-      consumes:
-        - application/json
-      responses:
-        200:
-          description: |
-            Stewardship status change successful.
-        400:
-          $ref: "#/responses/400"
-        403:
-          $ref: "#/responses/403"
-        429:
-          $ref: "#/responses/429"
-  /pour-active-stewardship:
-    put:
-      summary: Make this broker an active-steward of the user's data with caveats allowing for safe sync of data from some passive-steward.
-      description: |
-        All of the user's data with caller's [identity](glossary.html#identity) is now under this broker's [active-stewardship](glossary.html#data-steward) with caveats:
-
-        * *getter methods* will return [246/Inconclusive](#/responses/246) on successful reads of [segment-key](glossary.html#segment-key) that weren't explicitly written to: see [response status code *246*](#/responses/246).  This is important for continuity of data-access during migrations:
-            1. finishing up any persistence storage network synchronization from a previously [active-steward](glossary.html#data-steward) before making this broker a [regular active-steward](#operation--active-stewardship-put).  See [data-stewardship](#tag-data-stewardship) for use-cases.
-            1. allowing for time-consuming explicit export from a previously [active-steward](glossary.html#data-steward) and explicit [fill](#operation-fill-WIRE) of this broker; before making this broker a [regular active-steward](#operation--active-stewardship-put).  See [data-stewardship](#tag-data-stewardship) for use-cases.
-        * accepts decentralized storage data changes until an explicit API write to a [segment-key](glossary.html#segment-key):
-            * overwrites data in that [segment-key](glossary.html#segment-key) as usual (see [response code *246](#/responses/246))
-            * causes the [segment-key](glossary.html#segment-key) to stops being overwritten by decentralized storage changes
-            * causes the [segment-key](glossary.html#segment-key) to start returning 200/OK on *getter methods* instead of [246/Inconclusive](#/responses/246)
-        
-        Once activated, the user can write data to their *datastore-keys*.
-
-        Ensures updates *from* decentralized storage continue to be pulled; stops pushing updates *to* decentralized storage.
-
-        This call is idempotent: call this to change from [passive or active stewardship](#tag-data-stewardship).
-
-        Note that this *pour-active stewardship* mode is complementary with the [fill endpoint](#operation-fill-WIRE) when not leveraging distributed persistence.
-
-        When in this *pour-active stewardship* mode while waiting for persistence network to synchronize data from a [passive-steward](glossary.html#data-steward); this *pour-active steward* can be safely transitioned to an [active steward](#operation--active-stewardship-put) when the [passive-steward](glossary.html#data-steward) and this broker both return the same identifier from [GET /latest-snapshot-id](#operation--latest-snapshot-id--guid--get).
-        
-        WARNING: having more than one "active" data-steward may lead to write race-conditions on the distributed persistence network with unknown consequences.
-      parameters:
-        - in: body
-          name: activation
-          description: |
-            Activation parameters.
-          schema:
-            type: object
-            properties:
-              drain-host:
-                type: string
-                description: |
-                  This parameter can only be provided if *drain-host-signed*, *unixtime-millis*, *unixtime-millis-signed*, and *broker-address-signed* are also provided.
-
-                  This is the host name or IP address of [passive-steward broker](glossary.html#data-steward) we're draining data from into this broker.  
-
-                  This host name or IP address--if properly signed by *drain-host-signed*--will be pushed to the [lookup network](#tag-broker-lookup) corresponding to the [remuneration-key](#/definitions/RemunerationKey) used for this [identity](glossary.html#identity).
-
-                  Once the [lookup network](#tag-broker-lookup) has this *drain-host* it can aid all data-access during a [migration](#tag-data-stewardship).
-              drain-host-signed:
-                type: string
-                description: |
-                  BASE64 encoded.
-
-                  This parameter can only be provided if *unixtime-millis*, *unixtime-millis-signed*, and *broker-address-signed* are also provided.
-
-                  The *drain-host* provided above signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
-
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
-              broker-address-signed:
-                type: string
-                description: |
-                  BASE64 encoded.
-
-                  This parameter can only be provided if *unixtime-millis* and *unixtime-millis-signed* are also provided.
-
-                  The [broker-address](glossary.html#broker-address) on the reumneration-provider matching caller's [identity](glossary.html#identity)--as provided by [/capabilities/address](#operation--capabilities-address)--signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
-
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
-
-                  Providing this parameter means we want to advertise this broker as the caller's [user-address](glossary.html#user-address)' [activeHost](glossary.html#data-steward) to the [lookup network](#tag-broker-lookup) corresponding to the [remuneration-key](#/definitions/RemunerationKey) used for this [identity](glossary.html#identity).
-              unixtime-millis:
-                type: number
-                description: |
-                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
+                  Non-unique UNIX Epoch timestamp (milliseconds) that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of tolerance either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
 
                   If this parameter is provided, *unixtime-millis-signed* must be provided as well.
 
@@ -3192,6 +3129,103 @@ paths:
         - data-stewardship
       security:
         - Authorization Header: []
+      responses:
+        200:
+          description: |
+            Stewardship status change successful.
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"
+  /pour-active-stewardship:
+    put:
+      summary: Put this broker into active-steward mode for data migration.
+      description: |
+        All of the user's data with caller's [identity](glossary.html#identity) is now under this broker's [active-stewardship](glossary.html#data-steward) with caveats:
+
+        * *getter methods* will return [246/Inconclusive](#/responses/246) on successful reads of [segment-key](glossary.html#segment-key) that weren't explicitly written to: see [response status code *246*](#/responses/246).  This is important for continuity of data-access during migrations:
+            1. finishing up any persistence storage network synchronization from a previously [active-steward](glossary.html#data-steward) before making this broker a [regular active-steward](#operation--active-stewardship-put).  See [data-stewardship](#tag-data-stewardship) for use-cases.
+            1. allowing for time-consuming explicit export from a previously [active-steward](glossary.html#data-steward) and explicit [fill](#operation-fill-WIRE) of this broker; before making this broker a [regular active-steward](#operation--active-stewardship-put).  See [data-stewardship](#tag-data-stewardship) for use-cases.
+        * accepts decentralized storage data changes until an explicit API write to a [segment-key](glossary.html#segment-key):
+            * overwrites data in that [segment-key](glossary.html#segment-key) as usual (see [response code *246](#/responses/246))
+            * causes the [segment-key](glossary.html#segment-key) to stops being overwritten by decentralized storage changes
+            * causes the [segment-key](glossary.html#segment-key) to start returning 200/OK on *getter methods* instead of [246/Inconclusive](#/responses/246)
+        
+        Once activated, the user can write data to their [datastore-keys](glossary.html#datastore-key).
+
+        Ensures updates *from* decentralized storage continue to be pulled; does not push updates *to* decentralized storage.
+
+        This call is idempotent: call this to change from [passive or active stewardship](#tag-data-stewardship).
+
+        Note that this *pour-active stewardship* mode is complementary with the [fill endpoint](#operation-fill-WIRE) when not leveraging distributed persistence.
+
+        When in this *pour-active stewardship* mode--while waiting for persistence network to synchronize data from a [passive-steward](glossary.html#data-steward)--this *pour-active steward* can be safely transitioned to an [active steward](#operation--active-stewardship-put) once the [passive-steward](glossary.html#data-steward) and this broker both return the same identifier from [GET /latest-snapshot-id](#operation--latest-snapshot-id--guid--get).
+        
+        WARNING: having more than one "active" data-steward may lead to write race-conditions on the distributed persistence network with unknown consequences.
+      parameters:
+        - in: body
+          name: activation
+          description: |
+            Activation parameters.
+          schema:
+            type: object
+            properties:
+              drain-host:
+                type: string
+                description: |
+                  This parameter can only be provided if *drain-host-signed*, *unixtime-millis*, *unixtime-millis-signed*, and *broker-address-signed* are also provided.
+
+                  This is the host name or IP address of the [passive-steward broker](glossary.html#data-steward) we're draining data from into this broker.  
+
+                  This host name or IP address--if properly signed by *drain-host-signed*--will be pushed to the [lookup network](#tag-broker-lookup) corresponding to the [remuneration-key](#/definitions/RemunerationKey) used for this [identity](glossary.html#identity).
+
+                  Once the [lookup network](#tag-broker-lookup) has this *drain-host* it can aid all data-access during a [migration](#tag-data-stewardship).
+              drain-host-signed:
+                type: string
+                description: |
+                  BASE64 encoded.
+
+                  This parameter can only be provided if *drain-host*, *unixtime-millis*, *unixtime-millis-signed*, and *broker-address-signed* are also provided.
+
+                  This is the *drain-host* (provided above) signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
+
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+              broker-address-signed:
+                type: string
+                description: |
+                  BASE64 encoded.
+
+                  This parameter can only be provided if *unixtime-millis* and *unixtime-millis-signed* are also provided.
+
+                  The [broker-address](glossary.html#broker-address) on the reumneration-provider matching caller's [identity](glossary.html#identity)--as provided by [/capabilities/address](#operation--capabilities-address-get)--signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
+
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+
+                  Providing this parameter signals we want to advertise this broker as the caller's [user-address](glossary.html#user-address)' [activeHost](glossary.html#data-steward) to the [lookup network](#tag-broker-lookup) corresponding to the [remuneration-key](#/definitions/RemunerationKey) used for this [identity](glossary.html#identity).
+              unixtime-millis:
+                type: number
+                description: |
+                  Non-unique UNIX Epoch timestamp (milliseconds) that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of tolerance either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
+
+                  If this parameter is provided, *unixtime-millis-signed* must be provided as well.
+
+                  These parameters mitigate replay attacks.
+              unixtime-millis-signed:
+                type: string
+                description: |
+                  BASE64 encoded.
+
+                  The *unixtime-millis* provided above signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
+
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+      tags:
+        - data-stewardship
+      security:
+        - Authorization Header: []
+      consumes:
+        - application/json
       responses:
         200:
           description: |
@@ -3318,7 +3352,7 @@ paths:
           $ref: "#/responses/429"  
   /latest-snapshot-id/{guid}:
     get:
-      summary: Get persisntence network (GUID) specific identifier of latest sync-point between broker and persistence network.
+      summary: Get latest sync-point with persistence network.
       description: |
         Get persisntence network (GUID) specific identifier of latest sync-point between broker and persistence network.
 
@@ -3805,10 +3839,10 @@ definitions:
       - unixtime-millis
       - message
     properties:
-      unixtime-millis
+      unixtime-millis:
         type: integer
         description: |
-          Non-unique UNIX Epoch timestamp milliseconds of the message.
+          Non-unique UNIX Epoch timestamp (milliseconds) of the message.
       message:
         type: string
         description: |
@@ -3994,7 +4028,8 @@ responses:
 
       Once both complimentary hosts--reported by [broker-lookup](#tag-broker-lookup)--respond with a value and a status code, consult the following decision matrix as to which broker's value to use :
 
-      |   | *200/OK from ACTIVE (pour)* | *246/Inconclusive from ACTIVE (pour)* | *422/Unprocessable from ACTIVE (pour)* | *246/Inconclusive from PASSIVE (drain)* | *ERROR from PASSIVE (drain)* | *PASSIVE (drain) not set* |
+      |  | *200/OK from ACTIVE (pour)* | *246/Inconclusive from ACTIVE (pour)* | *422/Unprocessable from ACTIVE (pour)* | *246/Inconclusive from PASSIVE (drain)* | *ERROR from PASSIVE (drain)* | *PASSIVE (drain) not set* |
+      | --- | --- | --- | --- | --- | --- | --- |
       | *200/OK from ACTIVE (pour)* | X | X | X | use ACTIVE's value | use ACTIVE's value | use ACTIVE's value |
       | *246/Inconclusive from ACTIVE (pour)* | X | X | X | use PASSIVE's value | use ACTIVE's value | use ACTIVE's value |
       | *422/Unprocessable from ACTIVE (pour)* | X | X | X | use PASSIVE's value | ERROR | ERROR |

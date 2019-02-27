@@ -478,13 +478,15 @@ See the [broker lookup](lookup.md) write-up.
 
 #### drain-host
 
-A *passive steward* host name or IP explicitly set in the *broker lookup* network as the original source-of-truth for a user's data during a data migration.
+A *passive steward*'s host name or IP explicitly set in the *broker lookup* network.
+
+The broker known as a *drain-host* is the original source-of-truth for a user's data during a data migration.
 
 Look at the data-stewardship use cases in [the API](broker.html#tag-data-stewardship) and take note that while a *passive steward* is designated as a *drain-host*, the currently *active steward* broker is [put in a temporary "pour" mode](broker.html#operation--pour-active-stewardship-put).
 
-[Setting up a drain-host](broker.html#operation--broker-lookup-put) and a ["pour" *active-steward](broker.html#operation--pour-active-stewardship-put) is useful in two migration scenarios:
+[Setting up a drain-host](broker.html#operation--broker-lookup-put) and a ["pour" active-steward](broker.html#operation--pour-active-stewardship-put) is useful in two migration scenarios:
 
 1. migration to a new *active steward* with the help of a *persistence network*
-2. client driven [export](broker.html#operation-export-WIRE)+[fill](operation-fill-WIRE)
+2. client driven [export](broker.html#operation-export-WIRE)+[fill](broker.html#operation-fill-WIRE)
 
 See [data-stewardship APIs](broker.html#tag-data-stewardship) for use cases.
