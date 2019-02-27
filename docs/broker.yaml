@@ -559,9 +559,8 @@ paths:
         - in: path
           name: remuneration-key
           required: true
-          description: |
-            One of the remuneration provider keys from */capabilities/remuneration-providers*
-          type: string
+          schema:
+            $ref: "#/definitions/RemunerationKey"
       produces:
         - application/json
       responses:
@@ -606,6 +605,120 @@ paths:
             This broker's broker-address for the remuneration-provider used by caller's identity.
         429:
           $ref: "#/responses/429"
+  /broker-lookup:
+    get:
+      summary: List of remuneration providers supported.
+      description: |
+        Mapping of remuneration providers to the broker's public address for given
+        provider.
+      tags:
+        - capabilities
+      operationId: getRemunerationProviders
+      produces:
+        - application/json
+      responses:
+        200:
+          description: |
+            Array of objects each defining one remuneration provider mapping.
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/RemunerationProvider"
+        429:
+          $ref: "#/responses/429"
+    put:
+      summary: Populate broker-lookup entry on the network for the calling identity's remuneration-key.
+      description: |
+        Populate *broker-lookup* entry from payload.
+
+        The calling *identity* is for a *user-address* on a sepcific ledger with its own [remuneration-key](#/definitions/RemunerationKey)
+      tags:
+        - auth
+      parameters:
+        - in: body
+          name: authentication
+          description: |
+            Authentication parameters.
+          schema:
+            type: object
+            required:
+              - remuneration-key
+              - secret-phrase
+              - user-address
+              - secret-phrase-signed
+              - unixtime-millis
+              - unixtime-millis-signed
+            properties:
+              remuneration-key:
+                type: string
+                description: |
+                  [Key](#/definitions/RemunerationKey) from remuneration-providers which contains subscription payment(s) from the
+                  provided *user-address* to this broker's *broker-address*.
+
+                  Must be one of the remuneration provider keys from this broker's [capabilities](#operation--capabilities-remuneration-providers-get).
+              secret-phrase:
+                type: string
+                description: |
+                  BASE64 encoded.
+
+                  A secret phrase for the specified user-address.  Once a user authenticates against the broker with a secret-phrase and a user-address, the secret-phrase is tied to the user-address indefinitely, unless changed by [changed-credentials](#operation--auth-changed-credentials-put).  Using the incorrect *scecret-phrase* will result in a 400 -- "invalid secret-phrase".  ([more information](identity.html#identity-tracked-by-broker))
+              user-address:
+                type: string
+                description: |
+                  A public user-address to verify an active subscription to this broker's broker-address.
+
+                  Must be an address for the remuneration provider indicated in *remuneration-key*.
+              secret-phrase-signed:
+                type: string
+                description: |
+                  BASE64 encoded.
+
+                  The *secret-phrase* provided above signed with the private key corrsponding to the
+                  *user-address*.
+
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+              unixtime-millis:
+                type: number
+                description: |
+                  Non-unique UNIX Epoch timestamp milliseconds that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of delay and error either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis) as the source for this parameter.
+
+                  These parameters mitigate replay attacks.
+              unixtime-millis-signed:
+                type: string
+                description: |
+                  BASE64 encoded.
+
+                  The *unixtime-millis* provided above signed with the private key corrsponding to the *user-address* of *identity*.
+
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        200:
+          description: |
+            Authentication token is returned to be used in subsequent calls into
+            overhide broker.
+          schema:
+            type: string
+        302:
+          description: |
+            Found -- the *login* succeeded and the authentication token is returned in the payload as per 200/OK.  For subsequent interaction with the API--including engaging the [WIRE connection](#security-definition-Authorization%20WSS)--you must use the URL in the returned `Location: <url>` header.
+            
+            This return code is to be expected when the broker is being load-balanced.
+        400:
+          $ref: "#/responses/400"
+        402:
+          description: |
+            Payment Required -- Remuneration provider indicates insufficient transactions to the broker system to meet a
+            service tier subscription requirements.
+
+            See [subscriptions write-up](https://github.com/JakubNer/overhide/blob/master/docs/identity.md#subscriptions).
+        409:
+          $ref: "#/responses/409-identity-conflict"
+        429:
+          $ref: "#/responses/429"
   /auth/credentials:
     put:
       summary: Authenticate an [identity](https://github.com/JakubNer/overhide/blob/master/docs/identity.md) returning a token.
@@ -634,7 +747,7 @@ paths:
               remuneration-key:
                 type: string
                 description: |
-                  Key from remuneration-providers which contains subscription payment(s) from the
+                  [Key](#/definitions/RemunerationKey) from remuneration-providers which contains subscription payment(s) from the
                   provided *user-address* to this broker's *broker-address*.
 
                   Must be one of the remuneration provider keys from this broker's [capabilities](#operation--capabilities-remuneration-providers-get).
@@ -658,7 +771,7 @@ paths:
                   The *secret-phrase* provided above signed with the private key corrsponding to the
                   *user-address*.
 
-                  Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
               unixtime-millis:
                 type: number
                 description: |
@@ -672,7 +785,7 @@ paths:
 
                   The *unixtime-millis* provided above signed with the private key corrsponding to the *user-address* of *identity*.
 
-                  Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
       consumes:
         - application/json
       produces:
@@ -773,7 +886,7 @@ paths:
               remuneration-key:
                 type: string
                 description: |
-                  Key from remuneration-providers which contains subscription payment(s) from the
+                  [Key](#/definitions/RemunerationKey) from remuneration-providers which contains subscription payment(s) from the
                   provided *user-address* to this broker's *broker-address*.
 
                   Must be one of the remuneration provider keys from this broker's [capabilities](#operation--capabilities-remuneration-providers-get).
@@ -817,7 +930,7 @@ paths:
                   The *invitee-secret-phrase* provided above signed with the private key corrsponding to the
                   *invitee-user-address*.
 
-                  Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
               unixtime-millis:
                 type: number
                 description: |
@@ -831,7 +944,7 @@ paths:
 
                   The *unixtime-millis* provided above signed with the private key corrsponding to the *user-address* of *identity*.
 
-                  Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
               since:
                 type: string
                 description: |
@@ -896,7 +1009,7 @@ paths:
               new-remuneration-key:
                 type: string
                 description: |
-                  Key from remuneration-providers which contains subscription payment(s) from the
+                  [Key](#/definitions/RemunerationKey) from remuneration-providers which contains subscription payment(s) from the
                   provided *new-user-address* to this broker's *broker-address*.
 
                   Must be one of the remuneration provider keys from this broker's [capabilities](#operation--capabilities-remuneration-providers-get).
@@ -920,7 +1033,7 @@ paths:
                   The *new-secret-phrase* provided above signed with the private key corrsponding to the
                   *new-user-address*.
 
-                  Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
               unixtime-millis:
                 type: number
                 description: |
@@ -934,7 +1047,7 @@ paths:
 
                   The *unixtime-millis* provided above signed with the private key corrsponding to the *user-address* of *identity*.
 
-                  Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
       security:
         - Authorization Header: []
       consumes:
@@ -999,7 +1112,7 @@ paths:
     get:
       summary: Retrieve remuneration transactions.
       description: |
-        Retrieve the latest remuneration transactions on *remuneration-key* from *from-address* to *to-address*
+        Retrieve the latest remuneration transactions on [remuneration-key](#/definitions/RemunerationKey) from *from-address* to *to-address*
       tags:
         - auth
       parameters:
@@ -1007,7 +1120,7 @@ paths:
           name: remuneration-key
           required: true
           description: |
-            Key from remuneration-providers which contains payment(s) from the
+            [Key](#/definitions/RemunerationKey) from remuneration-providers which contains payment(s) from the
             provided *from-address* to the provided *to-address*.
 
             Must be one of the remuneration provider keys from this broker's [capabilities](#operation--capabilities-remuneration-providers-get).
@@ -2935,9 +3048,9 @@ paths:
 
                   The *broker-address* on the reumneration-provider matching caller's *identity*--as provided by [/capabilities/address](#operation--capabilities-address)--signed with the private key corrsponding to the *user-address* of *identity*.
 
-                  Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
 
-                  Providing this parameter means we want to advertise this broker as the caller's *user-address*' [activeHost](glossary.html#data-steward) to the [lookup network](#tag-broker-lookup) corresponding to the *remuneration-key* used for this *identity*.
+                  Providing this parameter means we want to advertise this broker as the caller's *user-address*' [activeHost](glossary.html#data-steward) to the [lookup network](#tag-broker-lookup) corresponding to the [remuneration-key](#/definitions/RemunerationKey) used for this *identity*.
 
                   If the [lookup network](#tag-broker-lookup) currently has a *drainHost* entry, the *drainHost* entry is removed from the [lookup network](#tag-broker-lookup).
               unixtime-millis:
@@ -2955,7 +3068,7 @@ paths:
 
                   The *unixtime-millis* provided above signed with the private key corrsponding to the *user-address* of *identity*.
 
-                  Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
       tags:
         - data-stewardship
       security:
@@ -2994,7 +3107,7 @@ paths:
 
         Note that this *pour-active stewardship* mode is complementary with the [fill endpoint](#operation-fill-WIRE) when not leveraging distributed persistence.
 
-        When in this *pour-active stewardship* mode while waiting for persistence network to synchronize data from a [passive-steward](glossary.html#data-steward); this *pour-active steward* can be safely transitioned to an [active steward](#operation--active-stewardship-put) when the [passive-steward](glossary.html#data-steward) and this broker both return the same identifier from [GET /latest-snapshot-id](#operation--latest-snapshot-id-get).
+        When in this *pour-active stewardship* mode while waiting for persistence network to synchronize data from a [passive-steward](glossary.html#data-steward); this *pour-active steward* can be safely transitioned to an [active steward](#operation--active-stewardship-put) when the [passive-steward](glossary.html#data-steward) and this broker both return the same identifier from [GET /latest-snapshot-id](#operation--latest-snapshot-id--guid-).
         
         WARNING: having more than one "active" data-steward may lead to write race-conditions on the distributed persistence network with unknown consequences.
       parameters:
@@ -3012,7 +3125,7 @@ paths:
 
                   This is the host name or IP address of [passive-steward broker](glossary.html#data-steward) we're draining data from into this broker.  
 
-                  This host name or IP address--if properly signed by *drain-host-signed*--will be pushed to the [lookup network](#tag-broker-lookup) corresponding to the *remuneration-key* used for this *identity*.
+                  This host name or IP address--if properly signed by *drain-host-signed*--will be pushed to the [lookup network](#tag-broker-lookup) corresponding to the [remuneration-key](#/definitions/RemunerationKey) used for this *identity*.
 
                   Once the [lookup network](#tag-broker-lookup) has this *drainHost* it can aid all data-access during a [migration](#tag-data-stewardship).
               drain-host-signed:
@@ -3024,7 +3137,7 @@ paths:
 
                   The *drain-host* provided above signed with the private key corrsponding to the *user-address* of *identity*.
 
-                  Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
               broker-address-signed:
                 type: string
                 description: |
@@ -3034,9 +3147,9 @@ paths:
 
                   The *broker-address* on the reumneration-provider matching caller's *identity*--as provided by [/capabilities/address](#operation--capabilities-address)--signed with the private key corrsponding to the *user-address* of *identity*.
 
-                  Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
 
-                  Providing this parameter means we want to advertise this broker as the caller's *user-address*' [activeHost](glossary.html#data-steward) to the [lookup network](#tag-broker-lookup) corresponding to the *remuneration-key* used for this *identity*.
+                  Providing this parameter means we want to advertise this broker as the caller's *user-address*' [activeHost](glossary.html#data-steward) to the [lookup network](#tag-broker-lookup) corresponding to the [remuneration-key](#/definitions/RemunerationKey) used for this *identity*.
               unixtime-millis:
                 type: number
                 description: |
@@ -3052,7 +3165,7 @@ paths:
 
                   The *unixtime-millis* provided above signed with the private key corrsponding to the *user-address* of *identity*.
 
-                  Signature algorithm is *remuneration-key* specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's remuneration API.
       tags:
         - data-stewardship
       security:
@@ -3204,7 +3317,55 @@ paths:
           $ref: "#/responses/403"
         429:
           $ref: "#/responses/429"  
+  /latest-snapshot-id/{guid}:
+    get:
+      summary: Get persisntence network (GUID) specific identifier of latest sync-point between broker and persistence network.
+      description: |
+        Get persisntence network (GUID) specific identifier of latest sync-point between broker and persistence network.
+
+        For [active](glossary.html#data-steward) brokers this is an identifier of the latest write to persistence network.
+
+        For [passive (and pour-active)](glossary.html#data-steward) brokers this is the identifier of the latest snapshot on persistence network that was fully synced to the broker
+
+        This getter works in conjunction with the [opt-in-data import POST](#operation--opt-in-data--type-key---guid--post) setter for data pinning/distribution.
+      parameters:
+        - in: path
+          name: guid
+          required: true
+          description: |
+            A *GUID* as returned by [GET/guids](#operation--guids-get) on this broker.  
+          type: string
+      tags:
+        - data-stewardship
+      security:
+        - Authorization Header: []
+      produces:
+        - test/plain
+      responses:
+        200:
+          description: |
+            The identifier.
+        400:
+          $ref: "#/responses/400"
+        403:
+          $ref: "#/responses/403"
+        429:
+          $ref: "#/responses/429"  
 definitions:
+  RemunerationKey:
+    type: string
+    description: |
+      Tag representing a ledger network on which all addresses operate: *user-address*, broker, service, invitee/visitor addresses.
+
+      **Accepted Values:**
+
+      | *Remuneration Key* | *Network* | *Notes* |
+      | --- | --- | --- |
+      | ETH | Ethereum *mainnet* | [API link](https://ethereum.overhide.io/swagger.html) |
+      | RINKEBY | Ethereum *rinkeby* testnet | [API link](https://rinkeby.ethereum.overhide.io/swagger.html) |
+      | OH-LEDGER | *overhide-ledger* | [API link](https://ohledger.com/swagger.html) |
+      | OH-LEDGER-TEST | *overhide-ledger* test network | [API link](https://test.ohledger.com/swagger.html) |
+
   GUID:
     type: object
     description: |
@@ -3475,7 +3636,7 @@ definitions:
             value:
               type: number
               description: |
-                Amount of currency--as per *remuneration-key* required to be able to write/publish to this *segment-key*.
+                Amount of currency--as per [remuneration-key](#/definitions/RemunerationKey) required to be able to write/publish to this *segment-key*.
             since:
               type: string
               description: |
@@ -3485,7 +3646,7 @@ definitions:
             remuneration-key:
               type: string
               description: |
-                One of the remuneration provider keys from /capabilities/remuneration-providers
+                One of the remuneration provider [keys](#/definitions/RemunerationKey) from /capabilities/remuneration-providers
 
                 The provided address corresponds to one of the remuneration providers, define it.
         description: |

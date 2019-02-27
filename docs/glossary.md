@@ -346,7 +346,7 @@ A key used to encrypt *datastore-value*.
 
 #### datastore-value
 
-Each datastore-value is somehow encrypted.  Details of encryption depend on the client library.  
+Each datastore-value is usually encrypted.  Details of encryption depend on the client library.  
 
 The encryption key used for the datastore-value is the *datastore-value-secret*.
 
@@ -443,6 +443,8 @@ Implementation dependant--each *overhide* broker is expected to leverage a decen
 Consider a decentralized persistence network with many peers, some of which are *overhide* brokers.  One or more *overhide* brokers that are peers on this network may be subscribed to by a user.  Peers on the network that are subscribed-to *overhide* brokers are "stewards" of a user's data.
 
 An "active" data-steward is an *overhide* broker that the user can write data against.  Read-only data-stewards are "passive".  The active data-steward is the source of truth for the user's most current data.  Passive data-stewards are eventually consistent, pending network delays.  Passive data-stewards necessarily error-out on writes.  Having more than one "active" data-steward may lead to write race-conditions on the distributed persistence network with unknown consequences.
+
+A "pour-active" data-steward is an "active" data-steward with special caveats to allow for consistency during data migration.  Enabling "pour-active" mode on a broker is a temporary measure before transitioning to "active" mode:  read more in the [broker API](broker.html#tag-data-stewardship).
 
 It is up to the user--the user's tooling--to manage data stewardship via the [broker API](broker.html#tag-data-stewardship).
 
