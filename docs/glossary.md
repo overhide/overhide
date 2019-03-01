@@ -61,7 +61,7 @@ In this write-up F(*x-key<sub>sym</sub>*) is context specific:
 
 > (canonical)
 >
-> Use AES 256 CTR with a *secrets[?]* as secret-phrase  (see *secrets* below).
+> Use AES 256 CTR with a *secrets[?]* as the *secret*  (see *secrets* below).
 
 #### salt<sub>hash</sub>(payload)
 
@@ -151,13 +151,13 @@ See the [identity](identity.md) write-up.
 
 #### user-address
 
-When dealing with *identity*, this is a public address of a user.  Likely a blockchain public address (hash):  a user's *blockchain<sub>pub</sub>* key.
+When dealing with *identity*, this is a public address of a user.  Likely a ledger public address (hash):  a user's *ledger<sub>pub</sub>* key.
 
-A user using *overhide* for some service will know their *user-address* as well as be able to prove *identity* using their knowledge of the corresponding private key.  For *blockchain<sub>pub</sub>* the user would prove they know their *blockchain<sub>priv</sub>*.
+A user using *overhide* for some service will know their *user-address* as well as be able to prove *identity* using their knowledge of the corresponding private key.  For *ledger<sub>pub</sub>* the user would prove they know their *ledger<sub>priv</sub>*.
 
 #### broker-address
 
-When dealing with *identity*, this is a public address of an *overhide* broker.  Likely a blockchain public address (hash).
+When dealing with *identity*, this is a public address of an *overhide* broker.  Likely a ledger public address (hash).
 
 A recent enough transaction from a *user-address* to a *broker-address* indicates a subscription to the broker's services.
 
@@ -165,11 +165,21 @@ A broker could issue different public addresses for different tiers of service.
 
 #### service-address
 
-When dealing with *identity*, this is a public address of some service provider brokered by *overhide*.  Likely a blockchain public address (hash).
+When dealing with *identity*, this is a public address of some service provider brokered by *overhide*.  Likely a ledger public address (hash).
 
 A recent enough transaction from a *user-address* to a *service-address* indicates a subscription to the service.
 
 A service provider could issue different public addresses for different tiers of service.
+
+#### private-key / secret-key
+
+The *addresses* above (*user-address*, *broker-address*, *service-address*) are the public keys in [signatures](#x-keysigmessage).
+
+This is the *private-key* in that pair.
+
+A *private-key* is in reference to an *address* and is different from *secrets[?]* and *secret-phrases* as defined herein. 
+
+A *private-key* is always kept private to the user and the client accessing *overhide*.  It is never shared with an *overhide* broker or sent over the wire.  A *private-key* might be asked for in client-side libraries however (e.g. [overhide.js](overhide.js.md)).
 
 #### secrets
 
@@ -202,24 +212,24 @@ Secrets are different than *identity* *secret-phrases*--which are used to authen
 >
 > The [BIP32](http://bip32.org/) "master node" for the *secrets* array is seeded with an 18 word mnemonic using the [BIP39](https://iancoleman.io/bip39/) algorithm.
 >
-> These *secrets* in no way relate to users' wallet mnemonics and blockchain addresses.
+> These *secrets* in no way relate to users' wallet mnemonics and ledger addresses.
 >
 > *Keyrings* are meant to help organize mnemonics on behalf of applications.
 >
 > Some examples:
 >
 > * *secrets[3]<sub>pub</sub>* -- ECIES public key derived from 32 byte private key that is *secrets[3]*
-> * *secrets[6]<sub>sym</sub>* -- *secrets[6]* used as secret-phrase in AES 256 encryption
+> * *secrets[6]<sub>sym</sub>* -- *secrets[6]* used as the *secret* in AES 256 encryption
 
 #### wallet
 
-A store of key-pairs to prove identity, work-with transactions, and access funds on a blockchain.  
+A store of key-pairs to prove identity, work-with transactions, and access funds on a ledger.  
 
-A wallet contains public keys that are the external account addresses on a blockchain.
+A wallet contains public keys that are the external account addresses (*user-address*, *broker-address*, *service-address*) on a ledger.
 
-It also contains private keys used to sign transactions on behalf of the public keys--accounts.
+It also contains *private-keys* used to sign transactions on behalf of the public keys--accounts.
 
-*overhide* examples are envisioned to coexist with software wallets--something akin to *MetaMask* for Ethereum--which are browser extensions injecting JavaScript (*web3.js*) blockchain access to Web applications running with appropriate permissions in said browser.
+*overhide* examples are envisioned to coexist with software wallets--something akin to *MetaMask* for Ethereum--which are browser extensions injecting JavaScript (*web3.js*) ledger access to Web applications running with appropriate permissions in said browser.
 
 #### keybiner & keyrings
 
@@ -227,11 +237,11 @@ It also contains private keys used to sign transactions on behalf of the public 
 >
 > A *keybiner* is a collection of *keyrings*.  A *keyring* is a mapping of crypto key-pairs or *wallet* references, to a particular *overhide* broker system, for a particular *service*--or group of services a user decided to use the same *keyring* for.  I.e. a *keyring* is a set of keys for a particular purpose grouped together.
 >
-> An application will repetitively access a particular *overhide* broker instance with a particular blockchain public key (address) for identification.  The corresponding blockchain private key--unless provided by a *wallet*--is also needed on-hand--only in-browser--for signatures.  For convenience, better user experience, better application flow, it's desirable to store a mapping of all these identifiers and tokens on the client machine, e.g. in the client browser.  All these identifiers and tokens for a single purpose comprise a *keyring*.  Multiple such *keyrings* are stored in the client's *keybiner*.
+> An application will repetitively access a particular *overhide* broker instance with a particular ledger public key (address) for identification.  The corresponding ledger private key--unless provided by a *wallet*--is also needed on-hand--only in-browser--for signatures.  For convenience, better user experience, better application flow, it's desirable to store a mapping of all these identifiers and tokens on the client machine, e.g. in the client browser.  All these identifiers and tokens for a single purpose comprise a *keyring*.  Multiple such *keyrings* are stored in the client's *keybiner*.
 >
-> Keys in *keyrings* include public blockchain address keys and references to their private signing keys, as well as additional keys an application must use to encrypt and decrypt *overhide* data and metadata.  The additional keys are described above in the *secrets* section.  Since they are generated using a mnemonic, only the mnemonic need be stored in the *keyring*.
+> Keys in *keyrings* include public ledger address keys and references to their private signing keys, as well as additional keys an application must use to encrypt and decrypt *overhide* data and metadata.  The additional keys are described above in the *secrets* section.  Since they are generated using a mnemonic, only the mnemonic need be stored in the *keyring*.
 >
-> It's unlikely the private signing keys of a public blockchain will be made available to the *keybiner*, they will be kept in the user's *wallets*.  As such the *keyrings* may not store the keys themselves, but references to the keys in their particular *wallet*.
+> It's unlikely the private signing keys of a public ledger will be made available to the *keybiner*, they will be kept in the user's *wallets*.  As such the *keyrings* may not store the keys themselves, but references to the keys in their particular *wallet*.
 >
 > An example *keybiner* is reproduced below:
 >
@@ -256,7 +266,7 @@ It also contains private keys used to sign transactions on behalf of the public 
 >
 > An end-user can export their *keyring* as an encrypted file and manually transfer to another *keybiner* running in another browser.  Alternativelly a user could use a broker's *scratch-pad* to transfer a *keyring* or a whole *keybiner* to any other client.
 >
-> To setup a new *keyring* from scratch--let's say in a new browser on a new computer--the end-user needs to remember their *overhide* broker system ('brokerUrl', likely dictated by the app, a UI dropdown), credentials making up their *identity* including blockchain keys and/or *wallet* references, and a mnemonic for generating *secrets*.
+> To setup a new *keyring* from scratch--let's say in a new browser on a new computer--the end-user needs to remember their *overhide* broker system ('brokerUrl', likely dictated by the app, a UI dropdown), credentials making up their *identity* including ledger keys and/or *wallet* references, and a mnemonic for generating *secrets*.
 
 #### scratch-pad
 

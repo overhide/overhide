@@ -5,19 +5,21 @@
 By default all of a broker's data is stored in broker-local storage and not in decentralized persistence.
 
 A user has to either [opt-in all their data](broker.html#operation--auth-opt-in--agree--put) or [select *segment-keys*](broker.html#definition-DatastoreKeySettings) to 
-leverage the data decentralization discussed here.
+leverage decentralized persistence.
 
-With the exception of the section on [manual import/export](#other-considerations), this write-up discusses [data-stewardship](glossary.html#data-steward) and use of [*IPFS*](https://ipfs.io/) as if the user did opt-in into decentralized persistence.
+Regardless of *opt-in*, the user always has at their disposal [*client-driven* quasi-decentralization](#client-driven-quasi-decentralization) as enabled by the [*client-driven* data migration use-cases](#broker-api-support-for-data-stewardship).
+
+With the exception of the section on [*client-driven* quasi-decentralization](#client-driven-quasi-decentralization) and parts of "[Broker API Support For Data-Stewardship](#broker-api-support-for-data-stewardship)", this write-up discusses [data-stewardship](glossary.html#data-steward) and use of [*IPFS*](https://ipfs.io/) as if the user did *opt-in* into decentralized persistence.
 
 ## Data Stewardship
 
 Data decentralization in *overhide* is supported by an explicitly managed network of [data-stewards](glossary.html#data-steward).  
 
-*Data-stewards* are all *overhide* brokers on the same distributed persistence network to which a user pays a subscription: a subset of all *overhide* brokers on the network.
+*Data-stewards* are all *overhide* brokers on the same distributed persistence network to which a user [authorizes](remuneration-api.md): a subset of all *overhide* brokers on the network.
 
-An *active data-steward* is a subscribed-to *overhide* broker that the user interacts with for mutating data.  Only one *overhide* broker can be delegated as an *active data-steward* (see "Data Mutation Speed Considerations" below).
+An *active data-steward* is an [authorized](remuneration-api.md) *overhide* broker that the user interacts with for mutating data.  Only one *overhide* broker can be delegated as an *active data-steward* (see "Data Mutation Speed Considerations" below).
 
-A *passive data-steward* is any other subscribed-to *overhide* broker.  There can be many *passive data-stewards*.  These are read-only.  These guarantee to make the user's data available as soon as it's shared with them by the *active data-steward*.  A *passive data-steward* can be made "active" at any time; it's prudent to deactivate any previously *active data-steward*.
+A *passive data-steward* is any other [authorized](remuneration-api.md) *overhide* broker.  There can be many *passive data-stewards*.  These are read-only.  These guarantee to make the user's data available as soon as it's shared with them by the *active data-steward*.  A *passive data-steward* can be made "active" at any time; it's prudent to deactivate any previously *active data-steward*.
 
 All nodes on the broker's distributed persistence network may receive and make-available the user's data; but the *stewards* ensure to pin the user's data and guarantee its availability.
 
@@ -41,17 +43,13 @@ The [working-memory](glossary.html#working-memory-permanent-memory-shared-memory
 
 The SHA-256 content-hashes of any [segment-key](glossary.html#segment-key) value can be retrieved for each [persistence-level](glossary.html#working-memory-permanent-memory-shared-memory-persistence-status): use the [GET /{segment-key}/persistence-status](broker.html#operation---segment-key--persistence-status-get) API call.  On an active steward equivalence between the [shared-memory](glossary.html#working-memory-permanent-memory-shared-memory-persistence-status) hash and the [working-memory](glossary.html#working-memory-permanent-memory-shared-memory-persistence-status) hash means consistency is achieved.  On a passive steward data is driven by the [shared-memory](glossary.html#working-memory-permanent-memory-shared-memory-persistence-status) value; all hashes would be the same, always.  A client can use this API to validate data propagation, pining, hosting, to passive stewards.
 
-## Other Considerations
+## *Client-Driven* Quasi-Decentralization
 
 A user has ultimate control over their data.  A core-value of *overhide* is that users are always able to extract all of their data from any *overhide* system (provided they know their credentials).  The data may be exported from one *overhide* system and imported into another--presumably with incompatible underlying distributed persistence networks.  Users can leverage tooling that uses the [import](broker.html#operation-import-WIRE)/[export](broker.html#operation-export-WIRE) functionality of *overhide* broker APIs to extract all their data so they can do with it as they please.  That's a contractual obligation on a proper *overhide* broker implementation.
 
 ![import/export only](images/import-export.gif) 
 
-The intent of *overhide* is to go as far as possible to bring decentralization to our apps, with the hope that one day the broker is completely out of the picture and only [*overhide.js*](overhide.js.md) remains as a library, not a client shim. 
-
-![overhide.js as library](images/oh-js-as-lib.gif) 
-
-## [Broker API](broker.html) Support For Data-Stewardship
+## [Broker API](broker.html#tag-data-stewardship) Support For Data-Stewardship
 
 Refer to the [Broker API](broker.html#tag-data-stewardship) to read about how the APIs support data decentralization.
 
