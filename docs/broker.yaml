@@ -83,7 +83,7 @@ tags:
     description: |
       Allow services to discover users' specific broker *host names* and *IPs* through [user-addresses](glossary.html#user-address).
 
-      Target broker specifics are [set](#operation--broker-lookup--remuneration-key---user-address--put) into the *broker-lookup* network via whichever broker enters [active steward](glossary.html#data-steward) mode on behalf of the user with either:
+      Target broker specifics are [set](#operation--broker-lookup--user-address--put) into the *broker-lookup* network via whichever broker enters [active steward](glossary.html#data-steward) mode on behalf of the user with either:
 
       * [PUT /active-stewardship](#operation--active-stewardship-put)
       * [PUT /pour-active-stewardship](#operation--pour-active-stewardship-put)
@@ -101,7 +101,7 @@ tags:
       * opt-in persistence network storage
       * change [identity](glossary.html#identity) credentials.  Setting [identity](glossary.html#identity) for the first time is
       done with the [authenticate endpoint](#operation--auth-credentials-put).
-      * work with subscription details for a supported [remuneration API](../readme.html#remuneration-api) and a
+      * work with subscription details for a supported [remuneration API](remuneration-api.html) and a
       given [identity](glossary.html#identity).
   - name: scratch-pad 
     description: |
@@ -130,7 +130,7 @@ tags:
       * write rights
       * publish rights
       * delegate access rights
-      * entry-fee: minimum [remuneration](../readme.html#remuneration-api) to access
+      * entry-fee: minimum [remuneration](remuneration-api.html) to access
       * read/write limits
       * opt-in for decentralized storge
   - name: metrics
@@ -702,7 +702,7 @@ paths:
 
                   The signing [user-address](glossary.html#user-address) and the signed broker's address must be for ledger corresponding to [remuneration-key](#/definitions/RemunerationKey) of calling [identity](glossary.html#identity).                   
 
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](../readme.html#remuneration-api).
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
               drain-broker-host:
                 type: string
                 description: |
@@ -718,7 +718,7 @@ paths:
 
                   The signing [user-address](glossary.html#user-address) must be for ledger corresponding to [remuneration-key](#/definitions/RemunerationKey) of calling [identity](glossary.html#identity).                   
 
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](../readme.html#remuneration-api).
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
               unixtime-millis:
                 type: number
                 description: |
@@ -732,7 +732,7 @@ paths:
 
                   The *unixtime-millis* provided above signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
 
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](../readme.html#remuneration-api).
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
       security:
         - Authorization Header: []
       consumes:
@@ -797,7 +797,7 @@ paths:
                   The *secret-phrase* provided above signed with the private key corrsponding to the
                   *user-address*.
 
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](../readme.html#remuneration-api).
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
               unixtime-millis:
                 type: number
                 description: |
@@ -811,7 +811,7 @@ paths:
 
                   The *unixtime-millis* provided above signed with the private key corrsponding to the *user-address* of [identity](glossary.html#identity).
 
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](../readme.html#remuneration-api).
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
       consumes:
         - application/json
       produces:
@@ -949,7 +949,7 @@ paths:
                   The *invitee-secret-phrase* provided above signed with the private key corrsponding to the
                   *invitee-user-address*.
 
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](../readme.html#remuneration-api).
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
               unixtime-millis:
                 type: number
                 description: |
@@ -963,7 +963,7 @@ paths:
 
                   The *unixtime-millis* provided above signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
 
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](../readme.html#remuneration-api).
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
               since:
                 type: string
                 description: |
@@ -1047,7 +1047,7 @@ paths:
                   The *new-secret-phrase* provided above signed with the private key corrsponding to the
                   *new-user-address*.
 
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](../readme.html#remuneration-api).
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
               unixtime-millis:
                 type: number
                 description: |
@@ -1061,7 +1061,7 @@ paths:
 
                   The *unixtime-millis* provided above signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
 
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](../readme.html#remuneration-api).
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
       security:
         - Authorization Header: []
       consumes:
@@ -3090,7 +3090,7 @@ paths:
 
                   The [broker-address](glossary.html#broker-address) on the reumneration-provider matching caller's [identity](glossary.html#identity)--as provided by [/capabilities/address](#operation--capabilities-address-get)--signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
 
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](../readme.html#remuneration-api).
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
 
                   Providing this parameter signals we want to advertise this broker as the caller's [user-address](glossary.html#user-address)' [activeHost](glossary.html#data-steward) to the [lookup network](#tag-broker-lookup) corresponding to the [remuneration-key](#/definitions/RemunerationKey) used for this [identity](glossary.html#identity).
 
@@ -3110,7 +3110,7 @@ paths:
 
                   The *unixtime-millis* provided above signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
 
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](../readme.html#remuneration-api).
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
       tags:
         - data-stewardship
       security:
@@ -3202,7 +3202,7 @@ paths:
 
                   This is the *drain-host* (provided above) signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
 
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](../readme.html#remuneration-api).
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
               broker-address-signed:
                 type: string
                 description: |
@@ -3212,7 +3212,7 @@ paths:
 
                   The [broker-address](glossary.html#broker-address) on the reumneration-provider matching caller's [identity](glossary.html#identity)--as provided by [/capabilities/address](#operation--capabilities-address-get)--signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
 
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](../readme.html#remuneration-api).
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
 
                   Providing this parameter signals we want to advertise this broker as the caller's [user-address](glossary.html#user-address)' [activeHost](glossary.html#data-steward) to the [lookup network](#tag-broker-lookup) corresponding to the [remuneration-key](#/definitions/RemunerationKey) used for this [identity](glossary.html#identity).
               unixtime-millis:
@@ -3230,7 +3230,7 @@ paths:
 
                   The *unixtime-millis* provided above signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
 
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](../readme.html#remuneration-api).
+                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
       tags:
         - data-stewardship
       security:
@@ -3401,7 +3401,7 @@ definitions:
     description: |
       Tag representing a ledger network on which all addresses operate: [user-address](glossary.html#user-address), [broker-address](glossary.html#broker-address), [service-address](glossary.html#service-address), and [invitee/visitor](glossary.html#invitee) addresses.
 
-      In the *overhide* system, ledger networks are abstracted via an [API from remuneration providers](../readme.html#remuneration-api).  This list is the list of standard *remuneration providers* (ledgers) supported by *overhide*.  
+      In the *overhide* system, ledger networks are abstracted via an [API from remuneration providers](remuneration-api.html).  This list is the list of standard *remuneration providers* (ledgers) supported by *overhide*.  
       
       Brokers may [support a subset of this list](#operation--capabilities-remuneration-providers-get) or other *remuneration providers* altogether; however, it's best for the ecosystem to keep this list exhaustive.  Some functionality is designed to support just the *remuneration providers* listed: e.g. [broker-lookup](#tag-broker-lookup) functionality.
 
@@ -3454,7 +3454,7 @@ definitions:
   RemunerationProvider:
     type: object
     description: |
-      Link between a [broker-address](glossary.html#broker-address) and a [remuneration provider](../readme.html#remuneration-api) identified by a unique [remuneration-key](#/definitions/RemunerationKey).
+      Link between a [broker-address](glossary.html#broker-address) and a [remuneration provider](remuneration-api.html) identified by a unique [remuneration-key](#/definitions/RemunerationKey).
     required:
       - key
       - broker-address

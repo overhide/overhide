@@ -6,7 +6,130 @@
 </head>
 <body>
 <h1>
-<a id="user-content-discovery-and-dns-find-data-with-broker-lookup" class="anchor" href="#discovery-and-dns-find-data-with-broker-lookup" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Discovery and DNS: Find Data with Broker-Lookup</h1>
+<a id="broker-lookup--on-targeting-data-hosts-with-users-ledger-addresses" class="anchor" href="#broker-lookup--on-targeting-data-hosts-with-users-ledger-addresses" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Broker-Lookup:  On Targeting Data Hosts with Users' Ledger Addresses</h1>
+<blockquote>
+<h2>
+<a id="list-of-broker-lookup-nodes" class="anchor" href="#list-of-broker-lookup-nodes" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>List of <em>broker-lookup</em> Nodes</h2>
+<table>
+<thead>
+<tr>
+<th><em>host name or IP</em></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://lookup.overhide.io" rel="nofollow">https://lookup.overhide.io</a></td>
+</tr>
+</tbody>
+</table>
+</blockquote>
+<h2>
+<a id="motivation" class="anchor" href="#motivation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Motivation</h2>
+<p>To use <em>overhide</em> data with some service a user needs to tell the service which <em>overhide</em> broker hosts the user's data.</p>
+<p>Prior to this, the user selected an <em>overhide</em> broker to host their data considering criteria which--among others--included the ledger the user wants to work through for <a href="remuneration-api.html">remuneration and authorization</a>.</p>
+<p>This choice boiled down to which ledger's public-address the user wants to access their <em>overhide</em> data with.  This <a href="glossary.html#user-address">user-address</a> must be from a ledger supported by the chosen broker as per the broker's available <a href="broker.html#operation--capabilities-remuneration-providers-get">remuneration keys</a>.</p>
+<p>These decisions are made once, during onboarding onto a service.</p>
+<p>After that--on all subsequent interactions--in order for a user to access their data they must qualify this access with their:</p>
+<ul>
+<li>
+<a href="glossary.html#user-address">user-address</a>, and the ability to sign for it (<em>secret-key</em> in wallet or otherwise)</li>
+<li>the ledger this <a href="glossary.html#user-address">user-address</a> lives on: the <a href="broker.html#/definitions/RemunerationKey">remuneration key</a>
+</li>
+<li>the host name or IP of the broker hosting this data.</li>
+</ul>
+<p>The purpose of <a href="broker.html#tag-broker-lookup">broker-lookup</a> is to enable users to login into their <em>overhide</em> supporting services with just the <a href="glossary.html#user-address">user-address</a>: without requiring the service to ask for, or the user to have to enter, ledger (<a href="broker.html#/definitions/RemunerationKey">remuneration key</a>) or broker (host name, IP) information.</p>
+<p>It's envisioned that in case of crypto-currencies the <a href="glossary.html#user-address">user-address</a> is something the user commonly interacts with through their crypto-wallet: the wallet signs on behalf of the <a href="glossary.html#user-address">user-address</a>.</p>
+<p>In case of fiat money--where <a href="https://ohledger.com" rel="nofollow">overhide-ledger</a> is used for US dollars--the <a href="glossary.html#user-address">user-address</a> might not be in a crypto-wallet and as such its <em>secret-key</em> is directly handled by the user.  When a <a href="glossary.html#user-address">user-address</a> is handled directly with its <em>secret-key</em>, this can be considered similar to a <em>username</em> and <em>password</em> in traditional login setups.</p>
+<p>Hence a <a href="glossary.html#user-address">user-address</a> can be thought of as a fairly household concept.  Since <a href="broker.html#tag-broker-lookup">broker-lookup</a> allows users to discover the other information from just the <a href="glossary.html#user-address">user-address</a>, it makes for a streamlined user experience.</p>
+<h2>
+<a id="high-level-design-details" class="anchor" href="#high-level-design-details" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>High Level Design Details</h2>
+<p>Consider an <em>overhide</em> broker ecosystem connected to a couple ledgers--here we show Ethereum and BitCoin:</p>
+<p><a href="images/peer-mesh.svg" target="_blank" rel="noopener noreferrer"><img src="images/peer-mesh.svg" alt="" style="max-width:100%;"></a></p>
+<p>In the figure above <em>alpha</em>, <em>beta</em>, <em>gamma</em>, <em>psi</em>, and <em>omega</em>, are all <em>overhide-brokers</em>.</p>
+<p>The <em>alpha</em>, <em>gamma</em>, <em>psi</em>, and <em>omega</em> brokers interact with Ethereum's ledger through an Ethereum specific <a href="remuneration-api.html">remuneration provider</a> via Ethereum specific addresses.</p>
+<p><em>Alpha</em> and <em>omega</em> also interact with BitCoin, along with <em>beta</em>.  These interactions are through some BitCoin specific <em>remuneration provider</em> via BitCoin addresses.</p>
+<p>Notice that <em>alpha</em>, <em>beta</em>, and <em>gamma</em>, are paired with <em>broker-lookup peer node</em> functionality.  Because these are also <em>broker-lookup peer nodes</em>--above and beyond being <em>overhide</em> brokers--they are able to communicate via the <em>broker-lookup peer mesh</em>.  In addition to talking to eachother, they're also in communication with <em>broker-lookup peer nodes</em> that are standalone--not paired with <em>overhide</em> broker functionality:  <em>delta</em> and <em>eta</em>.</p>
+<p><em>Psi</em> and <em>omega</em> do not participate in the <em>broker-lookup peer mesh</em>.</p>
+<p>Consider some client of some service who <a href="broker.html#tag-data-stewardship">activates</a> their data with <em>gamma</em>.  Upon activation--since <em>gamma</em> is a <em>broker-lookup peer node</em>--<em>gamma</em> publishes the fact that it's responsible for handling data for whatever Ethereum <a href="glossary.html#user-address">user-address</a> the client furnished.  Now the <em>broker-lookup peer mesh</em> knows that resolution of the client's <a href="glossary.html#user-address">user-address</a> involves the Ethereum ledger and that the data is currently handled by <em>gamma</em>.</p>
+<p>Going forward, any service on any device that this client accesses only needs the client to provide their <a href="glossary.html#user-address">user-address</a>:  as long as the service is leveraging the <a href="broker.html#tag-broker-lookup">broker-lookup APIs</a>.  The service can resolve the remaining details, namely that: (1) it's an Ethereum <a href="glossary.html#user-address">user-address</a> and (2) the client's data is on <em>gamma</em>.</p>
+<p>Any such services in use by the client need only be configured with one or more "default" <em>broker-lookup peer nodes</em>; they no longer need the client to make them aware of specific brokers.  A node such as <em>delta</em> or <em>eta</em> would be likely candidates for such "default" lookup nodes; whom services access to resolve brokers in the rest of the mesh.  Such nodes exists with the sole purpose of providing broker resolutions.  They would likely have well maintained DNS entries and be well known in the ecosystem, e.g. <a href="https://lookup.overhide.io" rel="nofollow">https://lookup.overhide.io</a>.</p>
+<p>If the client originally <a href="broker.html#tag-data-stewardship">activated</a> their data on <em>psi</em>, the value-add of the <em>broker-lookup</em> couldn't be leverged:  <em>psi</em> does not participate in the <em>broker-lookup peer mesh</em>.  Recall that for <em>overhide</em> brokers participation in <em>broker-lookup</em> is optional, although it does add a great deal of value to the ecosystem.</p>
+<h2>
+<a id="reference-implementation" class="anchor" href="#reference-implementation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Reference Implementation</h2>
+<p>Some specifics of the <a href="https://github.com/overhide/overhide-lookup">broker-lookup peer node reference implementation</a> is touched upon below to give a more concrete foundation of how <em>broker-lookup</em> enables the <em>canonical</em> ecosystem.</p>
+<p><a href="images/peer-mesh-detail.svg" target="_blank" rel="noopener noreferrer"><img src="images/peer-mesh-detail.svg" alt="" style="max-width:100%;"></a></p>
+<p>In the figure above we now replaced BitCoin with <a href="https://ohledger.com" rel="nofollow">overhide-ledger</a> to reflect the <a href="broker.html#/definitions/RemunerationKey">remuneration keys</a> available in the initial release.</p>
+<p><em>Psi</em> and <em>omega</em> are not shown pointing to either Ethereum nor <a href="https://ohledger.com" rel="nofollow">overhide-ledger</a> <a href="remuneration-api.html">remuneration providers</a>; instead they point to some mystery ledger.  The mystery ledger is not part of the explicitly supported <a href="broker.html#/definitions/RemunerationKey">remuneration keys</a> by the <a href="broker.html#/definitions/RemunerationKey">spec</a>.  As such, <a href="https://github.com/overhide/overhide-lookup">nodes participating in the broker-lookup mesh</a> do not have knowledge of this ledger.</p>
+<p>The take-away here:  only <a href="broker.html#/definitions/RemunerationKey">remuneration keys</a> explicitly listed are supported in the <em>broker-lookup</em> mesh maintained by <em>overhide</em>.</p>
+<p>The <em>overhide</em> <em>broker-lookup</em> functionality has additional constraints that must be adhered to by participants:</p>
+<ul>
+<li>the peer-mesh is a distributed hash table (DHT) on top of the Kademlia protocol</li>
+<li>each <em>broker-lookup peer node</em> will verify several signatures when new values are provided</li>
+<li>
+<a href="glossary.html#user-address">user-addresses</a> will overwrite previous values indiscriminately</li>
+</ul>
+<h3>
+<a id="payload-signatures-and-verifications" class="anchor" href="#payload-signatures-and-verifications" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Payload Signatures and Verifications</h3>
+<p>When <a href="broker.html#tag-data-stewardship">active stewards</a> forward resolution payloads for <a href="glossary.html#user-address">user-addresses</a> to the mesh, the payloads must be valid.</p>
+<p>A payload constitutes:</p>
+<pre><code>{
+  "address": "..",      
+  "remunerationKey": "..",
+  "activeBrokerAddress": "..",       
+  "activeBrokerAddressSigned": "..", 
+  "activeBrokerHost": "..",
+  "activeBrokerHostSigned": "..",    
+  "drainBrokerHost": "..",
+  "drainBrokerHostSigned": ".."      
+}
+</code></pre>
+<p>The <a href="glossary.html#user-address">user-address</a> key is included as <em>address</em>.</p>
+<p>The following constitute a valid payload:</p>
+<ul>
+<li>
+<em>address</em> is the <a href="glossary.html#user-address">user-address</a>.</li>
+<li>
+<em>remunerationKey</em> is one of the supported <a href="broker.html#/definitions/RemunerationKey">remuneration-keys</a>.</li>
+<li>
+<em>activeBrokerAddress</em> is the <a href="glossary.html#broker-address">broker-address</a> of the <a href="glossary.html#data-steward">active steward</a>.</li>
+<li>
+<em>activeBrokerAddressSigned</em> is <em>activeBrokerAddress</em> signed by <em>address</em>: with the <em>secret-key</em> corresponding to <a href="glossary.html#user-address">user-address</a>.
+<ul>
+<li>since <em>address</em> signs <em>activeBrokerAddress</em>, only the owner of this <a href="glossary.html#user-address">user-address</a> can update their <a href="glossary.html#data-steward">active steward's</a> <a href="glossary.html#broker-address">broker-address</a>.</li>
+</ul>
+</li>
+<li>
+<em>activeBrokerHost</em> is the <em>host name</em> or <em>IP</em> of <a href="glossary.html#data-steward">active steward</a> broker.
+<ul>
+<li>this is the <em>host name</em> or <em>IP</em> to use for <a href="broker.html">all the API calls</a>.</li>
+</ul>
+</li>
+<li>
+<em>activeBrokerHostSigned</em> is <em>activeBrokerHost</em> signed by <em>activeBrokerAddress</em>
+<ul>
+<li>since <em>activeBrokerAddress</em> signs <em>activeBrokerHost</em>, the <a href="glossary.html#data-steward">active steward</a> can change the <em>host name</em> or <em>IP</em> without involving the user.</li>
+<li>this indirection is useful for load-balancing and other operations aspects of the broker.</li>
+</ul>
+</li>
+<li>
+<em>drainBrokerHost</em> is the <em>host name</em> or <em>IP</em> of the <a href="glossary.html#drain-host">drain-host</a>, if any.</li>
+<li>
+<em>drainBrokerHostSigned</em> is <em>drainBrokerHost</em> signed by <em>address</em>
+<ul>
+<li>since <em>address</em> signs <em>drainBrokerHost</em>, only the owner of this <a href="glossary.html#user-address">user-address</a> can update their <a href="glossary.html#drain-host">drain-host</a>.</li>
+</ul>
+</li>
+</ul>
+<p>The owner of <a href="glossary.html#user-address">user-address</a> signs both the <em>activeBrokerAddress</em> and (optionally) the <em>drainBrokerHost</em> directly controlling those values.  This is all done through the <a href="broker.html#tag-data-stewardship">activation APIs</a> depending on use case.</p>
+<p>The <em>activeBrokerHost</em> is not signed by the owner of <a href="glossary.html#user-address">user-address</a>, it is instead signed by the <a href="broker.html#tag-data-stewardship">active broker</a>.  This gives the broker flexibility in moving the user's data around its cluster and update its internal references to the data.</p>
+<p>Every <em>broker-lookup peer node</em> is a full member of the Kademlia DHT and as such will be asked to write resolution payloads into its node storage.  No <em>broker-lookup peer node</em> will write corrupt resolution payloads into their node storage.  Corrupt payloads are ones that do not contain valid signatures for data indicated.  Such payloads will be unceremoniously dropped.</p>
+<p>To verify signatures the payload will leverage the <em>is-signature-valid</em> method of the <a href="remuneration-api.html">remuneration API</a> for the <em>remuneration provider</em> indicated by <a href="broker.html#/definitions/RemunerationKey">remunerationKey</a>.</p>
+<h3>
+<a id="overwrite-on-collision" class="anchor" href="#overwrite-on-collision" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Overwrite on Collision</h3>
+<p>A valid resolution payload (as per above) is all that's necessary for a <em>broker-lookup peer node</em> to accept and store data.</p>
+<p>Should any new data for a <a href="glossary.html#user-address">user-address</a> overwrite some previous data, the overwrite is allowed to happen without ceremony.</p>
+<p>It is possible to contrive a case where two different ledgers using the same PKI scheme (Ethereum and <a href="https://ohledger.com" rel="nofollow">overhide-ledger</a>) are used with the same <a href="glossary.html#user-address">user-address</a> to store data on two different <em>overhide</em> brokers with two different <a href="broker.html#/definitions/RemunerationKey">remuneration-keys</a>.  In this case one of the brokers will always remain unresolvable through <em>broker-lookup</em>.</p>
+<p>Collisions between <a href="glossary.html#user-address">user-addresses</a> from two different owners, perhaps on different ledgers, are not a concern as these are improbable.</p>
 
 </body>
 </html>

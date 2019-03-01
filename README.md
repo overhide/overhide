@@ -49,7 +49,7 @@ Note that the model below shows a browser with *overhide's* [*keybiner*](docs/gl
    * client library to promote decoupling of trust
 * as available and reliable as the technology stack implementing the specification; the [reference implementation](https://github.com/JakubNer/overhide-broker) is geared to be both
 * provides ability to remunerate brokerage and service provider via blockchain: pseudonymous subscription fees
-* quasi-[decentralized](docs/decentralization.md), *overhide* broker is centralized via DNS for *Web 2.0* stacks, but broker can be easily switched out when failover need arises. 
+* [decentralized](docs/decentralization.md); *overhide* broker is discoverable via [broker-lookup](docs/lookup.md) from *Web 2.0* stacks, and broker can be [easily switched out](docs/broker.html#tag-data-stewardship) when need arises. 
 
 ### Benefits to Service
 
@@ -99,37 +99,19 @@ A core value of *overhide* is to keep user data decentralized.  The [overhide AP
 
 Brokers are trusted to write-out your data only as far as [Ethereum](https://www.ethereum.org/) or [Bitcoin](https://bitcoin.org) nodes are trusted to write-out your transactions.  Brokers are your agents to the network and are economically incentivized to do the right thing as network peers.
 
-The [*overhide* API minimizes trust](docs/trustlessness.md).
+The [*overhide* API minimizes required trust](docs/trustlessness.md).
+
+## [Broker-Lookup:  On Targeting Data Hosts with Users' Ledger Addresses](docs/lookup.md)
+
+Users do not need to carry around and make available their data-hosting broker information for routine service access.  Services can leverage [broker-lookup](docs/lookup.md) when provided with just the public [user-address](glossary.html#user-address) associated with the data.
 
 ## [Broker API](docs/broker.html)
 
 An [API](docs/broker.html) exposed by *overhide* broker, provides access to broker's services.
 
-## Remuneration API
+## [Remuneration API](docs/remuneration-api.html)
 
-Core to the *overhide* system is [ledger-based authorization](https://stage.ohledger.com/demo/why/why.html); whether for-pay or gratis.
-
-The *overhide* Remuneration API enables this [ledger-based authorization](https://stage.ohledger.com/demo/why/why.html) and permeates *overhide* features starting with the root concept of [identity](docs/identity.html) (see section on "[subscriptions](docs/identity.html#subscriptions)").
-
-[Ledger-based authorization](https://stage.ohledger.com/demo/why/why.html) is applied by *overhide* brokers on behalf of apps and services:  by virtue of using an *overhide* broker our apps and services gain full access to this authorization paradigm.
-
-It is an API of a handful of HTTP methods exposed by various ledgers--blockchain and otherwise.
-
-The static version of the [API](docs/remuneration.html) scrubbed from the *overhide* Rinkeby Ethereum *remuneration provider*: [Remuneration API](docs/remuneration.html).
-
-All *remuneration providers* expose an identical API contract.
-
-At this moment we have the following *overhide* remuneration providers exposing "live" API documentation:
-
-#### Ethereum:
-
-* [rinkeby](https://rinkeby.ethereum.overhide.io/swagger.html)
-* [mainnet](https://ethereum.overhide.io/swagger.html)
-
-#### US Dollars:
-
-* [test *overhide-ledger*](https://test.ohledger.com/swagger.html) with corresponding [application](https://test.ohledger.com)
-* [production *overhide-ledger*](https://ohledger.com/swagger.html) with corresponding [application](https://ohledger.com)
+The *overhide* [Remuneration API](docs/remuneration-api.html) enables [ledger-based authorization](https://stage.ohledger.com/demo/why/why.html) and permeates *overhide* features.
 
 ## [overhide.js](docs/overhide.js.md)
 
@@ -143,12 +125,12 @@ An example of *overhide* [applicability](docs/state-funnel.md) to a problem cust
 
 ## Tell Your Users
 
-This is a selection of pages your can link to from your application or service to tell your users that:
+This is a selection of pages you can link to from your application or service to tell your users that:
 
 * they own their data
 * their data is encrypted before it leaves their browser
-* they continues to have all the availability and reliability benefits of the cloud
+* they continue to have all the availability and reliability benefits of the cloud
 
-Your service let's users create their own *overhide* data: [link here](user-owned.html).
+["We let your data be yours" pamphlet](docs/your-data-be-yours.html).
 
-Your service let's users use delegated data: [link here](delegated.html).
+Note that there is no such pamphlet for [delegate data](docs/glossary.html#delegate-key) access.  [Delegate data](docs/glossary.html#delegate-key) access is necessary for ease of onboarding, usability, and convenience; but its use should be limited in scope and users should be encouraged to bring their own data.

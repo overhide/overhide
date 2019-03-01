@@ -83,6 +83,19 @@ Result (ciphertext) of a *payload* encrypted with the specified key.
 >
 > Use ECDSA with a *secrets[?]* as 32 byte private key: generating 65 byte public key from this private key (see *secrets* below).
 
+A *signature* is a byte string cryptographically transformed from some *message* by a *private-key* corresponding to a *public-key*.  Another cryptographic transformation can transform the original *message* and the *signature* back into the *public-key*.
+
+To sign:
+
+F(*message*, *private-key*) => *signature*
+
+To proove (recover):
+
+F(*messsage*, *signature*) => *public-key*
+
+Signing is done solely by the *public-key* owner--in private--as the *private-key* must only be known to the owner.  The proof can be done by anyone in possession of the *message* and *signature*: disclosable information.
+
+A signature equates possession of a *private-key* to ownership of a *public-key*.
 
 ## Definitions
 
@@ -414,11 +427,15 @@ A member user can usually publish messages to a *member-group-key* but the *data
 
 #### delegate-key
 
-A *datastore-key* owned by a *group-owner* but writable by another user, the "write" delegate.  The idea being that authorities, limits, [remuneration](../readme.html#remuneration-api) of the *datastore-key* are the responsibility of the *group-owner*, but data stored is by another *identity*.  
+A *datastore-key* owned by a *group-owner* but writable by another user, the "write" delegate.  The idea being that authorities, limits, [remuneration](remuneration-api.md) of the *datastore-key* are the responsibility of the *group-owner*, but data stored is by another *identity*.  
 
-The *delegate-key* allows services where the service user isn't forced to participate in [remunerating the broker](../readme.html#remuneration-api).
+The *delegate-key* allows services where the service user isn't forced to participate in [remunerating the broker](remuneration-api.md).
 
 Note that use of a *delegate-key* undermines the user's ownership of their own data.  The benefit is that a service using *overhide* is not forcing the user to participate in owning their data.  The risk is that the user doesn't own their data.
+
+It is recommended delegate data be only used for limited service-specific metadata and to enable collaboration through the service (e.g. lobbies).
+
+Delegate [data access](broker.html#tag-delegate) and [backchannel messaging](broker.html#tag-backchannel-queues) are made available after a [guest login](broker.html#operation--auth-guest-credentials-put).
 
 #### delegate qualification
 
@@ -432,7 +449,7 @@ A user who does not subscribe to the broker instance but likely subscribes to a 
 
 An invitee is always invited to interact with a broker on behalf of an actual broker subscriber.  The service does pay subscription fees to the broker.
 
-An invitee is authenticated as owning a valid address on an accepted [remuneration provider](../readme.html#remuneration-api).  
+An invitee is authenticated as owning a valid address on an accepted [remuneration provider](remuneration-api.md).  
 
 The service may allow some *datastore-keys* to be written to or published to by the invitee.  The service may restrict access to its *segment-keys* pending sufficient transactions from the invitee address to the service address.
 
@@ -472,7 +489,7 @@ If the latest value of a *datastore-key* has been shared to the decentralized pe
 
 Given an *user-address* or a *service-address*, provides ability to lookup that address' *active steward* broker's host name or IP.
 
-Since *user-addresses* and *service-addresses* are ledger specific ([remuneration provider](../readme.html#remuneration-api) specific) the *broker lookup* network is specific to a [remuneration-key](broker.html#/definitions/RemunerationKey).
+Since *user-addresses* and *service-addresses* are ledger specific ([remuneration provider](remuneration-api.md) specific) the *broker lookup* network is specific to a [remuneration-key](broker.html#/definitions/RemunerationKey).
 
 See the [broker lookup](lookup.md) write-up.
 
