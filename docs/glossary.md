@@ -414,9 +414,9 @@ A member user can usually publish messages to a *member-group-key* but the *data
 
 #### delegate-key
 
-A *datastore-key* owned by a *group-owner* but writable by another user, the "write" delegate.  The idea being that authorities, limits, remuneration of the *datastore-key* are the responsibility of the *group-owner*, but data stored is by another *identity*.  
+A *datastore-key* owned by a *group-owner* but writable by another user, the "write" delegate.  The idea being that authorities, limits, [remuneration](../readme.html#remuneration-api) of the *datastore-key* are the responsibility of the *group-owner*, but data stored is by another *identity*.  
 
-The *delegate-key* allows services where the service user isn't forced to participate in remunerating the broker.
+The *delegate-key* allows services where the service user isn't forced to participate in [remunerating the broker](../readme.html#remuneration-api).
 
 Note that use of a *delegate-key* undermines the user's ownership of their own data.  The benefit is that a service using *overhide* is not forcing the user to participate in owning their data.  The risk is that the user doesn't own their data.
 
@@ -432,7 +432,7 @@ A user who does not subscribe to the broker instance but likely subscribes to a 
 
 An invitee is always invited to interact with a broker on behalf of an actual broker subscriber.  The service does pay subscription fees to the broker.
 
-An invitee is authenticated as owning a valid address on an accepted remuneration provider.  
+An invitee is authenticated as owning a valid address on an accepted [remuneration provider](../readme.html#remuneration-api).  
 
 The service may allow some *datastore-keys* to be written to or published to by the invitee.  The service may restrict access to its *segment-keys* pending sufficient transactions from the invitee address to the service address.
 
@@ -472,7 +472,7 @@ If the latest value of a *datastore-key* has been shared to the decentralized pe
 
 Given an *user-address* or a *service-address*, provides ability to lookup that address' *active steward* broker's host name or IP.
 
-Since *user-addresses* and *service-addresses* are ledger specific (remuneration provider specific) the *broker lookup* network is specific to a [remuneration-key](broker.html#/definitions/RemunerationKey).
+Since *user-addresses* and *service-addresses* are ledger specific ([remuneration provider](../readme.html#remuneration-api) specific) the *broker lookup* network is specific to a [remuneration-key](broker.html#/definitions/RemunerationKey).
 
 See the [broker lookup](lookup.md) write-up.
 

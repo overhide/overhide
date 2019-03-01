@@ -10,7 +10,7 @@ For certain solutions--*overhide* isn't universally applicable--we want to free 
 
 Are users ready for *overhide*?  Although we all enjoy the benefits of centralization for discovery and distribution--e.g. app stores--we do want the freedom of not locking-in, owning our data, and keeping our particulars to ourselves.  
 
-Services built on top of *overhide* can be as decentralized as the service author enables.  An app can be fully decentralized leveraging a distributed implementation of the *overhide* (data) broker, and a blockchain solution for remuneration.  Or said app could start with a simple on-premises instance of an *overhide* broker and no remuneration structure.  (The [reference implementation](https://github.com/JakubNer/overhide-broker) is fully [decentralized](docs/decentralization.md))
+Services built on top of *overhide* can be as decentralized as the service author enables.  An app can be fully decentralized leveraging a distributed implementation of the *overhide* (data) broker, and a blockchain solution for [remuneration](#remuneration-api).  Or said app could start with a simple on-premises instance of an *overhide* broker and no remuneration structure.  (The [reference implementation](https://github.com/JakubNer/overhide-broker) is fully [decentralized](docs/decentralization.md))
 
 ---
 
@@ -24,7 +24,7 @@ A "user" could be a person who wants to own all the data used by the "service" a
 
 For reference, below is a sample model of the above mentioned components.  In <span style="color:lightgreen">green</span> are the artifacts documented by this repository.
 
-Note that the model below shows a browser with *overhide's* [*keybiner*](docs/glossary.md#keybiner--keyrings) provided by [*overhide.js*](docs/overhide.js.md)--an implementation of the *overhide* JavaScript client API.  The *overhide.js* references blockchain APIs (*web3.js*, *shapeshift*) as injected by [*wallets*](docs/glossary.md#wallet).  The blockchain APIs as well as the *overhide broker* are seen using the *Ethereum blockchain*.  The broker is also seen using [*IPFS*](https://ipfs.io/) for persistence.  This is but one model of possible implementation patterns; it is the reference model.  There is nothing precluding a service or tooling written in any language from using the APIs directly, going against another blockchain stack, or a completely different remuneration mechanism altogether (as long as it implements *remuneration API*).
+Note that the model below shows a browser with *overhide's* [*keybiner*](docs/glossary.md#keybiner--keyrings) provided by [*overhide.js*](docs/overhide.js.md)--an implementation of the *overhide* JavaScript client API.  The *overhide.js* references blockchain APIs (*web3.js*, *shapeshift*) as injected by [*wallets*](docs/glossary.md#wallet).  The blockchain APIs as well as the *overhide broker* are seen using the *Ethereum blockchain*.  The broker is also seen using [*IPFS*](https://ipfs.io/) for persistence.  This is but one model of possible implementation patterns; it is the reference model.  There is nothing precluding a service or tooling written in any language from using the APIs directly, going against another blockchain stack, or a completely different remuneration mechanism altogether (as long as it implements [remuneration API](#remuneration-api)).
 
 ![components](docs/images/provided.png)
 
@@ -45,7 +45,7 @@ Note that the model below shows a browser with *overhide's* [*keybiner*](docs/gl
 
 * open source specifications: to enable storing of data in the open
    * broker API for data storage
-   * remuneration API to enable payment of brokerage and service subscriptions
+   * [remuneration API](#remuneration-api) to enable payment of brokerage and service subscriptions
    * client library to promote decoupling of trust
 * as available and reliable as the technology stack implementing the specification; the [reference implementation](https://github.com/JakubNer/overhide-broker) is geared to be both
 * provides ability to remunerate brokerage and service provider via blockchain: pseudonymous subscription fees
@@ -105,9 +105,31 @@ The [*overhide* API minimizes trust](docs/trustlessness.md).
 
 An [API](docs/broker.html) exposed by *overhide* broker, provides access to broker's services.
 
-## [Remuneration API](docs/remuneration.html)
+## Remuneration API
 
-An [API](docs/remuneration.html) to facilitate proof of payment for remunerating an *overhide* broker or a brokered service.  Likely abstracting some blockchain.
+Core to the *overhide* system is [ledger-based authorization](https://stage.ohledger.com/demo/why/why.html); whether for-pay or gratis.
+
+The *overhide* Remuneration API enables this [ledger-based authorization](https://stage.ohledger.com/demo/why/why.html) and permeates *overhide* features starting with the root concept of [identity](docs/identity.html) (see section on "[subscriptions](docs/identity.html#subscriptions)").
+
+[Ledger-based authorization](https://stage.ohledger.com/demo/why/why.html) is applied by *overhide* brokers on behalf of apps and services:  by virtue of using an *overhide* broker our apps and services gain full access to this authorization paradigm.
+
+It is an API of a handful of HTTP methods exposed by various ledgers--blockchain and otherwise.
+
+The static version of the [API](docs/remuneration.html) scrubbed from the *overhide* Rinkeby Ethereum *remuneration provider*: [Remuneration API](docs/remuneration.html).
+
+All *remuneration providers* expose an identical API contract.
+
+At this moment we have the following *overhide* remuneration providers exposing "live" API documentation:
+
+#### Ethereum:
+
+* [rinkeby](https://rinkeby.ethereum.overhide.io/swagger.html)
+* [mainnet](https://ethereum.overhide.io/swagger.html)
+
+#### US Dollars:
+
+* [test *overhide-ledger*](https://test.ohledger.com/swagger.html) with corresponding [application](https://test.ohledger.com)
+* [production *overhide-ledger*](https://ohledger.com/swagger.html) with corresponding [application](https://ohledger.com)
 
 ## [overhide.js](docs/overhide.js.md)
 
@@ -118,3 +140,15 @@ By convention this library is to be provided in the global context via an `overh
 ## [On Applicability of a Key-Value Store](docs/state-funnel.md)
 
 An example of *overhide* [applicability](docs/state-funnel.md) to a problem customairly solved with a relational database in the back-end.
+
+## Tell Your Users
+
+This is a selection of pages your can link to from your application or service to tell your users that:
+
+* they own their data
+* their data is encrypted before it leaves their browser
+* they continues to have all the availability and reliability benefits of the cloud
+
+Your service let's users create their own *overhide* data: [link here](user-owned.html).
+
+Your service let's users use delegated data: [link here](delegated.html).
