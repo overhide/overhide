@@ -147,9 +147,9 @@ tags:
       * manage this broker's stewardship mode for an identity's data:  [active/passive stewardship](glossary.html#data-steward)
       * manage distributed persistence network particulars for a user
       * review [content propagation status](glossary.html#working-memory-permanent-memory-shared-memory-persistence-status)--of user's data and messages--to the distributed persistence network
-      * batch import and export of all user's data and messages
+      * batch export and import of all user's data and messages
 
-      Envisioned use cases include backup and broker transfer.
+      Envisioned use cases include backup and broker transfer including data migration.
 
       The stewardship APIs enable [data decentralization](decentralization.html) and [broker trustlessness](trustlessness.html).
 
@@ -188,6 +188,13 @@ tags:
       Once "overhide broker 2" is told to be an active steward, we want it to track client data under a new GUID [8-9].  The old GUID is well known to "overhide broker 1" and we want full disassociation.
 
       Client data is encrypted across *overhide*.  At this point it's also only writable by "overhide broker 2".  Neverless, we may desire to delete all of it from "overhide broker 1" [10].  
+
+      #### Sample Use Case: Persistence Network With Pour-Active Steward
+
+      #### Sample Use Case: Client Driven Export+Fill With Pour-Active Steward
+
+      #### Sample Use Case: Client Driven Export+Import
+
 paths:
   handshake:
     options:

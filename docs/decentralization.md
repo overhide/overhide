@@ -49,9 +49,13 @@ A user has ultimate control over their data.  A core-value of *overhide* is that
 
 ![import/export only](images/import-export.gif) 
 
+The next section introduces a couple *client-driven* data-migration use-cases that dive deeper into this topic in the corresponding [API](broker.html#tag-data-stewardship) documentation.
+
 ## [Broker API](broker.html#tag-data-stewardship) Support For Data-Stewardship
 
-Refer to the [Broker API](broker.html#tag-data-stewardship) to read about how the APIs support data decentralization.
+
+
+Refer to the [*data-stewardship* section of the Broker API](broker.html#tag-data-stewardship) for an in-depth look at these data-migration use cases as available to *overhide* brokers.
 
 ## Overview of [*overhide* Reference Implementation](https://github.com/JakubNer/overhide-broker) and [*IPFS*](https://ipfs.io/)
 
