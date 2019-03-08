@@ -83,14 +83,18 @@ tags:
     description: |
       Allow services to discover users' specific broker *host names* and *IPs* through [user-addresses](glossary.html#user-address).
 
-      Target broker specifics are [set](#operation--broker-lookup--user-address--put) into the *broker-lookup* network via whichever broker enters [active steward](glossary.html#data-steward) mode on behalf of the user with either:
+      Broker-targetting metadata is [set](#operation--broker-lookup--user-address--put) into the *broker-lookup* network via whichever broker enters [active steward](glossary.html#data-steward) mode on behalf of the user with either:
 
       * [PUT /active-stewardship](#operation--active-stewardship-put)
       * [PUT /pour-active-stewardship](#operation--pour-active-stewardship-put)
 
+      As such *broker-lookup* works in conjunction with [data-stewardship](#tag-data-stewardship) APIs and [data-stewardship](#tag-data-stewardship) benefits greatly from *broker-lookup. 
+
+      ![broker-lookup sequence](images/broker-lookup.png)      
+
       These APIs are optionally implemented by brokers.  The user's [active broker](glossary.html#data-steward) and the broker used to resolve a lookup (perhaps one and the same) need to support *broker-lookup* with all the supported [remuneration-keys](#/definitions/RemunerationKey): i.e. these APIs cannot return 405 -- "Method Not Allowed".
 
-      Read more on *broker-lookup* in the [reference implementation write-up](lookup.html).
+      Read more on *broker-lookup* in the [reference implementation write-up](lookup.html) and read-through the [data-stewardship](#tag-data-stewardship) use cases.
   - name: auth
     description: |
       Authentication, authorization, and credential management:
@@ -144,6 +148,8 @@ tags:
       All but [one](#operation--opt-in-data--type-key---guid--post) of these APIs deal with stwardship regardless of decentralization opt-in selected: see 
       [opt-in endpoint](#operation--auth-opt-in--agree--put) and [*segment-key* specific opt-in](#definition-DatastoreKeySettings).  
           
+      These APIs allow a client to:
+
       * manage this broker's stewardship mode for an identity's data:  [active/passive stewardship](glossary.html#data-steward)
       * manage distributed persistence network particulars for a user
       * review [content propagation status](glossary.html#working-memory-permanent-memory-shared-memory-persistence-status)--of user's data and messages--to the distributed persistence network
@@ -153,43 +159,62 @@ tags:
 
       The stewardship APIs enable [data decentralization](decentralization.html) and [broker trustlessness](trustlessness.html).
 
+      Each use case below is accompanied by a sequence diagram with the following markup:
+
+      * messages in red are API calls detailed in this section
+      * blue messages are external calls outside of *overhide* broker API but dealing with *overhide* managed data
+      * green messages are messages dealing with [broker-lookup](#tag-broker-lookup); [broker-lookup](#tag-broker-lookup) availability is assumed in the use cases
+      * other API calls are indicated for context and glanced over
+
       #### Sample Use Case: Designation of Stewards
 
       Consider the following sequence modelling *overhide* API calls required to associate client data with two *overhide* brokers; one designated as an [active data steward](glossary.html#data-steward) and one designated to be a [passive data steward](glossary.html#data-steward).
 
-      Messages in red are API calls detailed in this section.  Other API calls are glanced over.  Blue messages are external.
-
       ![overhide designation of stewards infographic](https://github.com/JakubNer/overhide/raw/master/docs/images/designate-stewards.png)
 
-      In this sequence the client subscribes to "overhide broker 1" and authenticates [1].  It's important to note that the first time a new user authenticates to a broker a new set of [GUIDs](#/definitions/GUID) is generated pointing to the client's data on the broker's distributed persistence network (e.g. [IPFS](https://ipfs.io/) "names" PKI pair for [IPFS](https://ipfs.io/)).
+      In this sequence the client subscribes to *overhide broker 1* and authenticates [1].  It's important to note that the first time a new user authenticates to a broker a new set of [GUIDs](#/definitions/GUID) is generated pointing to the client's data on the broker's distributed persistence network (e.g. [IPFS](https://ipfs.io/) "names" PKI pair for [IPFS](https://ipfs.io/)).
 
-      At this point "overhide broker 1" is read-only.  Any attempts to write data or post messages would yield a 400 -- "cannot write, broker not an active steward of user's data".  To make the broker writable, it's designated as an [active data steward](glossary.html#data-steward) [2].
+      At this point *overhide broker 1* is read-only.  Any attempts to write data or post messages would yield a 400 -- "cannot write, broker not an active steward of user's data".  To make the broker writable, it's designated as an [active data steward](glossary.html#data-steward) [4].
 
-      The client writes then reads data as desired [3-5].  The data is eventually made consistent with the distributed persistence network (e.g. [IPFS](https://ipfs.io/)).
+      When participating in [broker-lookup](#tag-broker-lookup) the [PUT /active-stewardship](#operation--active-stewardship-put) call--to make *overhide broker 1* an [active data steward](glossary.html#data-steward)--requires we know the broker's host name (or IP).  The [PUT /active-stewardship](#operation--active-stewardship-put) call is the mechanism that registers the broker as a user's active broker; hence the necessary signing of the particular metadata to push into the [broker-lookup](#tag-broker-lookup) network.  Steps [2] and [3] retrieve the necessary attributes to sign and push into the method [4].  The *unixtime-millis* is retrieved [3] and signed to prevent replay attacks.
 
-      Presumably the distributed persistence network backing "overhide broker 1" is a public decentralized data-store that allows common tooling access [7].  To access the client's data we need its reference.  The reference is retrieved as a [GUID](#/definitions/GUID) [6].
+      The client writes then reads data as desired [5].  The data is eventually made consistent with the distributed persistence network (e.g. [IPFS](https://ipfs.io/)) [6].
 
-      Another *overhide* broker is subscribed to by the client--to guarantee pinning of the client's data as a backup [8].
+      Presumably the distributed persistence network backing *overhide broker 1* is a public decentralized data-store that allows common tooling access [8].  To access the client's data we need its reference.  The reference is retrieved as a [GUID](#/definitions/GUID) [7].
 
-      At this point "overhide broker 2" is subscribed to, but it is not associated with the client's data as referenced by "overhide broker 1" [9-11].  The second broker has a compeltelly different GUID for the client's data on the distributed persistence network.
+      Another *overhide* broker is subscribed to by the client--to guarantee pinning of the client's data as a backup [9].
 
-      Once the client furnished the GUID form "overhide broker 1" to "overhide broker 2" [12], "overhide broker 2" starts acting as a passive steward of the client's data [13-17].
+      At this point *overhide broker 2* is subscribed to, but it is not associated with the client's data as referenced by *overhide broker 1* [10-11].  The second broker has a compeltelly different GUID for the client's data on the distributed persistence network.
 
-      #### Sample Use Case: Disassociation from Steward
+      Once the client furnished the GUID form *overhide broker 1* to *overhide broker 2* [12], *overhide broker 2* starts acting as a passive steward of the client's data [13-16].
 
-      The client may have a reason to diassociate from an *overhide* broker.  In the following sequence we model the API calls required to disassociate client data from "overhide broker 1":  including ensuring the disassociated broker cannot clobber any new data and that old client data is not consuming resources on the broker. 
+      #### Sample Use Case: Disassociation from Steward Over Persistence Network With Pour-Active Steward
+
+      The client may have a reason to diassociate from an *overhide* broker.  In the following sequence we model the API calls required to disassociate client data from *overhide broker 1*:  including ensuring the disassociated broker cannot clobber any new data and that old client data is not consuming resources on the broker. 
+
+      This use case leverages *broker-lookup* and a *distributed persistence network* (e.g. [IPFS](decentralization.html#overview-of-overhide-reference-implementation-and-ipfs)) for the migration.
 
       ![overhide disassociation from steward infographic](https://github.com/JakubNer/overhide/raw/master/docs/images/steward-disassociation.png)
 
-      We start with "overhide broker 1" being the [active data steward](glossary.html#data-steward) and "overhide broker 2" being the [passive data steward](glossary.html#data-steward) [1-5].
+      We start with *overhide broker 1* being the [active data steward](glossary.html#data-steward) and *overhide broker 2* being the [passive data steward](glossary.html#data-steward).  Use of *broker-lookup* with `GET /broker-lookup` [1] indicates *overhide broker 1* as the *activeBrokerHost* to the *client*.  The *client* works with *overhide broker 1* [2] and *overhide broker 2* is eventually consistent via the *distributed persistence network* [3,4].
 
-      Before making "overhide broker 2" the new active steward [7], we ensure "overhide broker 1" is made passive [6]:  it's desirable to have just one active steward writing to the distributed persistence network.
+      Before continuing we verify that *overhide broker 2* (passive) is synching to the data from *overhide broker 1* [5,6].  If both brokers return the same [GUID](glossary.html#guid----globally-unique-id) we know they're working with the same data.
 
-      Once "overhide broker 2" is told to be an active steward, we want it to track client data under a new GUID [8-9].  The old GUID is well known to "overhide broker 1" and we want full disassociation.
+      We prevent any further writes to *overhide broker 1* by making it passive [7].
 
-      Client data is encrypted across *overhide*.  At this point it's also only writable by "overhide broker 2".  Neverless, we may desire to delete all of it from "overhide broker 1" [10].  
+      We put *overhide broker 2* into a special "pour-active" mode [8].  A "pour-active" data-steward is an "active" data-steward with special caveats to allow for consistency during data migration. Enabling "pour-active" mode on a broker is a temporary measure before transitioning to "active" mode.
 
-      #### Sample Use Case: Persistence Network With Pour-Active Steward
+      Putting *overhide broker 2* into "pour-active" mode prompts it to tell the *broker-lookup* network that *overhide broker 1* is now the *drainBrokerHost* and that *overhide broker 2* is the new *activeBrokerHost* [9].
+
+      The *client* discovers that state of the hosts [10] and continues to use the brokers in tandem, uninterrupted [11,12].  The reads on both brokers [11,12] respect the decision matrix as per [result code 246](#/responses/246).  Reads against *overhide broker 2* could return [result code 422](#/responses/422) when a [segment-key](glossary.html#segment-key) is not yet available.  Writes on *overhide broker 1* are disallowed with [result code 400](#/responses/400) "cannot write, broker not an active steward of user's data".  Writes to *overhide broker 2* [11] proceed as usual except are not synched with the *distributed persistence network* (while in "pour-active" mode).
+
+      While the user is accessing the brokers in tandem, *overhide broker 2* is busy finalizing it's eventual consistency with the *distirbuted persistence network*.  Data access and migration are occuring at the same time:  *ovrehide broker 2* accepts *distributed persistence network* data changes for all [segment-keys](glossary.html#segment-key) not already overwritten via an explicit API write.
+
+      [14] and [15] check to see if syching data over the *distributed persistence network* is finished.  Once done, we can make *overhide broker 2* a standard [active steward](glossary.html#data-steward) [16].  The change to the broker's stewardship mode is reflected in the *broker-lookup* [17].
+
+      At this point *overhide broker 1* is a [passive steward](glossary.html#data-steward) for the user's data.  But since we set out to migrate to *overhide broker 2* and disassociate the user's data from *overhide broker 1*; now that the migration is done we tell *overhide broker 1* to delete the data and stop synching [18].  
+
+      The user continues to use the *client* to access their data [19-21].
 
       #### Sample Use Case: Client Driven Export+Fill With Pour-Active Steward
 
