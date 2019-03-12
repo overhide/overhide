@@ -87,7 +87,10 @@ A payload constitutes:
   "activeBrokerHost": "..",
   "activeBrokerHostSigned": "..",    
   "drainBrokerHost": "..",
-  "drainBrokerHostSigned": ".."      
+  "drainBrokerHostSigned": "..",
+  "timestamp": "..",
+  "timestampSignedByAddress": "..",
+  "timestampSignedByActiveBrokerAddress": ".."
 }
 ```
 
@@ -108,10 +111,19 @@ The following constitute a valid payload:
 * *drainBrokerHost* is the *host name* or *IP* of the [drain-host](glossary.html#drain-host), if any.
 * *drainBrokerHostSigned* is *drainBrokerHost* signed by *address*
     * since *address* signs *drainBrokerHost*, only the owner of this [user-address](glossary.html#user-address) can update their [drain-host](glossary.html#drain-host).
+* *timestamp* when information was published into *broker-lookup peer mesh*
+    * [ISO 8601/RFC3339 format](https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14)
+    * must be recent/current (within last hour)
+* *timestampSignedByAddress* is *timestamp* signed by *address*
+    * must be present and valid if and only if *timestampSignedByActiveBrokerAddress* is not present and valid.
+* *timestampSignedByActiveBrokerAddress* is *timestamp* signed by *activeBrokerAddress*
+    * must be present and valid if and only if *timestampSignedByAddress* is not present and valid.
 
 The owner of [user-address](glossary.html#user-address) signs both the *activeBrokerAddress* and (optionally) the *drainBrokerHost* directly controlling those values.  This is all done through the [activation APIs](broker.html#tag-data-stewardship) depending on use case.
 
 The *activeBrokerHost* is not signed by the owner of [user-address](glossary.html#user-address), it is instead signed by the [active broker](broker.html#tag-data-stewardship).  This gives the broker flexibility in moving the user's data around its cluster and update its internal references to the data.
+
+The *timestamp* ensures "griefing" through replaying of old payloads is minimized.  Since either the owner of [user-address](glossary.html#user-address) or the [active broker](broker.html#tag-data-stewardship) update the *broker-lookup peer mesh*, either one can sign the *timestamp*:  *timestampSignedByAddress* or *timestampSignedByActiveBrokerAddress*.
 
 Every *broker-lookup peer node* is a full member of the Kademlia DHT and as such will be asked to write resolution payloads into its node storage.  No *broker-lookup peer node* will write corrupt resolution payloads into their node storage.  Corrupt payloads are ones that do not contain valid signatures for data indicated.  Such payloads will be unceremoniously dropped.
 

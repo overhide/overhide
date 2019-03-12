@@ -137,7 +137,7 @@ Some definitions here pertain to [this](overhide.js.md) specific reference imple
 
 User provided phrase to work with a *broker* as an *identity*.  This phrase--when combined with a *user-address*--hashes to an *identity*.
 
-See the [identity](identity.md) write-up.
+See the [identity write-up](identity.md) and the [secrets write-up](secrets-keybiner.md).
 
 #### identity
 
@@ -181,6 +181,8 @@ A *private-key* is in reference to an *address* and is different from *secrets[?
 
 A *private-key* is always kept private to the user and the client accessing *overhide*.  It is never shared with an *overhide* broker or sent over the wire.  A *private-key* might be asked for in client-side libraries however (e.g. [overhide.js](overhide.js.md)).
 
+See the [secrets write-up](secrets-keybiner.md).
+
 #### secrets
 
 Secrets are byte strings used as keys for cryptographic functions used to encode data and metadata of *datastore-keys*.
@@ -194,13 +196,15 @@ Secrets are different than *identity* *secret-phrases*--which are used to authen
 * asymmetric keys
 * signature keys
 
+See the [secrets write-up](secrets-keybiner.md).
+
 > (canonical)
 >
-> Each *datastore-key* deals with *secrets* from a specific deterministic *secrets* array generated from a *mnemonic*.
+> Each *datastore-key* deals with *secrets* from a specific deterministic *secrets* array generated from a *secrets-seed*.
 >
 > A *secrets* array applies to one or more *datastore-keys*.  An array usually applies to a bunch of related *datastore-keys*: for example all *datastore-keys* from a single application.  A single *secrets* array could easily apply to all of a user's *datastore-keys*.
 >
-> A *secrets* array is generated from a *mnemonic*.  Hence all secrets tied to the same *secrets* array are generated from the same *mnemonic*.
+> A *secrets* array is generated from a *secrets-seed*.  Hence all secrets tied to the same *secrets* array are generated from the same *secrets-seed*.
 >
 > Each *secret* is a 32 byte string: a public addresses from simple ('m/i') [BIP32](http://bip32.org/) key-pair.  Note that the compressed "address" from such a key-pair is 32 bytes after removing the 1 byte BIP32 prefix.
 >
@@ -210,11 +214,7 @@ Secrets are different than *identity* *secret-phrases*--which are used to authen
 >
 > The *?* (question mark) index into *secrets*--i.e. *secrets[?]*--denotes any index, any *secret* from the array.
 >
-> The [BIP32](http://bip32.org/) "master node" for the *secrets* array is seeded with an 18 word mnemonic using the [BIP39](https://iancoleman.io/bip39/) algorithm.
->
-> These *secrets* in no way relate to users' wallet mnemonics and ledger addresses.
->
-> *Keyrings* are meant to help organize mnemonics on behalf of applications.
+> The [BIP32](http://bip32.org/) "master node" for the *secrets* array is seeded with a *secrets-seed* fed into the [BIP39](https://iancoleman.io/bip39/) algorithm.
 >
 > Some examples:
 >
@@ -231,56 +231,15 @@ It also contains *private-keys* used to sign transactions on behalf of the publi
 
 *overhide* examples are envisioned to coexist with software wallets--something akin to *MetaMask* for Ethereum--which are browser extensions injecting JavaScript (*web3.js*) ledger access to Web applications running with appropriate permissions in said browser.
 
+See the [overhide.js  write-up](overhide.js.md).
+
 #### keybiner & keyrings
 
-> (canonical)
->
-> A *keybiner* is a collection of *keyrings*.  A *keyring* is a mapping of crypto key-pairs or *wallet* references, to a particular *overhide* broker system, for a particular *service*--or group of services a user decided to use the same *keyring* for.  I.e. a *keyring* is a set of keys for a particular purpose grouped together.
->
-> An application will repetitively access a particular *overhide* broker instance with a particular ledger public key (address) for identification.  The corresponding ledger private key--unless provided by a *wallet*--is also needed on-hand--only in-browser--for signatures.  For convenience, better user experience, better application flow, it's desirable to store a mapping of all these identifiers and tokens on the client machine, e.g. in the client browser.  All these identifiers and tokens for a single purpose comprise a *keyring*.  Multiple such *keyrings* are stored in the client's *keybiner*.
->
-> Keys in *keyrings* include public ledger address keys and references to their private signing keys, as well as additional keys an application must use to encrypt and decrypt *overhide* data and metadata.  The additional keys are described above in the *secrets* section.  Since they are generated using a mnemonic, only the mnemonic need be stored in the *keyring*.
->
-> It's unlikely the private signing keys of a public ledger will be made available to the *keybiner*, they will be kept in the user's *wallets*.  As such the *keyrings* may not store the keys themselves, but references to the keys in their particular *wallet*.
->
-> An example *keybiner* is reproduced below:
->
-> ```
->  'keybiner': {'keyring1':{
->                 'brokerUrl':'..',
->                 'userAddress':'..',
->                 'userPrivateKeyOrRef':'..',
->                 'options': {..},
->                 'mnemonic':'..',
->               },
->               'keyring2':{..},
->               ...
->               'keyringN':{..}}
-> ```
->
-> Each *keyring* has an alias; "keyring1", "keyring2", "keyringN" above.  These are user friendly names, they can be thought of as login names in traditional login schemes.  The *overhide.js* library provides utilities to symmetrically encrypt the value under each *keyring*: each value is AES 256 encrypted with the same *secret-phrase* that comprises an *identity* with the *userAddress*.  When a user provides the appropriate *secret-phrase* to decrypt a keyring (a login), access to the broker mapping and all the stored keys is granted.  Hence the alias and the symmetric *secret-phrase* are the access credentials--and they're never sent over the wire.  From this point forward the application has all the information it needs to synchronize with the specified *overhide* instance ('brokerUrl').  The application can leverage the keys via *overhide.js* methods.    
->
-> The *overhide.js* JavaScript library makes available the *keybiner* module for use by Web applications running in browsers.  The *keybiner* uses *localstorage* to store *keyrings*.  As such browser security restrictions imply *keyrings* are tied to a particular domain.
->
-> Each *keyring* can be exported or re-setup from scratch--it's a convenience store to aid end-user experience.  
->
-> An end-user can export their *keyring* as an encrypted file and manually transfer to another *keybiner* running in another browser.  Alternativelly a user could use a broker's *scratch-pad* to transfer a *keyring* or a whole *keybiner* to any other client.
->
-> To setup a new *keyring* from scratch--let's say in a new browser on a new computer--the end-user needs to remember their *overhide* broker system ('brokerUrl', likely dictated by the app, a UI dropdown), credentials making up their *identity* including ledger keys and/or *wallet* references, and a mnemonic for generating *secrets*.
-
-#### scratch-pad
-
-A single *identity* specific data container for holding a small piece of data in *working-memory*.
-
-This data is volatile and not guaranteed:  it's only ever stored in *working-memory*.
-
-Think of it as a USB stick for quick transfers of a bit of data; using solely your *identity*.
-
-Possible use case:  transferring your *keybiner* from one device to another.
+See the [secrets write-up](secrets-keybiner.md).
 
 > (canonical)
 >
-> In *working-data* volatile memory limited to 32KiB that doesn't survive broker instance restarts.
+> A *keybiner* is a collection of *keyrings*.  A *keyring* is a collection of related credentials and metadata needed to access a single service or application: crypto key-pairs or *wallet* references, a *secret-phrase*, a *secrets-seed*, metadata for a particular *overhide* broker system and [remuneration provider](remuneration-api.md).  I.e. a *keyring* is a set of keys for a particular purpose grouped together.
 
 #### domain-key
 
@@ -312,7 +271,9 @@ These domain human readable keys are referred to as *domain-keys* in our write-u
 >
 > For example, *domain-key* "P4:acme.com/stuff" indicates that the *datastore-value* for *domain-key* "acme.com/stuff" is encrypted with an ECIES public key corresponding to the 32 byte *secrets[4]* as a private key.
 >
-> Note that the *domain-key* indicates the *secrets[?]* index and how it's used, but this is all dependant on using the correct *secrets* in the first place; the correct mnemonic.  We likely have the correct mnemonic if the first secret (*secrets[0]*) can decode the first three bytes of a *domain-key* from a *segment-key*; i.e. if we successfully test for the above regex.
+> Note that the *domain-key* indicates the *secrets[?]* index and how it's used, but this is all dependant on using the correct *secrets* in the first place; the correct *secrets-seed*.  We likely have the correct *secrets-seed* if the first secret (*secrets[0]*) can decode the first three bytes of a *domain-key* from a *segment-key*; i.e. if we successfully test for the above regex.
+>
+> See the [secrets write-up](secrets-keybiner.md).
 
 #### segment-key-secret
 
@@ -437,7 +398,7 @@ A member user can usually publish messages to a *member-group-key* but the *data
 
 #### delegate-key
 
-A *datastore-key* owned by a *group-owner* but writable by another user, the "write" delegate.  The idea being that authorities, limits, [remuneration](remuneration-api.md) of the *datastore-key* are the responsibility of the *group-owner*, but data stored is by another *identity*.  
+A *datastore-key* owned by a *group-owner* but writable by another user, the "write" delegate.  The idea being that authorities, limits, [remuneration](remuneration-api.md) of the *datastore-key* are the responsibility of the *group-owner*, but data access is by another *identity*.  
 
 The *delegate-key* allows services where the service user isn't forced to participate in [remunerating the broker](remuneration-api.md).
 
@@ -447,21 +408,53 @@ It is recommended delegate data be only used for limited service-specific metada
 
 Delegate [data access](broker.html#tag-delegate) and [backchannel messaging](broker.html#tag-backchannel-queues) are made available after a [guest login](broker.html#operation--auth-guest-credentials-put).
 
+Read more about *delegation* in the [delegates and subletting write-up](delegates-subletting.md)
+
+Review *delegation* APIs under [delegates](broker.html#tag-delegate) and [backchannel-queues](broker.html#tag-backchannel-queues) tags.
+
 #### delegate qualification
 
 Data and backchannel message queues can be qualified with a delegate *identity*.  The qualification indicates that the data is actually segmented by delegate.
 
-This means multiple delegates my write into a *datastore-key* and not clobber the other's delegate's data.  The non-delegated data is also left untouched.
+This means multiple delegates may write into a *datastore-key* and not clobber the other's delegate's data.  The non-delegated data is also left untouched.
 
-#### invitee
+Read more about *delegation* in the [delegates and subletting write-up](delegates-subletting.md)
 
-A user who does not subscribe to the broker instance but likely subscribes to a service furnishing data on the broker instance.
+Review *delegation* APIs under [delegates](broker.html#tag-delegate) and [backchannel-queues](broker.html#tag-backchannel-queues) tags.
 
-An invitee is always invited to interact with a broker on behalf of an actual broker subscriber.  The service does pay subscription fees to the broker.
+#### invitee, visitor, guest
 
-An invitee is authenticated as owning a valid address on an accepted [remuneration provider](remuneration-api.md).  
+A user must [log in as a visitor](broker.html#operation--auth-guest-credentials-put) of a [subscriber](identity.html#subscriptions) to use the *subscriber's* *delegate* data.
 
-The service may allow some *datastore-keys* to be written to or published to by the invitee.  The service may restrict access to its *segment-keys* pending sufficient transactions from the invitee address to the service address.
+*Visitors* may or may not subscribe to the broker instance themselves.  When users login to access another user's *delegate* data they do not [login as subscribers](broker.html#operation--auth-credentials-put), they login as [visitors](broker.html#operation--auth-guest-credentials-put).  In other words *delegated* data access is only available to *visitors*.  Users who already *subscribe* to the broker cannot access another user's *delegate* data unless they [re-authorize as visitors](broker.html#operation--auth-guest-credentials-put).
+
+A *visitor* is always invited to interact with a broker on behalf of the broker's *subscriber*.  
+
+A *visitor* is authenticated with their valid address on an accepted [remuneration ledger](remuneration-api.md).  
+
+A *subscriber* may restrict access to their *segment-keys* pending sufficient transactions from a *visitor's* *user-address* to the *subscriber's* *user-address*.
+
+Read more about *delegation* in the [delegates and subletting write-up](delegates-subletting.md)
+
+Review *delegation* APIs under [delegates](broker.html#tag-delegate) and [backchannel-queues](broker.html#tag-backchannel-queues) tags.
+
+#### subletting, subtenants
+
+Broker specific allotment of storage *quota* from a [subscriber](identity.html#subscriptions) to a *subtenant* is a *sublet*.
+
+A *subscriber* [remunerates the broker](remuneration-api.md) and maintains storage *quotas* with the broker.  A *sublet* is a subsequent allotment of a fraction of these storage *quotas* to another user:  the *subtenant*.
+
+The *subtenant* has full control and ownership of what's stored in the *sublet* storage.
+
+Think of a *sublet* as merely a broker specific, non-transferable, annotation, to be inquired on the *subtenant's* next authorization into the broker.  
+
+The [PUT /sublet](broker.html#operation--sublet-put) API method enumerates constraints on potential *subtenants* in order to leverage *subletting*.
+
+A *subtenant* can access their data as long as the *subscriber* continues to *sublet*, or if the *subtenant* starts [remunerating](remuneration-api.md) the broker and converts to a [subscriber](identity.html#subscriptions) themselves.
+
+Read more about benefits in the [delegates and subletting write-up](delegates-subletting.md)
+
+Review *subletting* APIs under the [subletting](broker.html#tag-subletting) tag.
 
 #### data-steward
 

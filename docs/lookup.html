@@ -80,7 +80,10 @@
   "activeBrokerHost": "..",
   "activeBrokerHostSigned": "..",    
   "drainBrokerHost": "..",
-  "drainBrokerHostSigned": ".."      
+  "drainBrokerHostSigned": "..",
+  "timestamp": "..",
+  "timestampSignedByAddress": "..",
+  "timestampSignedByActiveBrokerAddress": ".."
 }
 </code></pre>
 <p>The <a href="glossary.html#user-address">user-address</a> key is included as <em>address</em>.</p>
@@ -119,9 +122,29 @@
 <li>since <em>address</em> signs <em>drainBrokerHost</em>, only the owner of this <a href="glossary.html#user-address">user-address</a> can update their <a href="glossary.html#drain-host">drain-host</a>.</li>
 </ul>
 </li>
+<li>
+<em>timestamp</em> when information was published into <em>broker-lookup peer mesh</em>
+<ul>
+<li><a href="https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14" rel="nofollow">ISO 8601/RFC3339 format</a></li>
+<li>must be recent/current (within last hour)</li>
+</ul>
+</li>
+<li>
+<em>timestampSignedByAddress</em> is <em>timestamp</em> signed by <em>address</em>
+<ul>
+<li>must be present and valid if and only if <em>timestampSignedByActiveBrokerAddress</em> is not present and valid.</li>
+</ul>
+</li>
+<li>
+<em>timestampSignedByActiveBrokerAddress</em> is <em>timestamp</em> signed by <em>activeBrokerAddress</em>
+<ul>
+<li>must be present and valid if and only if <em>timestampSignedByAddress</em> is not present and valid.</li>
+</ul>
+</li>
 </ul>
 <p>The owner of <a href="glossary.html#user-address">user-address</a> signs both the <em>activeBrokerAddress</em> and (optionally) the <em>drainBrokerHost</em> directly controlling those values.  This is all done through the <a href="broker.html#tag-data-stewardship">activation APIs</a> depending on use case.</p>
 <p>The <em>activeBrokerHost</em> is not signed by the owner of <a href="glossary.html#user-address">user-address</a>, it is instead signed by the <a href="broker.html#tag-data-stewardship">active broker</a>.  This gives the broker flexibility in moving the user's data around its cluster and update its internal references to the data.</p>
+<p>The <em>timestamp</em> ensures "griefing" through replaying of old payloads is minimized.  Since either the owner of <a href="glossary.html#user-address">user-address</a> or the <a href="broker.html#tag-data-stewardship">active broker</a> update the <em>broker-lookup peer mesh</em>, either one can sign the <em>timestamp</em>:  <em>timestampSignedByAddress</em> or <em>timestampSignedByActiveBrokerAddress</em>.</p>
 <p>Every <em>broker-lookup peer node</em> is a full member of the Kademlia DHT and as such will be asked to write resolution payloads into its node storage.  No <em>broker-lookup peer node</em> will write corrupt resolution payloads into their node storage.  Corrupt payloads are ones that do not contain valid signatures for data indicated.  Such payloads will be unceremoniously dropped.</p>
 <p>To verify signatures the payload will leverage the <em>is-signature-valid</em> method of the <a href="remuneration-api.html">remuneration API</a> for the <em>remuneration provider</em> indicated by <a href="broker.html#/definitions/RemunerationKey">remunerationKey</a>.</p>
 <h3>

@@ -83,7 +83,7 @@ tags:
     description: |
       Allow services to discover users' specific broker *host names* and *IPs* through [user-addresses](glossary.html#user-address).
 
-      Broker-targetting metadata is [set](#operation--broker-lookup--user-address--put) into the *broker-lookup* network via whichever broker enters [active steward](glossary.html#data-steward) mode on behalf of the user with either:
+      Broker-targetting metadata is [set](#operation--broker-lookup-put) into the *broker-lookup* network via whichever broker enters [active steward](glossary.html#data-steward) mode on behalf of the user with either:
 
       * [PUT /active-stewardship](#operation--active-stewardship-put)
       * [PUT /pour-active-stewardship](#operation--pour-active-stewardship-put)
@@ -99,21 +99,23 @@ tags:
     description: |
       Authentication, authorization, and credential management:
 
-      * authenticate providing an [access token](#security-definition-Authorization Header): authenticate subscribers of 
-        the system and invitees of subscribers of the system.
+      * authenticate providing an [access token](#security-definition-Authorization Header): authenticate [subscribers](identity.html#subscriptions) of 
+        the system and [invitees](glossary.html#invitee-visitor-guest) of subscribers of the system.
       * work with  authority levels.
       * opt-in persistence network storage
       * change [identity](glossary.html#identity) credentials.  Setting [identity](glossary.html#identity) for the first time is
       done with the [authenticate endpoint](#operation--auth-credentials-put).
       * work with subscription details for a supported [remuneration API](remuneration-api.html) and a
       given [identity](glossary.html#identity).
-  - name: scratch-pad 
+  - name: subletting
     description: |
-      A single identity specific data container for holding a small piece of data in working-memory.
+      Subletting is one of two features allowing for services where a service's user isn't forced to participate in [remunerating the broker](remuneration-api.html).  The other such feature is [delegates](#tag-delegate).   Read more about *subletting* in the [delegates and subletting write-up](delegates-subletting.md)
+      
+      These APIs allow a *subscriber* (some user) to transfer some of their storage quotas for the benefit of a *subtenant* (another user).
 
-      This data is volatile and not guaranteed: it's only ever stored in working-memory.
+      Unlike [delegates](#tag-delegate), the *subtenant* fully owns and controls this data.
 
-      In working-data volatile memory limited to 32KiB that doesn't survive broker instance restarts.
+      A *subtenant* can access this data as long as they satisfy all constraints enumerated in the [PUT /sublet](#operation--sublet-put) method or the *subtenant* becomes a regular [subscriber](identity.html#subscriptions) of this broker.
   - name: data
     description: |
       Data key-value CRUD operations; modifying data values in [datastore-keys](glossary.html#datastore-key).
@@ -122,11 +124,17 @@ tags:
       Publishing messages to backchannel queues, subscribing to notifications, and de-queueing the messages.
   - name: delegate
     description: |
-      Delegate data in a [segment-key](glossary.html#segment-key) is data qualified by an [identity](glossary.html#identity) that is different from the owner.
+      Delegates are one of two features allowing for services where a service's user isn't forced to participate in [remunerating the broker](remuneration-api.html).  The other such feature is [subletting](#tag-subletting).  Read more about *delegation* in the [delegates and subletting write-up](delegates-subletting.md)
 
-      Each delegate keeps their data completely separate from other delegates under the same [segment-key](glossary.html#segment-key).
+      Delegate data stored by a [segment-key](glossary.html#segment-key) is meant to be accessed by a user who doesn't own the [segment-key](glossary.html#segment-key). 
 
-      Delegates may be alloted delegated *backchannel-queues*:  these are qualified via *delegate* query parameters on [the backchannel endpoints](#tag-backchannel-queues)
+      Delegate enabled [segment-keys](glossary.html#segment-key) partition their storage.  Each *partition* is separate and accessible by an [identity](glossary.html#identity) that is different from the owner of the [segment-key](glossary.html#segment-key).
+
+      Each delegate keeps their data completely separate from other delegates under the same .
+
+      Delegates may be alloted delegated *backchannel-queues*:  these are qualified via *delegate* query parameters on [the backchannel endpoints](#tag-backchannel-queues) and are not explicitly listed here.
+
+      Delegated data continues to be owned by the [segment-key](glossary.html#segment-key) owner--it's a chunk of the owner's data they allot for use by visiting users.  The delegate feature provides visiting users a way to access this data.    
   - name: datastore-key settings
     description: |
       Setting access metadata for [datastore-keys](glossary.html#datastore-key).
@@ -137,6 +145,16 @@ tags:
       * entry-fee: minimum [remuneration](remuneration-api.html) to access
       * read/write limits
       * opt-in for decentralized storge
+
+      #### Sample Use Case: Service Provider Requiring Authorization via *entry-fee*
+
+      Setting *entry-fee* gates on [segment-keys](glossary.html#segment-key) is a mechanism to require payment from users of those [segment-keys](glossary.html#segment-key).
+
+      Service providers set minimum *entry-fees* on some [segment-keys](glossary.html#segment-key) that their service or application requires as part of their functional flow.  
+
+      Any user, whether authorized as a [subscriber](#operation--auth-credentials-put) or [visitor](#operation--auth-guest-credentials-put), have their ledger-of-choice checked for existing transactions from themselves to the service provider.  The tally of transactions within an *entry-fee* gate established period of time must be at least equal to the *entry-fee* requirement to gain access (read, write, publish, subscribe).
+
+      This *entry-fee* requirement enables a service provider to leverage the simple [ledger-based authorization flow](https://test.ohledger.com/demo/why/why.html) via *overhide* brokers.
   - name: metrics
     description: |
       Usage metrics for specific [datastore-keys](glossary.html#datastore-key) or overall for the [identity](glossary.html#identity).
@@ -174,19 +192,19 @@ tags:
 
       In this sequence the *client* subscribes to *broker 1* and authenticates [1].  It's important to note that the first time a new user authenticates to a broker a new set of [GUIDs](#/definitions/GUID) is generated pointing to the user's data on the broker's distributed persistence network (e.g. [IPFS](https://ipfs.io/) "names" PKI pair for [IPFS](https://ipfs.io/)).
 
-      At this point *broker 1* is read-only.  Any attempts to write data or post messages would yield a 400 -- "cannot write, broker not an active steward of user's data".  To make the broker writable, it's designated as an [active data steward](glossary.html#data-steward) [4].
+      At this point *broker 1* is read-only.  Any attempts to write data or post messages would yield a 400 -- "cannot write, broker not an active steward of user's data".  To make the broker writable, it's designated as an [active data steward](glossary.html#data-steward) [3].
 
-      When participating in [broker-lookup](#tag-broker-lookup) the [PUT /active-stewardship](#operation--active-stewardship-put) call--to make *broker 1* an [active data steward](glossary.html#data-steward)--requires we know the broker's host name (or IP).  The [PUT /active-stewardship](#operation--active-stewardship-put) call is the mechanism that registers the broker as a user's active broker; hence the necessary signing of the particular metadata to push into the [broker-lookup](#tag-broker-lookup) network.  Steps [2] and [3] retrieve the necessary attributes to sign and push into the method [4].  The *unixtime-millis* is retrieved [3] and signed to prevent replay attacks.
+      When participating in [broker-lookup](#tag-broker-lookup) the [PUT /active-stewardship](#operation--active-stewardship-put) call--to make *broker 1* an [active data steward](glossary.html#data-steward)--requires we know the broker's host name (or IP).  The [PUT /active-stewardship](#operation--active-stewardship-put) call is the mechanism that registers the broker as a user's active broker; hence the necessary signing of the particular metadata to push into the [broker-lookup](#tag-broker-lookup) network.  Step [2] retrieves the broker's hostname for signing and pushing into the method [3].  
 
-      The *client* writes then reads data as desired [6].  The data is eventually made consistent with the distributed persistence network (e.g. [IPFS](https://ipfs.io/)) [6.1].
+      The *client* writes then reads data as desired [5].  The data is eventually made consistent with the distributed persistence network (e.g. [IPFS](https://ipfs.io/)) [5.1].
 
-      Presumably the distributed persistence network backing *broker 1* is a public decentralized data-store that allows common tooling access [8].  To access the *client*'s data we need its reference.  The reference is retrieved as a [GUID](#/definitions/GUID) [7].
+      Presumably the distributed persistence network backing *broker 1* is a public decentralized data-store that allows common tooling access [7].  To access the *client*'s data we need its reference.  The reference is retrieved as a [GUID](#/definitions/GUID) [6].
 
-      Another *overhide* broker is subscribed to by the *client*--to guarantee pinning of the user's data as a backup [9].
+      Another *overhide* broker is subscribed to by the *client*--to guarantee pinning of the user's data as a backup [8].
 
-      At this point *broker 2* is subscribed to, but it is not associated with the user's data as referenced by *broker 1* [10-11].  The second broker has a compeltelly different GUID for the user's data on the distributed persistence network.
+      At this point *broker 2* is subscribed to, but it is not associated with the user's data as referenced by *broker 1* [9-10].  The second broker has a compeltelly different GUID for the user's data on the distributed persistence network.
 
-      Once the *client* furnished the GUID form *broker 1* to *broker 2* [12], *broker 2* starts acting as a passive steward of the user's data [13-15].
+      Once the *client* furnished the GUID form *broker 1* to *broker 2* [11], *broker 2* starts acting as a passive steward of the user's data [12-14].
 
       #### Sample Use Case: Disassociation from Steward Over Persistence Network With Pour-Active Steward
 
@@ -206,7 +224,7 @@ tags:
 
       Putting *broker 2* into "pour-active" mode prompts it to tell the *broker-lookup* network that *broker 1* is now the *drainBrokerHost* and that *broker 2* is the new *activeBrokerHost* [6.1].
 
-      The *client* discovers that state of the hosts [7] and continues to use the brokers in tandem, uninterrupted [8,9].  The reads on both brokers [8,9] respect the decision matrix as per [result code 246](#/responses/246).  Reads against *broker 2* could return [result code 422](#/responses/422) when a [segment-key](glossary.html#segment-key) is not yet available.  Writes on *broker 1* are disallowed with [result code 400](#/responses/400) "cannot write, broker not an active steward of user's data".  Writes to *broker 2* [8] proceed as usual except are not synched with the *distributed persistence network* (while in "pour-active" mode).
+      The *client* discovers that state of the hosts [7] and continues to use the brokers in tandem, uninterrupted [8,9].  The reads on both brokers [8,9] respect the decision matrix as per [result code 246](#/responses/246).  Reads against *broker 2* could return [result code 422](#/responses/422) when a [segment-key](glossary.html#segment-key) is not yet available.  Writes on *broker 1* are disallowed with result code 400 -- "cannot write, broker not an active steward of user's data".  Writes to *broker 2* [8] proceed as usual except are not synched with the *distributed persistence network* (while in "pour-active" mode).
 
       While the user is accessing the brokers in tandem, *broker 2* is busy finalizing it's eventual consistency with the *distirbuted persistence network*.  Data access and migration are occuring at the same time:  *ovrehide broker 2* accepts *distributed persistence network* data changes for all [segment-keys](glossary.html#segment-key) not already overwritten via an explicit API write.
 
@@ -232,7 +250,7 @@ tags:
 
       Putting *broker 2* into "pour-active" mode prompts it to tell the *broker-lookup* network that *broker 1* is now the *drainBrokerHost* and that *broker 2* is the new *activeBrokerHost* [5.1].
 
-      The *client* discovers that state of the hosts [6] and continues to use the brokers in tandem, uninterrupted [7,8].  The reads on both brokers [7,8] respect the decision matrix as per [result code 246](#/responses/246).  Reads against *broker 2* could return [result code 422](#/responses/422) when a [segment-key](glossary.html#segment-key) is not yet available.  Writes on *broker 1* are disallowed with [result code 400](#/responses/400) "cannot write, broker not an active steward of user's data".  Writes to *broker 2* [7] proceed as usual.
+      The *client* discovers that state of the hosts [6] and continues to use the brokers in tandem, uninterrupted [7,8].  The reads on both brokers [7,8] respect the decision matrix as per [result code 246](#/responses/246).  Reads against *broker 2* could return [result code 422](#/responses/422) when a [segment-key](glossary.html#segment-key) is not yet available.  Writes on *broker 1* are disallowed with result code 400 -- "cannot write, broker not an active steward of user's data".  Writes to *broker 2* [7] proceed as usual.
 
       While the user is accessing the brokers in tandem, the *client* is used to [export](#operation-export-WIRE) data out of *broker 1* [9] and [fill](#operation-fill-WIRE) the data into *broker 2* [10].  The [fill](#operation-fill-WIRE) operation is an over-the-top alternative to indiscriminate [importing](#operation-import-WIRE):  the [fill](#operation-fill-WIRE) operation does not overwrite exitsting [segment-keys](glossary.html#segment-key) on *broker 2*.  This, in combination with the result codes describe in the previous paragraph, allows for over-the-top migration of user's data while the user continues to access their data via the *client*.
       
@@ -421,7 +439,16 @@ paths:
           description: |
             Success.  Empty.
         code == 400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * no handshake
+            * message outside handshake constraints
+            * cannot process input
+            * cannot write, broker not an active steward of user's data
+                * check broker-lookup to find active steward and write there
+            * cannot continue, invalid stewardship mode
+
         code == 429:
           $ref: "#/responses/429"
   acknowledge:
@@ -539,7 +566,13 @@ paths:
           description: |
             Halt seen.
         code == 400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * no handshake
+            * cannot write, broker not an active steward of user's data
+                * check broker-lookup to find active steward and write there
+            * cannot continue, invalid stewardship mode
         code == 429:
           $ref: "#/responses/429"  
   watchdog:
@@ -641,22 +674,10 @@ paths:
             items:
               $ref: "#/definitions/RemunerationTier"
         400:
-          $ref: "#/responses/400"
-        429:
-          $ref: "#/responses/429"
-  /capabilities/unixtime-millis:
-    get:
-      summary: Retrieve this broker's unixtime in milliseconds.
-      description: |
-        Retrieve this broker's unixtime in milliseconds.
-      tags:
-        - capabilities
-      produces:
-        - text/plain
-      responses:
-        200:
           description: |
-            The number as string: this broker's UNIX epoch time in milliseconds.
+            Bad request:
+
+            * invalid remuneration-key, doesn't match broker system capabilities
         429:
           $ref: "#/responses/429"
   /capabilities/address:
@@ -688,7 +709,9 @@ paths:
           description: |
             A public *user-address* whom to lookup.
 
-            Must be an address for one of the [supported ledgers](#/definitions/RemunerationKey).
+            Must be a valid address with one of the [supported ledgers](#/definitions/RemunerationKey).
+
+            A valid address is an address on an [accepted remuneration provider](#operation--capabilities-remuneration-providers-get) that is involved in some transaction on that [ledger](remuneration-api.html).
       tags:
         - broker-lookup
       produces:
@@ -707,7 +730,10 @@ paths:
               "activeBrokerHost": "..",
               "activeBrokerHostSigned": "..",    
               "drainBrokerHost": "..",
-              "drainBrokerHostSigned": ".."      
+              "drainBrokerHostSigned": "..",
+              "timestamp": "..",
+              "timestampSignedByAddress": "..",
+              "timestampSignedByActiveBrokerAddress": ".."
             }
             ```
 
@@ -724,6 +750,12 @@ paths:
             * *drainBrokerHost* is the *host name* or *IP* of the [drain-host](glossary.html#drain-host), if any.
             * *drainBrokerHostSigned* is *drainBrokerHost* signed by *address*
                 * since *address* signs *drainBrokerHost*, only the owner of this [user-address](glossary.html#user-address) can update their [drain-host](glossary.html#drain-host).
+            * *timestamp* when information was published into *broker-lookup* network
+                * [ISO 8601/RFC3339 format](https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14)
+            * *timestampSignedByAddress* is *timestamp* signed by *address*
+                * must be present and valid if *timestampSignedByActiveBrokerAddress* is not present and valid.
+            * *timestampSignedByActiveBrokerAddress* is *timestamp* signed by *activeBrokerAddress*
+                * must be present and valid if *timestampSignedByAddress* is not present and valid.
         404:
           $ref: "#/responses/404-cannot-resolve"
         405:
@@ -748,8 +780,6 @@ paths:
             type: object
             required:
               - active-broker-address-signed
-              - unixtime-millis
-              - unixtime-millis-signed
             properties:
               active-broker-address-signed:
                 type: string
@@ -779,20 +809,6 @@ paths:
                   The signing [user-address](glossary.html#user-address) must be for ledger corresponding to [remuneration-key](#/definitions/RemunerationKey) of calling [identity](glossary.html#identity).                   
 
                   Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
-              unixtime-millis:
-                type: number
-                description: |
-                  Non-unique UNIX Epoch timestamp (milliseconds) that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of tolerance either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
-
-                  These parameters mitigate replay attacks.
-              unixtime-millis-signed:
-                type: string
-                description: |
-                  BASE64 encoded.
-
-                  The *unixtime-millis* provided above signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
-
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
       security:
         - Authorization Header: []
       consumes:
@@ -802,7 +818,15 @@ paths:
           description: |
             Set OK.
         400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * address incompatible with remuneration provider
+            * invalid signature
+            * cannot process input
+            * cannot write, broker not an active steward of user's data
+                * check broker-lookup to find active steward and write there
+            * cannot continue, invalid stewardship mode
         405:
           $ref: "#/responses/405"
         429:
@@ -827,8 +851,6 @@ paths:
               - secret-phrase
               - user-address
               - secret-phrase-signed
-              - unixtime-millis
-              - unixtime-millis-signed
             properties:
               remuneration-key:
                 type: string
@@ -848,7 +870,9 @@ paths:
                 description: |
                   A public *user-address* to verify an active subscription to this broker's [broker-address](glossary.html#broker-address).
 
-                  Must be an address for the remuneration provider indicated in *remuneration-key*.
+                  Must be a valid address with the remuneration provider indicated in *remuneration-key*.
+
+                  A valid address is an address on an [accepted remuneration provider](#operation--capabilities-remuneration-providers-get) that is involved in some transaction on that [ledger](remuneration-api.html).
               secret-phrase-signed:
                 type: string
                 description: |
@@ -856,20 +880,6 @@ paths:
 
                   The *secret-phrase* provided above signed with the private key corrsponding to the
                   *user-address*.
-
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
-              unixtime-millis:
-                type: number
-                description: |
-                  Non-unique UNIX Epoch timestamp (milliseconds) that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of tolerance either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
-
-                  These parameters mitigate replay attacks.
-              unixtime-millis-signed:
-                type: string
-                description: |
-                  BASE64 encoded.
-
-                  The *unixtime-millis* provided above signed with the private key corrsponding to the *user-address* of [identity](glossary.html#identity).
 
                   Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
       consumes:
@@ -884,7 +894,14 @@ paths:
           schema:
             type: string
         400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * invalid remuneration-key, doesn't match broker system capabilities
+            * address incompatible with remuneration provider
+            * invalid signature
+            * invalid secret-phrase
+            * cannot process input
         402:
           description: |
             Payment Required -- Remuneration provider indicates insufficient transactions to the broker system to meet a
@@ -926,22 +943,24 @@ paths:
     put:
       summary: Authenticate an invitee's user-address as a guest of a subscriber's user-address.
       description: |
-        Authenticate an invitee's [user-address](glossary.html#user-address) as a guest of a subscriber's [user-address](glossary.html#user-address).
+        Authenticate an [invitee's](glossary.html#invitee-visitor-guest) [user-address](glossary.html#user-address) as a guest of a subscriber's [user-address](glossary.html#user-address).
 
-        An invitee into the system must provide a valid address on an [accepted remuneration provider](#operation--capabilities-remuneration-providers-get).  An invitee must prove ownership of said valid address.
+        An [invitee](glossary.html#invitee-visitor-guest) into the system must provide a valid address on an [accepted remuneration provider](#operation--capabilities-remuneration-providers-get).  An [invitee](glossary.html#invitee-visitor-guest) must prove ownership of said valid address.
 
-        Transactions--on a supported remuneration-provider--from the *invitee-user-address* to the provided *inviter-user-address* are part of the state of the returned access token by this call.  The *inviter* may set [fee expectations](#definition-DatastoreKeySettings) on [segment-key](glossary.html#segment-key).  If fees paid are expected, the *invitee* must necessairly have transacted with the *inviter*.
+        A valid address is an address on an [accepted remuneration provider](#operation--capabilities-remuneration-providers-get) that is involved in some transaction on that [ledger](remuneration-api.html).
+
+        Transactions--on a supported remuneration-provider--from the *invitee-user-address* to the provided *inviter-user-address* are part of the state of the returned access token by this call.  The *inviter* may set [fee expectations](#definition-DatastoreKeySettings) on [segment-key](glossary.html#segment-key).  If fees paid are expected, the [invitee](glossary.html#invitee-visitor-guest) must necessairly have transacted with the inviting [subscriber](identity.html#subscriptions).
 
         The inviting subscriber must expose their [user-address](glossary.html#user-address) and a *shared-phrase* that's used to hash their [user-address](glossary.html#user-address)
         into an [identity](glossary.html#identity).  The *shared-phrase* is equivalent to the
         *secret-phrase* passed into the [authenticate endpoint](#operation--auth-credentials-put): except it's not kept secret by the 
-        inviting user.  This is necessary to authorize the invitee to the inviting subscriber, and to ensure the inviting subscriber's 
+        inviting user.  This is necessary to authorize the [invitee](glossary.html#invitee-visitor-guest) to the inviting subscriber, and to ensure the inviting subscriber's 
         [user-address](glossary.html#user-address) does in fact hash to the desired indentity: we don't want to just pass the inviting subscriber's [identity](glossary.html#identity),
         we want to calculate it.
 
         Returns an "invitee" token to be used for [token authentication](#security-definition-Authorization Header) in the rest of the API.
         
-        The *invitee-user-address*  hashed by *invitee-secret-phrase* is the invitee's [identity](glossary.html#identity)
+        The *invitee-user-address*  hashed by *invitee-secret-phrase* is the [invitee's](glossary.html#invitee-visitor-guest) [identity](glossary.html#identity)
         for the purposes of [write/publish permissions](#definition-DatastoreKeySettings) on [segment-key](glossary.html#segment-key).
       tags:
         - auth
@@ -959,8 +978,6 @@ paths:
               - invitee-secret-phrase
               - invitee-user-address
               - invitee-secret-phrase-signed
-              - unixtime-millis
-              - unixtime-millis-signed
             properties:
               remuneration-key:
                 type: string
@@ -974,15 +991,17 @@ paths:
                 description: |
                   BASE64 Encoded.
 
-                  A shared phrase by the inviter to the invitee for the specified *inviter-user-address*.  The *shared-phrase* and the *inviter-user-address*
+                  A shared phrase by the inviter to the [invitee](glossary.html#invitee-visitor-guest) for the specified *inviter-user-address*.  The *shared-phrase* and the *inviter-user-address*
                   must compute to an authorized [identity](glossary.html#identity) on the system.  This is
-                  the identity inviting the invitee.
+                  the identity inviting the [invitee](glossary.html#invitee-visitor-guest).
               inviter-user-address:
                 type: string
                 description: |
                   A public [user-address](glossary.html#user-address) to verify an active subscription to this broker's [broker-address](glossary.html#broker-address).
 
-                  Must be an address for the remuneration provider indicated in *remuneration-key*.
+                  Must be a valid address with the remuneration provider indicated in *remuneration-key*.
+
+                  A valid address is an address on an [accepted remuneration provider](#operation--capabilities-remuneration-providers-get) that is involved in some transaction on that [ledger](remuneration-api.html).
 
                   Used in combination with *shared-phrase*, see *shared-phrase* above.
               invitee-secret-phrase:
@@ -998,7 +1017,9 @@ paths:
               invitee-user-address:
                 type: string
                 description: |
-                  A public [user-address](glossary.html#user-address), must be an address for the remuneration provider indicated in *remuneration-key*.
+                  A public [user-address](glossary.html#user-address), must be a valid address with the remuneration provider indicated in *remuneration-key*.
+
+                  A valid address is an address on an [accepted remuneration provider](#operation--capabilities-remuneration-providers-get) that is involved in some transaction on that [ledger](remuneration-api.html).
 
                   Transactions from this address to *inviter-user-address* are stored in the returned access token to [check fees](#definition-DatastoreKeySettings) on invitee-accessed [segment-key](glossary.html#segment-key).
               invitee-secret-phrase-signed:
@@ -1010,29 +1031,6 @@ paths:
                   *invitee-user-address*.
 
                   Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
-              unixtime-millis:
-                type: number
-                description: |
-                  Non-unique UNIX Epoch timestamp (milliseconds) that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of tolerance either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
-
-                  These parameters mitigate replay attacks.
-              unixtime-millis-signed:
-                type: string
-                description: |
-                  BASE64 encoded.
-
-                  The *unixtime-millis* provided above signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
-
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
-              since:
-                type: string
-                description: |
-                  If an [*entry-fee*](#tag-datastore-key-settings) is specified for a [datastore-key](glossary.html#datastore-key), transactions from *invitee-user-address*
-                  to *inviter-user-address* need to be tallied.  All historical transactions are tallied unless this parameter is specified.
-
-                  Retrieve transactions since this date-time (inclusive) until now.
-
-                  The date-time is a string in [ISO 8601/RFC3339 format](https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14).
       consumes:
         - application/json
       produces:
@@ -1045,7 +1043,14 @@ paths:
           schema:
             type: string
         400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * invalid remuneration-key, doesn't match broker system capabilities
+            * address incompatible with remuneration provider
+            * invalid signature
+            * invalid secret-phrase
+            * cannot process input
         402:
           description: |
             Payment Required -- Remuneration provider indicates no transactions exist between the user addresses in parameters.
@@ -1077,8 +1082,6 @@ paths:
               - new-secret-phrase
               - new-user-address
               - new-secret-phrase-signed
-              - unixtime-millis
-              - unixtime-millis-signed
             properties:
               new-remuneration-key:
                 type: string
@@ -1098,7 +1101,9 @@ paths:
                 description: |
                   A public [user-address](glossary.html#user-address) to verify an active subscription to this broker's [broker-address](glossary.html#broker-address).
 
-                  Must be an address for the remuneration provider indicated in *new-remuneration-key*.
+                  Must be a valid address with the remuneration provider indicated in *new-remuneration-key*.
+
+                  A valid address is an address on an [accepted remuneration provider](#operation--capabilities-remuneration-providers-get) that is involved in some transaction on that [ledger](remuneration-api.html).
               new-secret-phrase-signed:
                 type: string
                 description: |
@@ -1106,20 +1111,6 @@ paths:
 
                   The *new-secret-phrase* provided above signed with the private key corrsponding to the
                   *new-user-address*.
-
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
-              unixtime-millis:
-                type: number
-                description: |
-                  Non-unique UNIX Epoch timestamp (milliseconds) that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of tolerance either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
-
-                  These parameters mitigate replay attacks.
-              unixtime-millis-signed:
-                type: string
-                description: |
-                  BASE64 encoded.
-
-                  The *unixtime-millis* provided above signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
 
                   Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
       security:
@@ -1131,7 +1122,14 @@ paths:
           description: |
             Credentials successfully changed.
         400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * invalid remuneration-key, doesn't match broker system capabilities
+            * address incompatible with remuneration provider
+            * invalid signature
+            * invalid secret-phrase
+            * cannot process input
         401:
            $ref: "#/responses/401"
         409:
@@ -1175,7 +1173,10 @@ paths:
           description: |
             Opt-in changed.
         400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * cannot process input
         401:
            $ref: "#/responses/401"
         409:
@@ -1205,7 +1206,9 @@ paths:
           description: |
             A public address from which to verify payment details (amount/date) to the *to-address*.
 
-            Must be an address from the remuneration provider indicated in *remuneration-key*.
+            Must be a valid address from the remuneration provider indicated in *remuneration-key*.
+
+            A valid address is an address on an [accepted remuneration provider](#operation--capabilities-remuneration-providers-get) that is involved in some transaction on that [ledger](remuneration-api.html).
           type: string
         - in: path
           name: to-address
@@ -1213,7 +1216,9 @@ paths:
           description: |
             The target public address to check for payment made.
 
-            Must be an address from the remuneration provider indicated in *remuneration-key*.
+            Must be a valid address from the remuneration provider indicated in *remuneration-key*.
+
+            A valid address is an address on an [accepted remuneration provider](#operation--capabilities-remuneration-providers-get) that is involved in some transaction on that [ledger](remuneration-api.html).
 
             This could be this broker system's public payment address with
             the reumneration provider (as retrieved via [remuneration provider](#definition-RemunerationProvider)).
@@ -1248,69 +1253,181 @@ paths:
             items:
               $ref: "#/definitions/Transaction"
         400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * invalid remuneration-key, doesn't match broker system capabilities
+            * address incompatible with remuneration provider
+            * cannot process input
         401:
            $ref: "#/responses/401"
         409:
           $ref: "#/responses/409-identity-conflict"
         429:
           $ref: "#/responses/429"
-  /scratch-pad:
+  /sublet:
     get:
-      summary: Get scratch-pad binary data for a user.
+      summary: Get existing "sublet" arrangement.
       description: |
-        Retrieve *scratch-pad* data.
-      
-        *Scratch-pad* data is limited to 32KiB of temporary data.  Data is never be persisted and will only live in volatile memory: *working-data*.  *Scratch-pad* data is not qualified beyond authenticated [identity](glossary.html#identity): a single *scratch-pad* per identity.
+        Retrieve the existing *sublet* arrangement for calling *subscriber*.
       tags:
-        - scratch-pad
+        - subletting
       security:
         - Authorization Header: []
       produces:
-        - application/octet-stream
+        - application/json
       responses:
         200:
           description: |
-            Data payload retrieved.
-        246:
-          $ref: "#/responses/246"
-        400:
-          $ref: "#/responses/400"
+            Subletting arrangement for *subscriber* on this broker.
+
+            The response payload can be an empty object `{}` if no *subletting* arrangement defined.
+          schema:
+            type: object
+            required:
+              - storage-limit-bytes
+            properties:
+              fees-schedule:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - value
+                    - within-seconds
+                    - remuneration-key
+                  properties:
+                    value:
+                      type: number
+                      description: |
+                        Amount of currency--as per [remuneration-key](#/definitions/RemunerationKey) required to sublet.
+
+                        A 0-value implies at least one transaction of any value (perhaps just the ledger transaction fees) must be present.
+                    within-seconds:
+                      type: number
+                      description: |
+                        All transactions--on the remuneration provider indicated with *remuneration-key*--with a timestamp more recent than *within-seconds* before the time of [login](#operation--auth-guest-credentials-put), have their amounts tallied and compared to *value*.  If the tally is at least *value* the *fees-schedule* is met.
+
+                        A 0-value means for all-time.
+                    remuneration-key:
+                      type: string
+                      description: |
+                        One of the remuneration provider [keys](#/definitions/RemunerationKey) from /capabilities/remuneration-providers
+
+                        The provided address corresponds to one of the remuneration providers, define it.
+                description: |
+                  If specified, mandates that before a *subletting* arrangement can take place during *subtenant* [login](#operation--auth-credentials-put), the broker checks for [ledger](remuneration-api.html) transactions from *subtenant* to *subscriber*.  This is the *fees-schedule* dictating permission to access.
+              storage-limit-bytes:
+                type: number
+                description: |
+                  Maximum number of bytes of total content allowed to be *sublet* from *subscriber* to *subtenant*.  
         401:
            $ref: "#/responses/401"
-        409:
-          $ref: "#/responses/409-identity-conflict"
-        422:
-          $ref: "#/responses/422"
         429:
-          $ref: "#/responses/429"            
+          $ref: "#/responses/429"     
     put:
-      summary: Set scratch-pad data for a user.
+      summary: Set a "sublet" arrangement.
       description: |
-        Set *scratch-pad* binary data.
-      
-        *Scratch-pad* data is limited to 32KiB of temporary data.  Data is never be persisted and will only live in volatile memory: *working-data*.  *Scratch-pad* data is not qualified beyond authenticated [identity](glossary.html#identity): a single *scratch-pad* per identity.
+        Transfer some [authorities limits](#/definitions/Authorities)(the *sublet* arrangement) on this broker from this method caller's identity (the *subscriber*) to any *subtenant* satisfying any specified *fees-schedule*.  
+
+        Allows a *subtenant* to [authorize](#operation--auth-credentials-put) into broker to use resources--up to the limits subleted--with their [user-address](glossary.html#user-address) as owner.  
+
+        This method merely instruments *subletting* arrangements from this *subscriber* to any user authorizing as a *subtenant*.  Upon *subtenant*'s next login with [PUT /auth/credentials](#operation--auth-credentials-put) the *subletting* arrangement--along with any other *sublets*--is alloted if and only if:
+
+        1. the *subtenant* meets requirements outlined by the *fees-schedule* of this call, if any
+        1. the *subtenant* doesn't already have an [active subscription] on this broker
+        1. the *subtenant* doesn't already have an entry in [broker-lookup](#tag-broker-lookup) other than this broker
+        1. this broker is the *subtenant*'s [active steward](glossary.html#data-steward)
+        1. the *subscriber* has an active subscription with a [current storage utilization](#/definitions/Metrics) below 1
+
+        Notes:
+
+        * *subletting* is broker specific, non-transferable.
+        * a user cannot be a *subtenant* of multiple *subscribers* on different brokers
+            * user will need a different [user-address](glossary.html#user-address) for each *sublet*
+            * expected response from broker:  400 -- "cannot sublet: already active on another broker"
+        * only a single *subletting* arrangement can be set per *subscriber* per broker
+
       tags:
-        - scratch-pad
+        - subletting
       parameters:
         - in: body
-          name: payload
+          name: subletting payload
           description: |
-            Data payload for scratch-pad.
+            Subletting payload.
+          schema:
+            type: object
+            required:
+              - storage-limit-bytes
+            properties:
+              fees-schedule:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - value
+                    - within-seconds
+                    - remuneration-key
+                  properties:
+                    value:
+                      type: number
+                      description: |
+                        Amount of currency--as per [remuneration-key](#/definitions/RemunerationKey) required to sublet.
+
+                        A 0-value implies at least one transaction of any value (perhaps just the ledger transaction fees) must be present.
+                    within-seconds:
+                      type: number
+                      description: |
+                        All transactions--on the remuneration provider indicated with *remuneration-key*--with a timestamp more recent than *within-seconds* before the time of [login](#operation--auth-guest-credentials-put), have their amounts tallied and compared to *value*.  If the tally is at least *value* the *fees-schedule* is met.
+
+                        A 0-value means for all-time.
+                    remuneration-key:
+                      type: string
+                      description: |
+                        One of the remuneration provider [keys](#/definitions/RemunerationKey) from /capabilities/remuneration-providers
+
+                        The provided address corresponds to one of the remuneration providers, define it.
+                description: |
+                  If specified, mandates that before a *subletting* arrangement can take place during *subtenant* [login](#operation--auth-credentials-put), the broker checks for [ledger](remuneration-api.html) transactions from *subtenant* to *subscriber*.  This is the *fees-schedule* dictating permission to access.
+              storage-limit-bytes:
+                type: number
+                description: |
+                  Maximum number of bytes of total content allowed to be *sublet* from *subscriber* to *subtenant*.  
       security:
         - Authorization Header: []
       consumes:
-        - application/octet-stream
+        - application/json
       responses:
         200:
           description: |
             Data successfully set.
         400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * invalid remuneration-key, doesn't match broker system capabilities
+            * cannot process input
+            * cannot write, broker not an active steward of user's data
+                * check broker-lookup to find active steward and write there
+            * cannot continue, invalid stewardship mode
+            * cannot sublet: already active on another broker
         401:
            $ref: "#/responses/401"
-        409:
-          $ref: "#/responses/409-identity-conflict"
+        429:
+          $ref: "#/responses/429"          
+    delete:
+      summary: Delete a "sublet" arrangement.
+      description: |
+        Delete a *sublet* arrangement, if any.
+      tags:
+        - subletting
+      security:
+        - Authorization Header: []
+      responses:
+        200:
+          description: |
+            If arrangement is deleted or no arrangement existed.
+        401:
+           $ref: "#/responses/401"
         429:
           $ref: "#/responses/429"          
   set data:
@@ -1419,7 +1536,15 @@ paths:
           description: |
             Success.  Empty.
         code == 400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * no handshake
+            * message outside handshake constraints
+            * cannot process input
+            * cannot write, broker not an active steward of user's data
+                * check broker-lookup to find active steward and write there
+            * cannot continue, invalid stewardship mode
         code == 403:
           $ref: "#/responses/403"
         code == 409:
@@ -1504,7 +1629,12 @@ paths:
         code == 246:
           $ref: "#/responses/246"
         code == 400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * no handshake
+            * message outside handshake constraints
+            * cannot process input
         code == 403:
           $ref: "#/responses/403"
         code == 404:
@@ -1601,7 +1731,15 @@ paths:
           description: |
             Success.  Empty.
         code == 400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * no handshake
+            * message outside handshake constraints
+            * cannot process input
+            * cannot write, broker not an active steward of user's data
+                * check broker-lookup to find active steward and write there
+            * cannot continue, invalid stewardship mode
         code == 403:
           $ref: "#/responses/403"
         code == 404:
@@ -1729,7 +1867,15 @@ paths:
           description: |
             Success.  Empty.
         code == 400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * no handshake
+            * message outside handshake constraints
+            * cannot process input
+            * cannot write, broker not an active steward of user's data
+                * check broker-lookup to find active steward and write there
+            * cannot continue, invalid stewardship mode
         code == 403:
           $ref: "#/responses/403"
         code == 404:
@@ -1855,7 +2001,12 @@ paths:
         code == 246:
           $ref: "#/responses/246"
         code == 400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * no handshake
+            * message outside handshake constraints
+            * cannot process input
         code == 403:
           $ref: "#/responses/403"
         code == 404:
@@ -1965,7 +2116,15 @@ paths:
           description: |
             Success.  Empty.
         code == 400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * no handshake
+            * message outside handshake constraints
+            * cannot process input
+            * cannot write, broker not an active steward of user's data
+                * check broker-lookup to find active steward and write there
+            * cannot continue, invalid stewardship mode
         code == 403:
           $ref: "#/responses/403"
         code == 404:
@@ -2129,7 +2288,15 @@ paths:
                 description: |
                   The message byte stream value.
         code == 400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * no handshake
+            * message outside handshake constraints
+            * cannot process input
+            * cannot write, broker not an active steward of user's data
+                * check broker-lookup to find active steward and write there
+            * cannot continue, invalid stewardship mode
         code == 404:
           $ref: "#/responses/404-datastore-key"
 
@@ -2245,7 +2412,15 @@ paths:
           description: |
             Value successfully set.
         code == 400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * no handshake
+            * message outside handshake constraints
+            * cannot process input
+            * cannot write, broker not an active steward of user's data
+                * check broker-lookup to find active steward and write there
+            * cannot continue, invalid stewardship mode
         code == 403:
           $ref: "#/responses/403"
         code == 409:
@@ -2334,7 +2509,12 @@ paths:
         code == 246:
           $ref: "#/responses/246"
         code == 400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * no handshake
+            * message outside handshake constraints
+            * cannot process input
         code == 403:
           $ref: "#/responses/403"
         code == 404:
@@ -2437,7 +2617,15 @@ paths:
           description: |
             Success.  Empty.
         code == 400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * no handshake
+            * message outside handshake constraints
+            * cannot process input
+            * cannot write, broker not an active steward of user's data
+                * check broker-lookup to find active steward and write there
+            * cannot continue, invalid stewardship mode
         code == 403:
           $ref: "#/responses/403"
         code == 404:
@@ -2561,7 +2749,12 @@ paths:
         code == 246:
           $ref: "#/responses/246"
         code == 400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * no handshake
+            * message outside handshake constraints
+            * cannot process input
         code == 403:
           $ref: "#/responses/403"
         code == 404:
@@ -2619,7 +2812,13 @@ paths:
           description: |
             Settings applied successfully.
         400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * cannot process input
+            * cannot write, broker not an active steward of user's data
+                * check broker-lookup to find active steward and write there
+            * cannot continue, invalid stewardship mode
         403:
           $ref: "#/responses/403"
         404:
@@ -2660,7 +2859,10 @@ paths:
         246:
           $ref: "#/responses/246"
         400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * cannot process input
         403:
           $ref: "#/responses/403"
         404:
@@ -2688,8 +2890,6 @@ paths:
             $ref: "#/definitions/Metrics"
         246:
           $ref: "#/responses/246"
-        400:
-          $ref: "#/responses/400"
         403:
           $ref: "#/responses/403"
         404:
@@ -2733,7 +2933,10 @@ paths:
         246:
           $ref: "#/responses/246"
         400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * cannot process input
         403:
           $ref: "#/responses/403"
         404:
@@ -2799,7 +3002,12 @@ paths:
         code == 206:
           $ref: "#/responses/206"
         code == 400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * no handshake
+            * message outside handshake constraints
+            * cannot process input
         code == 403:
           $ref: "#/responses/403"
         code == 429:
@@ -2885,7 +3093,15 @@ paths:
           description: |
             Success.  Empty.
         code == 400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * no handshake
+            * message outside handshake constraints
+            * cannot process input
+            * cannot write, broker not an active steward of user's data
+                * check broker-lookup to find active steward and write there
+            * cannot continue, invalid stewardship mode
         code == 403:
           $ref: "#/responses/403"
         code == 429:
@@ -2970,7 +3186,15 @@ paths:
           description: |
             Success.  Empty.
         code == 400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * no handshake
+            * message outside handshake constraints
+            * cannot process input
+            * cannot write, broker not an active steward of user's data
+                * check broker-lookup to find active steward and write there
+            * cannot continue, invalid stewardship mode
         code == 403:
           $ref: "#/responses/403"
         code == 429:
@@ -3028,7 +3252,12 @@ paths:
         code == 206:
           $ref: "#/responses/206"
         400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * no handshake
+            * message outside handshake constraints
+            * cannot process input
         403:
           $ref: "#/responses/403"
         429:
@@ -3082,7 +3311,14 @@ paths:
           description: |
             Data successfully set.
         400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * invalid type-key, doesn't match broker system capabilities
+            * cannot process input
+            * cannot write, broker not an active steward of user's data
+                * check broker-lookup to find active steward and write there
+            * cannot continue, invalid stewardship mode
         403:
           $ref: "#/responses/403"
         429:
@@ -3094,6 +3330,8 @@ paths:
       summary: Delete all user's data on the broker system.
       description: |
         Delete all user's data on the broker system, based on [identity](glossary.html#identity) passed in.
+
+        Broker can be in any [stewardship mode](glossary.html#data-steward).
       tags:
         - data-stewardship
       parameters:
@@ -3116,7 +3354,10 @@ paths:
           description: |
             If all data is deleted.
         400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * cannot process input
         403:
           $ref: "#/responses/403"
         429:
@@ -3147,8 +3388,6 @@ paths:
                 description: |
                   BASE64 encoded.
 
-                  This parameter can only be provided if *unixtime-millis* and *unixtime-millis-signed* are also provided.
-
                   The [broker-address](glossary.html#broker-address) on the reumneration-provider matching caller's [identity](glossary.html#identity)--as provided by [/capabilities/address](#operation--capabilities-address-get)--signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
 
                   Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
@@ -3156,22 +3395,6 @@ paths:
                   Providing this parameter signals we want to advertise this broker as the caller's [user-address](glossary.html#user-address)' [activeHost](glossary.html#data-steward) to the [lookup network](#tag-broker-lookup) corresponding to the [remuneration-key](#/definitions/RemunerationKey) used for this [identity](glossary.html#identity).
 
                   If the [lookup network](#tag-broker-lookup) currently has a [drain-host](glossary.html#drain-host) entry, the [drain-host](glossary.html#drain-host) entry is removed from the [lookup network](#tag-broker-lookup).
-              unixtime-millis:
-                type: number
-                description: |
-                  Non-unique UNIX Epoch timestamp (milliseconds) that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of tolerance either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
-
-                  If this parameter is provided, *unixtime-millis-signed* must be provided as well.
-
-                  These parameters mitigate replay attacks.
-              unixtime-millis-signed:
-                type: string
-                description: |
-                  BASE64 encoded.
-
-                  The *unixtime-millis* provided above signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
-
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
       tags:
         - data-stewardship
       security:
@@ -3183,7 +3406,11 @@ paths:
           description: |
             Stewardship status change successful.
         400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * invalid signature
+            * cannot process input
         403:
           $ref: "#/responses/403"
         429:
@@ -3205,8 +3432,6 @@ paths:
         200:
           description: |
             Stewardship status change successful.
-        400:
-          $ref: "#/responses/400"
         403:
           $ref: "#/responses/403"
         429:
@@ -3247,7 +3472,7 @@ paths:
               drain-host:
                 type: string
                 description: |
-                  This parameter can only be provided if *drain-host-signed*, *unixtime-millis*, *unixtime-millis-signed*, and *broker-address-signed* are also provided.
+                  This parameter can only be provided if *drain-host-signed* and *broker-address-signed* are also provided.
 
                   This is the host name or IP address of the [passive-steward broker](glossary.html#data-steward) we're draining data from into this broker.  
 
@@ -3259,7 +3484,7 @@ paths:
                 description: |
                   BASE64 encoded.
 
-                  This parameter can only be provided if *drain-host*, *unixtime-millis*, *unixtime-millis-signed*, and *broker-address-signed* are also provided.
+                  This parameter can only be provided if *drain-host* and *broker-address-signed* are also provided.
 
                   This is the *drain-host* (provided above) signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
 
@@ -3269,29 +3494,11 @@ paths:
                 description: |
                   BASE64 encoded.
 
-                  This parameter can only be provided if *unixtime-millis* and *unixtime-millis-signed* are also provided.
-
                   The [broker-address](glossary.html#broker-address) on the reumneration-provider matching caller's [identity](glossary.html#identity)--as provided by [/capabilities/address](#operation--capabilities-address-get)--signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
 
                   Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
 
                   Providing this parameter signals we want to advertise this broker as the caller's [user-address](glossary.html#user-address)' [activeHost](glossary.html#data-steward) to the [lookup network](#tag-broker-lookup) corresponding to the [remuneration-key](#/definitions/RemunerationKey) used for this [identity](glossary.html#identity).
-              unixtime-millis:
-                type: number
-                description: |
-                  Non-unique UNIX Epoch timestamp (milliseconds) that must be within 300000 milliseconds of the current system time of the broker.  This gives the caller five minutes of tolerance either in the future or in the past.  You can use [/capabilities/unixtime-millis](#operation--capabilities-unixtime-millis-get) as the source for this parameter.
-
-                  If this parameter is provided, *unixtime-millis-signed* must be provided as well.
-
-                  These parameters mitigate replay attacks.
-              unixtime-millis-signed:
-                type: string
-                description: |
-                  BASE64 encoded.
-
-                  The *unixtime-millis* provided above signed with the private key corrsponding to the [user-address](glossary.html#user-address) of [identity](glossary.html#identity).
-
-                  Signature algorithm is [remuneration-key](#/definitions/RemunerationKey) specific; for Ethereum it's *keccak-256*, for Bitcoin it's *secp256k1*.  Refer to the ledger's [remuneration API](remuneration-api.html).
       tags:
         - data-stewardship
       security:
@@ -3303,7 +3510,11 @@ paths:
           description: |
             Stewardship status change successful.
         400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * invalid signature
+            * cannot process input
         403:
           $ref: "#/responses/403"
         429:
@@ -3344,7 +3555,10 @@ paths:
         246:
           $ref: "#/responses/246"
         400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * cannot process input
         403:
           $ref: "#/responses/403"
         404:
@@ -3367,13 +3581,6 @@ paths:
         If this broker is not an [active steward](#operation--active-stewardship-put) of data for [identity](glossary.html#identity), call fails with a 400 -- "cannot write, broker not an active steward of user's data".  Note that [pour-active-stewards](#operation--pour-active-stewardship-put) are considered *passive* stewards for this call.
       tags:
         - data-stewardship
-      parameters:
-        - in: path
-          name: guid
-          required: true
-          description: |
-            A *GUID* as returned by [GET/guids](#operation--guids-get) on this broker.  On success, this GUID--as well as GUIDs representing the same distributed persistence network as this GUID--will be replaces with a new GUID.
-          type: string
       security:
         - Authorization Header: []
       consumes:
@@ -3388,8 +3595,6 @@ paths:
             type: array
             items:
               $ref: "#/definitions/GUID"
-        400:
-          $ref: "#/responses/400"
         403:
           $ref: "#/responses/403"
         429:
@@ -3416,8 +3621,6 @@ paths:
             type: array
             items:
               $ref: "#/definitions/GUID"
-        400:
-          $ref: "#/responses/400"
         403:
           $ref: "#/responses/403"
         429:
@@ -3451,7 +3654,10 @@ paths:
           description: |
             The identifier.
         400:
-          $ref: "#/responses/400"
+          description: |
+            Bad request:
+
+            * cannot process input
         403:
           $ref: "#/responses/403"
         429:
@@ -3460,7 +3666,7 @@ definitions:
   RemunerationKey:
     type: string
     description: |
-      Tag representing a ledger network on which all addresses operate: [user-address](glossary.html#user-address), [broker-address](glossary.html#broker-address), [service-address](glossary.html#service-address), and [invitee/visitor](glossary.html#invitee) addresses.
+      Tag representing a ledger network on which all addresses operate: [user-address](glossary.html#user-address), [broker-address](glossary.html#broker-address), [service-address](glossary.html#service-address), and [invitee/visitor](glossary.html#invitee-visitor-guest) addresses.
 
       In the *overhide* system, ledger networks are abstracted via an [API from remuneration providers](remuneration-api.html).  This list is the list of standard *remuneration providers* (ledgers) supported by *overhide*.  
       
@@ -3741,19 +3947,21 @@ definitions:
           type: object
           required:
             - value
-            - since
+            - within-seconds
             - remuneration-key
           properties:
             value:
               type: number
               description: |
-                Amount of currency--as per [remuneration-key](#/definitions/RemunerationKey) required to be able to write/publish to this [segment-key](glossary.html#segment-key).
-            since:
-              type: string
-              description: |
-                The remuneration *value* must accumulate in transactions since this date-time (inclusive) until now.
+                Amount of currency--as per [remuneration-key](#/definitions/RemunerationKey) required to access this [segment-key](glossary.html#segment-key).
 
-                The date-time is a string in [ISO 8601/RFC3339 format](https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14).
+                A 0-value implies at least one transaction of any value (perhaps just the ledger transaction fees) must be present.
+            within-seconds:
+              type: number
+              description: |
+                All transactions--on the remuneration provider indicated with *remuneration-key*--with a timestamp more recent than *within-seconds* before the time of [login](#operation--auth-guest-credentials-put), have their amounts tallied and compared to *value*.  If the tally is at least *value* the *entry-fee* is met.
+
+                A 0-value means for all-time.
             remuneration-key:
               type: string
               description: |
@@ -3761,10 +3969,15 @@ definitions:
 
                 The provided address corresponds to one of the remuneration providers, define it.
         description: |
-          if *allow-publish* or *allow-write* is "self", "any", "signed" this parameter is ignored.
+          The *entry-fee* condition applies *allow-publish*, *allow-write*, or *allow-delegation* is "any", "signed", or "invitee": anytime someone other than "self" is allowed some access.
 
-          If *allow-publish* or *allow-write* is "invitee", this parameter the minimum remuneration value required to be able to write the write/publish operations
-          on this [segment-key](glossary.html#segment-key).      
+          It may be prudent to not [opt-in](#operation--auth-opt-in--agree--put) this [segment-key](glossary.html#segment-key) into *distributed persistence*: *distributed persistence* may make the value available regardless of *entry-fee* established.
+
+          For every [segment-key](glossary.html#segment-key) gated with an *entry-fee* the accessing user's payments to the [segment-key's](glossary.html#segment-key) owner have to be verified.  These are cached by the broker such that subsequent access to [segment-keys](glossary.html#segment-key) with the same *entry-fee* *value* are accessed quickly without performing the same check.  However, it is prudent to limit the number of different *valued* *entry-fees*:  have lots of [segment-keys](glossary.html#segment-key) with an associated *entry-fee* but ensure the *entry-fee* *value* is common.
+
+          It may be prudent to keep the number of [segment-keys](glossary.html#segment-key) with an *entry-fee* down to a managable number--perhaps only one per critical path of an authorization tier in your service's (app's) functional flow.  The *entry-fee* amounts may need to change as per business needs; keeping the number of such configuration points managable may be important.
+
+          If a transaction is made by the accessing user to the owning user, the accessing user must [re-authorize](#operation--auth-guest-credentials-put) to have the new transaction considered.
       duplicate-delegate-policy:
         type: string
         description: |
@@ -4100,7 +4313,7 @@ responses:
       It is always returned by *getter calls* on: 
 
       * [passive hosts](#tag-data-stewardship) in cases where an [active host](#tag-data-stewardship) would return a *200/OK*.
-      * [pour-active-stewardship hosts](#operation--pour-active-stewardship-put) when request is for data in a [segment-key](glossary.html#segment-key) that hasn't been explicitly written to via [data](#tag-data), [backchannel](#tag-backchannel-queues), or [scratch-pad](#operation--scratch-pad-put) APIs.  Once a [segment-key](glossary.html#segment-key) is written to by one of these APIs--since the broker was put into [*pour-active-stewardship*](#operation--pour-active-stewardship-put) mode for an [identity](glossary.html#identity)--the [*pour-active-steward*](#operation--pour-active-stewardship-put) will return a *200/OK*.
+      * [pour-active-stewardship hosts](#operation--pour-active-stewardship-put) when request is for data in a [segment-key](glossary.html#segment-key) that hasn't been explicitly written to via [data](#tag-data) or [backchannel](#tag-backchannel-queues) APIs.  Once a [segment-key](glossary.html#segment-key) is written to by one of these APIs--since the broker was put into [*pour-active-stewardship*](#operation--pour-active-stewardship-put) mode for an [identity](glossary.html#identity)--the [*pour-active-steward*](#operation--pour-active-stewardship-put) will return a *200/OK*.
 
       Upon receipt of a *246* status code as a response to a *getter call* the client must check whichever complementary broker is reported by [broker-lookup](#tag-broker-lookup)--if any.  A complementary broker to an [*active* *pour* host](#operation--pour-active-stewardship-put) is the [*passive* *drain* host](glossary.html#drain-host) and vice versa.  
 
@@ -4117,23 +4330,6 @@ responses:
 
       The decision which broker's value to use as source of truth depends on their returned status codes.
 
-  400:
-    description: |
-      A bad request from the client results in one or more of the following error message strings:
-
-      * invalid remuneration-key, doesn't match broker system capabilities
-      * address incompatible with remuneration provider
-      * invalid signature
-      * invalid secret-phrase
-      * no handshake
-      * message outside handshake constraints
-      * invalid type-key, doesn't match broker system capabilities
-      * cannot process input
-      * cannot write, broker not an active steward of user's data
-          * check broker-lookup to find active steward and write there
-      * cannot continue, invalid stewardship mode
-
-      The message enum might be extended by broker system.
   401:
     description: |
       For an endpoint protected with the [token security definition](#security-definition-Authorization Header), an "Authorization" header was not provided a valid token--as returned from the [authenticate endpoint](#operation--auth-credentials-put).
