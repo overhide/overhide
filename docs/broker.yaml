@@ -88,7 +88,7 @@ tags:
       * [PUT /active-stewardship](#operation--active-stewardship-put)
       * [PUT /pour-active-stewardship](#operation--pour-active-stewardship-put)
 
-      As such *broker-lookup* works in conjunction with [data-stewardship](#tag-data-stewardship) APIs and [data-stewardship](#tag-data-stewardship) benefits greatly from *broker-lookup. 
+      As such *broker-lookup* works in conjunction with [data-stewardship](#tag-data-stewardship) APIs and [data-stewardship](#tag-data-stewardship) benefits greatly from *broker-lookup*. 
 
       ![broker-lookup sequence](https://github.com/JakubNer/overhide/raw/master/docs/images/broker-lookup.png)      
 
@@ -130,11 +130,11 @@ tags:
 
       Delegate enabled [segment-keys](glossary.html#segment-key) partition their storage.  Each *partition* is separate and accessible by an [identity](glossary.html#identity) that is different from the owner of the [segment-key](glossary.html#segment-key).
 
-      Each delegate keeps their data completely separate from other delegates under the same .
+      Each delegate keeps their data completely separate from other delegates under the same [segment-key](glossary.html#segment-key).
 
-      Delegates may be alloted delegated *backchannel-queues*:  these are qualified via *delegate* query parameters on [the backchannel endpoints](#tag-backchannel-queues) and are not explicitly listed here.
+      *Backchannel-queues* may also be *partitioned* by delegate:  these *backchannel-queues* are qualified via *delegate* query parameters on [the backchannel endpoints](#tag-backchannel-queues) and are not explicitly listed here.
 
-      Delegated data continues to be owned by the [segment-key](glossary.html#segment-key) owner--it's a chunk of the owner's data they allot for use by visiting users.  The delegate feature provides visiting users a way to access this data.    
+      Delegated data continues to be owned by the [segment-key](glossary.html#segment-key) owner--it's a chunk of the owner's data they allot for use by [visiting users](glossary.html#invitee-visitor-guest).  The delegate feature provides [visiting users](glossary.html#invitee-visitor-guest) a way to access this data.    
   - name: datastore-key settings
     description: |
       Setting access metadata for [datastore-keys](glossary.html#datastore-key).
@@ -260,7 +260,7 @@ tags:
 
       The previous two use cases described data migration with minimal interruption to user's access to their data.
 
-      For completeness, this use case describes the most basic over-the-top data migration that does interrupt the user's access to their data.  This use case is likely practical when a single user is migrating their data and they're fine waiting for their data to [export](#operation-export-WIRE) and [import](#operation-import-WIRE) before continuing to use it.  Contrast this to the previous use cases--which are likely more practical when the data migrating user is a service provider--whose data is being accessed by many other users (e.g. [delegtes](glossary.html#delegate-qualification)) while the migration is in progress.
+      For completeness, this use case describes the most basic over-the-top data migration that does interrupt the user's access to their data.  This use case is likely practical when a single user is migrating their data and they're fine waiting for their data to [export](#operation-export-WIRE) and [import](#operation-import-WIRE) before continuing to use it.  Contrast this to the previous use cases--which are likely more practical when the data migrating user is a service provider--whose data is being accessed by many other users (e.g. [delegtes](glossary.html#delegate-key)) while the migration is in progress.
 
       ![overhide disassociation from steward using export+import infographic](https://github.com/JakubNer/overhide/raw/master/docs/images/steward-export-import.png)
 
@@ -2815,6 +2815,8 @@ paths:
           description: |
             Bad request:
 
+            * address incompatible with remuneration provider
+            * invalid signature
             * cannot process input
             * cannot write, broker not an active steward of user's data
                 * check broker-lookup to find active steward and write there
@@ -3969,11 +3971,11 @@ definitions:
 
                 The provided address corresponds to one of the remuneration providers, define it.
         description: |
-          The *entry-fee* condition applies *allow-publish*, *allow-write*, or *allow-delegation* is "any", "signed", or "invitee": anytime someone other than "self" is allowed some access.
+          The *entry-fee* condition applies if *allow-publish*, *allow-write*, or *allow-delegation* is "any", "signed", or "invitee": anytime someone other than "self" is allowed some access.
+
+          For every [segment-key](glossary.html#segment-key) gated with an *entry-fee* the accessing user's payments to the [segment-key's](glossary.html#segment-key) owner have to be verified.  These are cached by the broker such that subsequent access to [segment-keys](glossary.html#segment-key) with the same *entry-fee* *value* are accessed quickly without performing the same check.  However, it is prudent to limit the number of different *valued* *entry-fees*: ensure you limit the number of different *entry-fee* *values* to a handful.
 
           It may be prudent to not [opt-in](#operation--auth-opt-in--agree--put) this [segment-key](glossary.html#segment-key) into *distributed persistence*: *distributed persistence* may make the value available regardless of *entry-fee* established.
-
-          For every [segment-key](glossary.html#segment-key) gated with an *entry-fee* the accessing user's payments to the [segment-key's](glossary.html#segment-key) owner have to be verified.  These are cached by the broker such that subsequent access to [segment-keys](glossary.html#segment-key) with the same *entry-fee* *value* are accessed quickly without performing the same check.  However, it is prudent to limit the number of different *valued* *entry-fees*:  have lots of [segment-keys](glossary.html#segment-key) with an associated *entry-fee* but ensure the *entry-fee* *value* is common.
 
           It may be prudent to keep the number of [segment-keys](glossary.html#segment-key) with an *entry-fee* down to a managable number--perhaps only one per critical path of an authorization tier in your service's (app's) functional flow.  The *entry-fee* amounts may need to change as per business needs; keeping the number of such configuration points managable may be important.
 
