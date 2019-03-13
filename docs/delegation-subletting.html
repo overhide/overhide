@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>docs/delegation-subletting.html</title>
+  <link rel="stylesheet" href="styles/github.css">
+</head>
+<body>
+<h1>
+<a id="delegation-and-subletting" class="anchor" href="#delegation-and-subletting" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Delegation and Subletting</h1>
+<p><em>Delegation</em> and <em>subletting</em> are two features allowing for services where a service's user isn't forced to participate in <a href="../readme.html#remuneration-api">remunerating</a> the broker.</p>
+<p>Consider the following figure for the rest of this write-up.</p>
+<p><a href="images/delegate-sublet.svg" target="_blank" rel="noopener noreferrer"><img src="images/delegate-sublet.svg" alt="Given storage." style="max-width:100%;"></a></p>
+<p>The whole <em>overhide</em> broker's data storage contains a slice of storage for a <em>service-provider</em> and a separate sliver of storage as a <em>sublet</em> with some other user as the <em>sublet's</em> <em>subtenant</em>.  The <em>service-provider</em> owned storage contains a chunk made available as <em>delegate-data</em>.</p>
+<h2>
+<a id="delegate-data" class="anchor" href="#delegate-data" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Delegate Data</h2>
+<p>A <a href="identity.html#subscriptions">susbcriber</a> can specify <a href="glossary.html#segment-key">segment-keys</a> they own to be accessible by other users--other <em>subscribers</em> or <a href="glossary.html#invitee-visitor-guest">visitors</a>--such that each user has their own <em>partition</em> of data under the <em>segment-key</em>.</p>
+<p>Delegate data stored by a <em>segment-key</em> is meant to be accessed by a user who doesn't own the <em>segment-key</em>.</p>
+<p>Each delegate keeps their data completely separate from other delegates under the same <em>segment-key</em>.</p>
+<p>The <em>segment-key</em> owner controls:</p>
+<ul>
+<li>the names of delegated <em>segment-keys</em>
+</li>
+<li>the full life-cycle of delegated <em>segment-keys</em>: when they're migrated, deleted, otherwise made available</li>
+<li>storage allowance</li>
+<li>requisite <a href="broker.html#/definitions/DatastoreKeySettings">fees-schedule</a> to access</li>
+</ul>
+<p>Delegate data is well suited for service (application) specific metadata that needs to be available and independent for each user: the service (application) may not expect the user to furnish such metadata from their own storage.</p>
+<p>Delegate data coupled with delegated <a href="broker.html#tag-backchannel-queues">backchannel-queues</a> make available interesting workflows, e.g. user lobbies for an application.</p>
+<p>Also of note, having a service (application) depend on delegated <a href="glossary.html#segment-key">segment-keys</a> restricted by <a href="broker.html#/definitions/DatastoreKeySettings">fees-schedules</a> in critical paths of certain application workflows effectively act as authorization checks for different access tiers into the service.</p>
+<h2>
+<a id="sublet-data" class="anchor" href="#sublet-data" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Sublet Data</h2>
+<p>A <a href="identity.html#subscriptions">susbcriber</a> can specify a portion of their storage quotas for the benefit of a <em>subtenant</em>: another user of the broker.</p>
+<p><em>Subletting</em> doesn't specify what the data is--unlike <em>delegation</em> which specifies particular <em>segment-keys</em>.  <em>Subletting</em> merely gives a storage allowance to another user.</p>
+<p>Unlike <em>delegation</em>, the <em>subtenant</em> fully owns and controls this <em>sublet</em> data.</p>
+<p>The <em>subscriber</em> providing a <em>sublet</em> arrangement only controls whether they will allow users to use some of the <em>subscriber's</em> quotas should the meet very specific requirements as outlined in the <a href="broker.html#operation--sublet-put">PUT /sublet</a> API call.</p>
+<p>In essence the <em>subtenant</em> cannot have or own <em>overhide</em> data on this broker or any other broker to be eligible.</p>
+<p>The intent is to furnish a user with a sliver of data to continue with a service (application) should they not have any of their own.  It's meant to ease users into the service (application) without a hard requirement for them to come in with their own data storage.</p>
+<p>In <em>sublet</em> arrangements the <em>subtenants</em> are the owners of their own data so as not to diminish any value-propositions of the <em>overhide</em> system:  the users own their data--even if subsidized.</p>
+
+</body>
+</html>

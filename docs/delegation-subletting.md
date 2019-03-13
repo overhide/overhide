@@ -6,7 +6,7 @@ Consider the following figure for the rest of this write-up.
 
 ![Given storage.](images/delegate-sublet.svg)
 
-The whole *overhide* broker's data storage contains a slice of storage for a *service-provider* and a sliver of storage as a *sublet* with some other user as a *subtenant*.  The *service-provider* owned storage contains a chunk made available as *delegate-data*. 
+The whole *overhide* broker's data storage contains a slice of storage for a *service-provider* and a separate sliver of storage as a *sublet* with some other user as the *sublet's* *subtenant*.  The *service-provider* owned storage contains a chunk made available as *delegate-data*. 
 
 ## Delegate Data
 
@@ -14,7 +14,7 @@ A [susbcriber](identity.html#subscriptions) can specify [segment-keys](glossary.
 
 Delegate data stored by a *segment-key* is meant to be accessed by a user who doesn't own the *segment-key*.
 
-Each delegate keeps their data completely separate from other delegates under the same segment-key.
+Each delegate keeps their data completely separate from other delegates under the same *segment-key*.
 
 The *segment-key* owner controls:
 
@@ -31,7 +31,7 @@ Also of note, having a service (application) depend on delegated [segment-keys](
 
 ## Sublet Data
 
-A [susbcriber](identity.html#subscriptions) can specify a portion of their storage quotas for the benefit of a subtenant: another user of the broker.
+A [susbcriber](identity.html#subscriptions) can specify a portion of their storage quotas for the benefit of a *subtenant*: another user of the broker.
 
 *Subletting* doesn't specify what the data is--unlike *delegation* which specifies particular *segment-keys*.  *Subletting* merely gives a storage allowance to another user.
 
@@ -43,4 +43,4 @@ In essence the *subtenant* cannot have or own *overhide* data on this broker or 
 
 The intent is to furnish a user with a sliver of data to continue with a service (application) should they not have any of their own.  It's meant to ease users into the service (application) without a hard requirement for them to come in with their own data storage.
 
-The arrangement still makes the user the owner of the data so as not to take any value-propositions away from the *overhide* system:  the user owns their data--even if subsidized.
+In *sublet* arrangements the *subtenants* are the owners of their own data so as not to diminish any value-propositions of the *overhide* system:  the users own their data--even if subsidized.

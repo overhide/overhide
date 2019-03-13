@@ -150,4 +150,4 @@ This is a selection of pages you can link to from your application or service to
 
 ["We let your data be yours" pamphlet](docs/your-data-be-yours.html).
 
-Note that there is no such pamphlet for [delegate data](docs/glossary.html#delegate-key) access.  [Delegate data](docs/glossary.html#delegate-key) access is necessary for ease of onboarding, usability, and convenience; but its use should be limited in scope and users should be encouraged to bring their own data.
+Note that there is no such pamphlet for [delegate data](docs/delegation-subletting.md) access.  [Delegate data](docs/delegation-subletting.md) access is necessary for ease of onboarding, usability, and convenience; but its use should be limited in scope and users should be encouraged to bring their own data.
