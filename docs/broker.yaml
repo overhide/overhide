@@ -109,7 +109,7 @@ tags:
       given [identity](glossary.html#identity).
   - name: subletting
     description: |
-      Subletting is one of two features allowing for services where a service's user isn't forced to participate in [remunerating the broker](remuneration-api.html).  The other such feature is [delegates](#tag-delegate).   Read more about *subletting* in the [delegates and subletting write-up](delegates-subletting.md)
+      Subletting is one of two features allowing for services where a service's user isn't forced to participate in [remunerating the broker](remuneration-api.html).  The other such feature is [delegates](#tag-delegate).   Read more about *subletting* in the [delegates and subletting write-up](delegation-subletting.md)
       
       These APIs allow a *subscriber* (some user) to transfer some of their storage quotas for the benefit of a *subtenant* (another user).
 
@@ -124,7 +124,7 @@ tags:
       Publishing messages to backchannel queues, subscribing to notifications, and de-queueing the messages.
   - name: delegate
     description: |
-      Delegates are one of two features allowing for services where a service's user isn't forced to participate in [remunerating the broker](remuneration-api.html).  The other such feature is [subletting](#tag-subletting).  Read more about *delegation* in the [delegates and subletting write-up](delegates-subletting.md)
+      Delegates are one of two features allowing for services where a service's user isn't forced to participate in [remunerating the broker](remuneration-api.html).  The other such feature is [subletting](#tag-subletting).  Read more about *delegation* in the [delegates and subletting write-up](delegation-subletting.md)
 
       Delegate data stored by a [segment-key](glossary.html#segment-key) is meant to be accessed by a user who doesn't own the [segment-key](glossary.html#segment-key). 
 

@@ -408,7 +408,7 @@ It is recommended delegate data be only used for limited service-specific metada
 
 Delegate [data access](broker.html#tag-delegate) and [backchannel messaging](broker.html#tag-backchannel-queues) are made available after a [guest login](broker.html#operation--auth-guest-credentials-put).
 
-Read more about *delegation* in the [delegates and subletting write-up](delegates-subletting.md)
+Read more about *delegation* in the [delegates and subletting write-up](delegation-subletting.md)
 
 Review *delegation* APIs under [delegates](broker.html#tag-delegate) and [backchannel-queues](broker.html#tag-backchannel-queues) tags.
 
@@ -418,7 +418,7 @@ Data and backchannel message queues can be qualified with a delegate *identity*.
 
 This means multiple delegates may write into a *datastore-key* and not clobber the other's delegate's data.  The non-delegated data is also left untouched.
 
-Read more about *delegation* in the [delegates and subletting write-up](delegates-subletting.md)
+Read more about *delegation* in the [delegates and subletting write-up](delegation-subletting.md)
 
 Review *delegation* APIs under [delegates](broker.html#tag-delegate) and [backchannel-queues](broker.html#tag-backchannel-queues) tags.
 
@@ -434,7 +434,7 @@ A *visitor* is authenticated with their valid address on an accepted [remunerati
 
 A *subscriber* may restrict access to their *segment-keys* pending sufficient transactions from a *visitor's* *user-address* to the *subscriber's* *user-address*.
 
-Read more about *delegation* in the [delegates and subletting write-up](delegates-subletting.md)
+Read more about *delegation* in the [delegates and subletting write-up](delegation-subletting.md)
 
 Review *delegation* APIs under [delegates](broker.html#tag-delegate) and [backchannel-queues](broker.html#tag-backchannel-queues) tags.
 
@@ -452,7 +452,7 @@ The [PUT /sublet](broker.html#operation--sublet-put) API method enumerates const
 
 A *subtenant* can access their data as long as the *subscriber* continues to *sublet*, or if the *subtenant* starts [remunerating](remuneration-api.md) the broker and converts to a [subscriber](identity.html#subscriptions) themselves.
 
-Read more about benefits in the [delegates and subletting write-up](delegates-subletting.md)
+Read more about benefits in the [delegates and subletting write-up](delegation-subletting.md)
 
 Review *subletting* APIs under the [subletting](broker.html#tag-subletting) tag.
 
@@ -487,6 +487,8 @@ If the latest value of a *datastore-key* is only in volatile memory (RAM) of the
 If the latest value of a *datastore-key* has been persisted to the broker's non-volatile storage (HDD/NAS), it's considered to be in "permanent-memory".  Reads against other passive *data-stewards* will not return the latest value.  The value will be lost if the broker's permanent storage is corrupted.
 
 If the latest value of a *datastore-key* has been shared to the decentralized persistence network--making it available to other peers--it's considered to be in "shared-memory"--reads against other passive *data-stewards* will return this latest value.  
+
+Use the [GET /{segment-key}/persistence-status](broker.html#operation---segment-key--persistence-status-get) API call to determine *persistence-status* of a *segment-key*.
 
 #### broker lookup
 
