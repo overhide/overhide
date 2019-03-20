@@ -695,6 +695,27 @@ paths:
             This broker's [broker-address](glossary.html#broker-address) for the remuneration-provider used by caller's identity.
         429:
           $ref: "#/responses/429"
+  /capabilities/version:
+    get:
+      summary: Retrieve this broker's API version.
+      description: |
+        Retrieve this broker's API version.
+      tags:
+        - capabilities
+      produces:
+        - text/plain
+      responses:
+        200:
+          description: |
+            This broker's API version as: `implementation:version:qualifier`.
+
+            *implementation* is a tag identifying broker instance implementer (brand).
+
+            *version* is *overhide* version implemented (version of this document).
+
+            *qualifier* is a version qualifying tag (e.g. `wip`, `alpha`, `beta`, `dev`, `stable`).
+        429:
+          $ref: "#/responses/429"
   /broker-lookup/{user-address}:
     get:
       summary: Resolve user-addres to broker host name or IP.
@@ -912,6 +933,15 @@ paths:
           $ref: "#/responses/409-identity-conflict"
         429:
           $ref: "#/responses/429"
+        449:
+          description: |
+            Retry With:
+
+            The response body contains a string.
+
+            Retry this request with *secret-phrase* set to the response string and *secret-phrase-signed* be a signature of the respons string.
+
+            Receiving this response is dependent on broker-specific heuristics.  The broker may challenge the client with this response (always, sometimes, never).  
   /auth/authorities:
     get:
       summary: Retrieves authorities for an [identity](glossary.html#identity).
@@ -1060,6 +1090,15 @@ paths:
           $ref: "#/responses/409-identity-conflict"
         429:
           $ref: "#/responses/429"
+        449:
+          description: |
+            Retry With:
+
+            The response body contains a string.
+
+            Retry this request with *invitee-secret-phrase* set to the response string and *invitee-secret-phrase-signed* be a signature of the respons string.
+
+            Receiving this response is dependent on broker-specific heuristics.  The broker may challenge the client with this response (always, sometimes, never).  
   /auth/changed-credentials:
     put:
       summary: Change authentication of token's user.

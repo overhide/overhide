@@ -104,11 +104,15 @@ Helping maintain users' data ownership is a major task of *overhide*; however, n
 
 ## [overhide.js](docs/overhide.js.md)
 
+> The *overhide.js* library is currently being shaped into a *minimally viable product* before first release.  There is a [subset of features planned](docs/mvp.md) to be released.
+
 This [overhide.js JavaScript client library](docs/overhide.js.md) provides the client implementation of the [*overhide* APIs](#broker-api).  [The library](docs/overhide.js.md) benefits app/service developers in the standard ways.
 
 By convention [this library](docs/overhide.js.md) is to be provided in the global context via an `overhide` object.
 
 ## overhide.c
+
+> The *overhide.c* library is on a back-burner pending *minimally viable product* release of other components.
 
 The *overhide.c* linkable client library provides the client implementation of the [*overhide* APIs](#broker-api) externalized as *C* calls.  The library doesn't provide widgets such as the [keybiner](#secrets-and-the-keybiner) or abstraction of [*wallets*](docs/glossary.md#wallet), but smooths out broker interaction with a plethora of languages--C/C++, Golang, Python, etc.; the world is not just JavaScript and peaches.
 
@@ -131,6 +135,8 @@ Users do not need to carry around and make available their data-hosting broker i
 ## [Broker API](docs/broker.html)
 
 An [API](docs/broker.html) exposed by *overhide* broker, provides access to broker's services.
+
+> An *overhide.io* broker instance with a [*minimally viable product* feature-set](docs/mvp.md) is planned first.
 
 ## [Remuneration API](docs/remuneration-api.html)
 

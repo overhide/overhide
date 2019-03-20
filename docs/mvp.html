@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>docs/mvp.html</title>
+  <link rel="stylesheet" href="styles/github.css">
+</head>
+<body>
+<h1>
+<a id="minimally-viable-product-feature-set" class="anchor" href="#minimally-viable-product-feature-set" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Minimally Viable Product Feature Set</h1>
+<blockquote>
+<p>ETA: a number of months</p>
+</blockquote>
+<p>The following features are planned as part of the first release.</p>
+<p>The rest of the features will be put on the backlog and implemented in the future after MVP release, namely:</p>
+<ul>
+<li>stewardship</li>
+<li>migration</li>
+<li>delegation</li>
+<li>metrics</li>
+</ul>
+<p>All feature assume inclusion of both relevant <a href="broker.html">broker API</a> implementation and relevant <a href="overhide.js.html">overhide.js</a> implementation.</p>
+<h2>
+<a id="features-planned-for-mvp" class="anchor" href="#features-planned-for-mvp" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Features Planned for MVP</h2>
+<h3>
+<a id="ohjs" class="anchor" href="#ohjs" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>oh$.js</h3>
+<ul>
+<li>implement <a href="glossary.html#keybiner--keyrings">keybiner</a> as iframe
+<ul>
+<li>
+<a href="">oh$.js</a> events</li>
+</ul>
+</li>
+<li>integrate into <a href="https://ohledger.com" rel="nofollow">ohledger</a>
+</li>
+</ul>
+<h3>
+<a id="overhidejs" class="anchor" href="#overhidejs" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>overhide.js</h3>
+<ul>
+<li><a href="glossary.html#secrets">secrets</a></li>
+</ul>
+<h3>
+<a id="broker--overhidejs" class="anchor" href="#broker--overhidejs" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>broker + overhide.js</h3>
+<ul>
+<li><a href="broker.html#tag-capabilities">capabilities</a></li>
+<li><a href="broker.html#tag-flow-control">flow-control</a></li>
+<li><a href="broker.html#tag-broker-lookup">broker-lookup</a></li>
+<li>portions of <a href="broker.html#tag-auth">auth</a>
+<ul>
+<li><a href="broker.html#operation--auth-credentials-put">PUT /auth/credentials</a></li>
+<li><a href="broker.html#operation--auth-authorities-get">GET /auth/authorities</a></li>
+<li><a href="broker.html#operation--auth-changed-credentials-put">PUT /auth/changed-credentials</a></li>
+<li><a href="broker.html#operation--auth--remuneration-key---from-address---to-address--transactions-get">GET /auth/{remuneration-key}/{from-address}/{to-address}/transactions</a></li>
+</ul>
+</li>
+<li><a href="broker.html#tag-subletting">subletting</a></li>
+<li><a href="broker.html#tag-data">data</a></li>
+<li><a href="broker.html#operation-post-message-WIRE">backchannel queues</a></li>
+<li>portions of <a href="broker.html#tag-data-stewardship">data-stewardship</a>:
+<ul>
+<li><a href="broker.html#operation---segment-key--persistence-status-get">GET /{segment-key}/persistence-status</a></li>
+<li><a href="broker.html#operation--guids-put">PUT /guids</a></li>
+<li><a href="broker.html#operation--guids-get">GET /guids</a></li>
+<li><a href="broker.html#operation--latest-snapshot-id--guid--get">GET /latest-snapshot-id/{guid}</a></li>
+</ul>
+</li>
+<li>portions of <a href="broker.html#tag-metrics">metrics</a>
+<ul>
+<li><a href="broker.html#operation-segment-keys-WIRE">WIRE segment-keys</a></li>
+</ul>
+</li>
+</ul>
+
+</body>
+</html>
