@@ -52,9 +52,9 @@ It's unlikely that private signing keys of a public ledger will be made availabl
 
 The *keybiner* can be made available in any browser login page as a modal.  It opens in an `iframe` tied to the *overhide.io* domain, which--if the user uses a properly secured up-to-date browser--ensures the secrets managed by the *keybiner* are not leaked outside.
 
-The *keybiner* is a browser-only solution provided by [oh$.js](https://github.com/overhide/overhide-remuneration.js) as abstracted by the [*overhide.js*](https://github.com/JakubNer/overhide.js) library.  As such the *keybiner* sits alongside in-browser *wallet* implementations and simplifies logins.
+The *keybiner* is a browser-only solution provided by [ledgers.js](https://github.com/overhide/overhide-remuneration.js) as abstracted by the [*overhide.js*](https://github.com/JakubNer/overhide.js) library.  As such the *keybiner* sits alongside in-browser *wallet* implementations and simplifies logins.
 
-[Native](../readme.html#overhidec) applications need necessarily leverage Web rendering layers--some sort of a Web view--in order to leverage the *keybiner*, [oh$.js](https://github.com/overhide/overhide-remuneration.js), and related wallets.
+[Native](../readme.html#overhidec) applications need necessarily leverage Web rendering layers--some sort of a Web view--in order to leverage the *keybiner*, [ledgers.js](https://github.com/overhide/overhide-remuneration.js), and related wallets.
 
 ### High Level Data and Workflow Overview
 

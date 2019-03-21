@@ -15,10 +15,9 @@ All feature assume inclusion of both relevant [broker API](broker.html) implemen
 
 ## Features Planned for MVP
 
-### oh$.js
+### ledgers.js
 
-* implement [keybiner](glossary.html#keybiner--keyrings) as iframe
-    * [oh$.js]() events
+* implement [keybiner](glossary.html#keybiner--keyrings)
 * integrate into [ohledger](https://ohledger.com)
 
 ### overhide.js
