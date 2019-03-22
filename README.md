@@ -1,4 +1,6 @@
-# ![](docs/images/logo-sm.png) *overhide*  
+<p align="center"><a href="https://github.com/overhide"><img src="docs/images/logo.png" width="200px"/></a></p>
+
+# overhide
 
 *Over*tly *hide*: a system to store users' clandestine data within their purview and to enable rich collaborative services without the cost of private and proprietary infrastructure.
 
