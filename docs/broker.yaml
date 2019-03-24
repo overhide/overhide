@@ -8,7 +8,7 @@ info:
   description: |
     This is the API contract expected to be exposed by an overhide "broker".  This API is represented by the green "broker API" connector in the overhide component model:
 
-    ![overhide component model](https://github.com/JakubNer/overhide/raw/master/docs/images/provided.png)
+    ![overhide component model](images/provided.png)
 
     Read this API with reference to the [glossary](glossary.html).
 
@@ -58,7 +58,7 @@ tags:
 
       The various flow-control events are modeled below:
 
-      ![overhide flow-control infographic](https://github.com/JakubNer/overhide/raw/master/docs/images/flowcontrol.png)
+      ![overhide flow-control infographic](images/flowcontrol.png)
 
       Before the *client* can exchange data with the *overhide broker* it needs to authenticate and handshake.
 
@@ -90,7 +90,7 @@ tags:
 
       As such *broker-lookup* works in conjunction with [data-stewardship](#tag-data-stewardship) APIs and [data-stewardship](#tag-data-stewardship) benefits greatly from *broker-lookup*. 
 
-      ![broker-lookup sequence](https://github.com/JakubNer/overhide/raw/master/docs/images/broker-lookup.png)      
+      ![broker-lookup sequence](images/broker-lookup.png)      
 
       These APIs are optionally implemented by brokers.  The user's [active broker](glossary.html#data-steward) and the broker used to resolve a lookup (perhaps one and the same) need to support *broker-lookup* with all the supported [remuneration-keys](#/definitions/RemunerationKey): i.e. these APIs cannot return 405 -- "Method Not Allowed".
 
@@ -188,7 +188,7 @@ tags:
 
       Consider the following sequence modelling *overhide* API calls required to associate user data with two *overhide* brokers; one designated as an [active data steward](glossary.html#data-steward) and one designated to be a [passive data steward](glossary.html#data-steward).
 
-      ![overhide designation of stewards infographic](https://github.com/JakubNer/overhide/raw/master/docs/images/designate-stewards.png)
+      ![overhide designation of stewards infographic](images/designate-stewards.png)
 
       In this sequence the *client* subscribes to *broker 1* and authenticates [1].  It's important to note that the first time a new user authenticates to a broker a new set of [GUIDs](#/definitions/GUID) is generated pointing to the user's data on the broker's distributed persistence network (e.g. [IPFS](https://ipfs.io/) "names" PKI pair for [IPFS](https://ipfs.io/)).
 
@@ -212,7 +212,7 @@ tags:
 
       This use case leverages *broker-lookup* and a *distributed persistence network* (e.g. [IPFS](decentralization.html#overview-of-overhide-reference-implementation-and-ipfs)) for the migration.
 
-      ![overhide disassociation from steward using persistence network infographic](https://github.com/JakubNer/overhide/raw/master/docs/images/steward-disassociation.png)
+      ![overhide disassociation from steward using persistence network infographic](images/steward-disassociation.png)
 
       We start with *broker 1* being the [active data steward](glossary.html#data-steward) and *broker 2* being the [passive data steward](glossary.html#data-steward).  Use of *broker-lookup* with `GET /broker-lookup` [1] indicates *broker 1* as the *activeBrokerHost* to the *client*.  The *client* works with *broker 1* [2] and *broker 2* is eventually consistent via the *distributed persistence network* [2.1,2.1.1].
 
@@ -240,7 +240,7 @@ tags:
 
       In this use case we accomplish the same migration over-the-top without use of a *distributed persistence network*.  This works for all your data; [opted-in](#operation--auth-opt-in--agree--put) and not.
 
-      ![overhide disassociation from steward using export+fill infographic](https://github.com/JakubNer/overhide/raw/master/docs/images/steward-export-fill.png)
+      ![overhide disassociation from steward using export+fill infographic](images/steward-export-fill.png)
 
       The use case starts with *broker 1* as the active broker and *broker 2* is not in the picture.  The *client* works with *broker 1* [1,2].
 
@@ -262,7 +262,7 @@ tags:
 
       For completeness, this use case describes the most basic over-the-top data migration that does interrupt the user's access to their data.  This use case is likely practical when a single user is migrating their data and they're fine waiting for their data to [export](#operation-export-WIRE) and [import](#operation-import-WIRE) before continuing to use it.  Contrast this to the previous use cases--which are likely more practical when the data migrating user is a service provider--whose data is being accessed by many other users (e.g. [delegtes](glossary.html#delegate-key)) while the migration is in progress.
 
-      ![overhide disassociation from steward using export+import infographic](https://github.com/JakubNer/overhide/raw/master/docs/images/steward-export-import.png)
+      ![overhide disassociation from steward using export+import infographic](images/steward-export-import.png)
 
       The sequence is similar to the previous use cases with two notable differences.  First difference being the *ERROR* in writing data during the migration [6].  Second difference being the [import](#operation-import-WIRE) call [9].  This call clobbers all data on *broker 2* with the import payload.
 
