@@ -148,7 +148,7 @@ The *overhide* [Remuneration API](docs/remuneration-api.md) enables [ledger-base
 
 An example of *overhide* [applicability](docs/state-funnel.md) to a problem customairly solved with a relational database in the back-end.
 
-## Tell Your Users
+## [Tell Your Users](docs/your-data-be-yours.md)
 
 The following page contains assets to include and link into your application or service--to tell your users that:
 
