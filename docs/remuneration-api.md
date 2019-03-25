@@ -8,7 +8,7 @@ The *overhide* Remuneration API enables this [ledger-based authorization](https:
 
 It is an API of a handful of HTTP methods exposed by various ledgers--blockchain and otherwise.
 
-All *remuneration providers* expose an identical API contract: [just two methods](remuneration.md): this is the static version of the [API](remuneration.md) scrubbed from the *overhide* Rinkeby Ethereum *remuneration provider*.
+All *remuneration providers* expose an identical API contract: [just two methods](https://overhide.github.io/overhide/docs/remuneration.html): this is the static version of the [API](https://overhide.github.io/overhide/docs/remuneration.html) scrubbed from the *overhide* Rinkeby Ethereum *remuneration provider*.
 
 At this moment we have the following *overhide* remuneration providers exposing "live" API documentation:
 
