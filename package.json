@@ -20,6 +20,7 @@
     "copy:broker": "copyfiles -f docs/images/** docs/.generated/broker/images",
     "pack:broker": "html-inline docs/.generated/broker/index.html > docs/broker.html",
     "pack:remuneration": "html-inline docs/.generated/remuneration/index.html > docs/remuneration.html",
-    "all": "npm run build:broker & npm run copy:broker & npm run build:remuneration & npm run pack:broker & npm run pack:remuneration"
+    "mangle:broker": "replace-in-file /options/gi WIRE docs/broker.html --isRegex",
+    "all": "npm run build:broker & npm run copy:broker & npm run build:remuneration & npm run pack:broker & npm run pack:remuneration & npm run mangle:broker"
   }
 }

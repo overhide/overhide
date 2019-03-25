@@ -45,7 +45,7 @@ The SHA-256 content-hashes of any [segment-key](glossary.md#segment-key) value c
 
 ## *Client-Driven* Quasi-Decentralization
 
-A user has ultimate control over their data.  A core-value of *overhide* is that users are always able to extract all of their data from any *overhide* system (provided they know their credentials).  The data may be exported from one *overhide* system and imported into another--presumably with incompatible underlying *distributed persistence network*s.  Users can leverage tooling that uses the [import](https://overhide.github.io/overhide/docs/broker.html#operation-import-options)/[export](https://overhide.github.io/overhide/docs/broker.html#operation-export-options) functionality of *overhide* broker APIs to extract all their data so they can do with it as they please.  That's a contractual obligation on a proper *overhide* broker implementation.
+A user has ultimate control over their data.  A core-value of *overhide* is that users are always able to extract all of their data from any *overhide* system (provided they know their credentials).  The data may be exported from one *overhide* system and imported into another--presumably with incompatible underlying *distributed persistence network*s.  Users can leverage tooling that uses the [import](https://overhide.github.io/overhide/docs/broker.html#operation-import-WIRE)/[export](https://overhide.github.io/overhide/docs/broker.html#operation-export-WIRE) functionality of *overhide* broker APIs to extract all their data so they can do with it as they please.  That's a contractual obligation on a proper *overhide* broker implementation.
 
 ![import/export only](images/import-export.gif) 
 

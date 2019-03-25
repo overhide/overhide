@@ -36,11 +36,11 @@ All feature assume inclusion of both relevant [broker API](https://overhide.gith
     * [GET /auth/{remuneration-key}/{from-address}/{to-address}/transactions](https://overhide.github.io/overhide/docs/broker.html#operation--auth--remuneration-key---from-address---to-address--transactions-get)
 * [subletting](https://overhide.github.io/overhide/docs/broker.html#tag-subletting)
 * [data](https://overhide.github.io/overhide/docs/broker.html#tag-data)
-* [backchannel queues](https://overhide.github.io/overhide/docs/broker.html#operation-post-message-options)
+* [backchannel queues](https://overhide.github.io/overhide/docs/broker.html#operation-post-message-WIRE)
 * portions of [data-stewardship](https://overhide.github.io/overhide/docs/broker.html#tag-data-stewardship):
     * [GET /{segment-key}/persistence-status](https://overhide.github.io/overhide/docs/broker.html#operation---segment-key--persistence-status-get)
     * [PUT /guids](https://overhide.github.io/overhide/docs/broker.html#operation--guids-put)
     * [GET /guids](https://overhide.github.io/overhide/docs/broker.html#operation--guids-get)
     * [GET /latest-snapshot-id/{guid}](https://overhide.github.io/overhide/docs/broker.html#operation--latest-snapshot-id--guid--get)
 * portions of [metrics](https://overhide.github.io/overhide/docs/broker.html#tag-metrics)
-    * [WIRE segment-keys](https://overhide.github.io/overhide/docs/broker.html#operation-segment-keys-options)
+    * [WIRE segment-keys](https://overhide.github.io/overhide/docs/broker.html#operation-segment-keys-WIRE)
