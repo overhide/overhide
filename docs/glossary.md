@@ -233,13 +233,13 @@ It also contains *private-keys* used to sign transactions on behalf of the publi
 
 See the [overhide.js  write-up](overhide.js.md).
 
-#### keybiner & keyrings
+#### keybiner
 
 See the [secrets write-up](secrets-keybiner.md).
 
 > (canonical)
 >
-> A *keybiner* is a collection of *keyrings*.  A *keyring* is a collection of related credentials and metadata needed to access a single service or application: crypto key-pairs or *wallet* references, a *secret-phrase*, a *secrets-seed*, metadata for a particular *overhide* broker system and [remuneration provider](remuneration-api.md).  I.e. a *keyring* is a set of keys for a particular purpose grouped together.
+> A *keybiner* is a collection of related credentials and metadata needed to access a single service or application: crypto key-pairs or *wallet* references, a *secret-phrase*, a *secrets-seed*, metadata for a particular *overhide* broker system and [remuneration provider](remuneration-api.md).  I.e. a *keybiner* is a set of keys for a particular purpose grouped together.
 
 #### domain-key
 

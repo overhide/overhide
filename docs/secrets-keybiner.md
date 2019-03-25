@@ -1,4 +1,4 @@
-# Secrets and the Keybiner
+# Secrets and [the Keybiner](https://github.com/overhide/keybiner.js)
 
 ## Secrets
 
@@ -28,61 +28,42 @@ Lastly we need to store the data encrypted by our *secret-seed* in a broker we a
 
 At this point the user is working with their data.  
 
-There are a lot of values at play and not all of them are obviously evident to the uninitiated.  Juggling all these values might be palatable when a user is signing onto a service, but certainly not on each and every login into the service.  To help users with all these values *overhide* provides a widget called the *keybiner*.
+There are a lot of values at play and not all of them are obviously evident to the uninitiated.  Juggling all these values might be palatable when a user is signing onto a service, but certainly not on each and every login into the service.  To help users with all these values *overhide* provides a widget called the [keybiner](https://github.com/overhide/keybiner.js).
 
-## Keybiner
+## [Keybiner](https://github.com/overhide/keybiner.js)
 
-Consider that all the *values* introduced in the previous section are grouped together into *keyrings*: one *keyring* per all *values* for a single service (application).
+Consider that all the *values* introduced in the previous section can be handled together as a group: a [keybiner](https://github.com/overhide/keybiner.js) of all *values* for a single service (application).
 
-Consider further that each *keyring* is accessed with a single human-friendly *value*:  the *secret-seed*:  the same *secret-seed* used to generate [secrets](glossary.md#secrets).
+The concept is simple, make a multitude of related configuration points--that might as well be Greek to most users--into a single token that's just as obscure, but at least is easy to select, copy, manage.
+
+A [keybiner](https://github.com/overhide/keybiner.js) is a single BASE64 string that can be encrypted, stored, and moved around easily:
+
+* stored in browser password manager / auto-fill
+* stored in online password manager like [LastPass](https://www.lastpass.com)
+* stored in mobile password manager
+* encrypted and copied to clipboard
+* encrypted and emailed to oneself for import into other browsers
+
+A [keybiner](https://github.com/overhide/keybiner.js) string is as single value, a single form input--although obfuscated--that's immediately interchangeable with many values, many form inputs.
 
 ![Keybiner](images/keybiner.svg)
 
-In the above figure we see the same *values* except they are sourced from the *keybiner* instead of our fallible user.  The user is just responsible for two things: remembering to use the *keybiner* and remembering the *secret-seed*.  Even then, remembering to use the *keybiner* is a non-issue as the service (application) can provide a button to open the widget.
+In the above figure we see the same *values* from before, except they are grouped together under a [keybiner](https://github.com/overhide/keybiner.js).  The user is responsible for providing just this one token.  Should a user desire convenience, remembering to use a specific [keybiner](https://github.com/overhide/keybiner.js) on a Web site is likely a non-issue, as it's an easily detectable (by the browser) form auto-fill; a password-manager trigger.
 
-Another notable utility in the above figure is the use of the [broker-lookup](lookup.md) to resolve the user's [public-address](glossary.md#user-address) into the *active-broker-host* value.  It's an indirection allowing for some data-mobility and less responsibility on the *keybiner*.
+Relating back to *overhide* specific application--a [keybiner](https://github.com/overhide/keybiner.js) is a collection of related credentials and metadata needed to access a single service or application: crypto key-pairs or *wallet* references, a *secret-phrase*, a *secrets-seed*, metadata for a particular *overhide* broker system and [remuneration provider](remuneration-api.md).  Again, a [keybiner](https://github.com/overhide/keybiner.js) is a set of keys for a particular purpose grouped together.
 
-A *keybiner* is a collection of *keyrings*.  A *keyring* is a collection of related credentials and metadata needed to access a single service or application: crypto key-pairs or *wallet* references, a *secret-phrase*, a *secrets-seed*, metadata for a particular *overhide* broker system and [remuneration provider](remuneration-api.md).  I.e. a *keyring* is a set of keys for a particular purpose grouped together.
+> [*Aside*]
+>
+> Another notable utility in the above figure is the use of the [broker-lookup](lookup.md) to resolve the user's [public-address](glossary.md#user-address) into the *active-broker-host* value.  It's an indirection allowing for some data-mobility and less responsibility on the [keybiner](https://github.com/overhide/keybiner.js).
 
-An application will repetitively access a particular *overhide* broker instance with a particular ledger public key (address) for identification.  The corresponding ledger private key--unless provided by a *wallet*--is also needed on-hand--only in-browser--for signatures.  Furthermore, a subset of user's data used in the application is encrypted with *secrets* which are reconstructed from some human friendly *secrets-seed*; that's also required.  For convenience, better user experience, better application flow, it's desirable to store all these identifiers and tokens on the client machine, e.g. in the client browser.  All these identifiers and tokens for a single purpose comprise a *keyring*.  Multiple such *keyrings* are stored in the client's *keybiner*.
-
-It's unlikely that private signing keys of a public ledger will be made available to the *keybiner*; they will be kept in the user's *wallets*.  As such the *keyrings* may not store the keys themselves, but references to the keys in their particular *wallet*.
+An application will repetitively access a particular *overhide* broker instance with a particular ledger public key (address) for identification.  The corresponding ledger private key--unless provided by a *wallet*--is also needed on-hand--only in-browser--for signatures.  Furthermore, a subset of user's data used in the application is encrypted with *secrets* which are reconstructed from some human friendly *secrets-seed*; that's also required.  For convenience, better user experience, better application flow, it's desirable to store all these identifiers and tokens on the client machine, e.g. in the client browser.  All these identifiers and tokens for a single purpose comprise a [keybiner](https://github.com/overhide/keybiner.js).  Multiple such [keybiners](https://github.com/overhide/keybiner.js) may stored in the client's browser, identifiable by domain.
 
 ### In-Browser Helper
 
-The *keybiner* can be made available in any browser login page as a modal.  It opens in an `iframe` tied to the *overhide.io* domain, which--if the user uses a properly secured up-to-date browser--ensures the secrets managed by the *keybiner* are not leaked outside.
+The [keybiner](https://github.com/overhide/keybiner.js) can be made available in any browser login page as a widget.  
 
-The *keybiner* is a browser-only solution provided by [ledgers.js](https://www.npmjs.com/package/ledgers.js) as abstracted by the [*overhide.js*](https://github.com/overhide/overhide.js) library.  As such the *keybiner* sits alongside in-browser *wallet* implementations and simplifies logins.
+The [keybiner](https://github.com/overhide/keybiner.js) is a browser-only solution provided by [keybiner.js](https://github.com/overhide/keybiner.js).
 
-[Native](https://github.com/overhide/overhide#overhidec) applications need necessarily leverage Web rendering layers--some sort of a Web view--in order to leverage the *keybiner*, [ledgers.js](https://www.npmjs.com/package/ledgers.js), and related wallets.
+[Native](https://github.com/overhide/overhide#overhidec) applications need necessarily leverage Web rendering layers--some sort of a Web view--in order to leverage the [keybiner](https://github.com/overhide/keybiner.js), [ledgers.js](https://www.npmjs.com/package/ledgers.js), and related wallets.  
 
-### High Level Data and Workflow Overview
-
-A model of *keybiner*'s data is reproduced below:
-
-```
- 'keybiner': {'keyring1':{
-                'brokerHostName':'..',
-                'remunerationProviderReference':'..',
-                'userAddress':'..',
-                'userPrivateKeyOrReference':'..',
-                'secretPhrase':'..'
-              },
-              'keyring2':{..},
-              ...
-              'keyringN':{..}}
-```
-
-Each *keyring* has an alias; "keyring1", "keyring2", "keyringN" above.  These are user friendly names, they can be thought of as the user's tags for each *keyring*.  These can tag a particular *keyring* to a specific service or application.  The *keybiner* symmetrically encrypts the value under each *keyring*: each value is AES 256 encrypted with the same *secrets-seed* used to generate *secrets* to encrypt and decrypt service data targeted by the *keyring*.  
-
-When users log into a service for the first time they provide their *public-address* and *secret-key* from some [ledger](remuneration-api.md); whether from a *wallet* or otherwise.  They optionally specify a broker hostname (or IP) unless leveraging data [delegation](delegation-subletting.md) or [subletting](delegation-subletting.md).  Finally they type in a *secret-phrase* for the broker, *secrets-seed* for the data, and a unique tag.  All this metadata is sent to the *keybiner*: *overhide.io* bound iframe off of the login page.  In the *keybiner* the data is symmetrically encrypted with the *secrets-seed* and stored in the browser's *localstorage*.  The user logs into the service.
-
-Upon a return visit to the service they user pops-open the *keybiner* from the login page and types in their *secrets-seed*.  All *keyrings* in this browser's *keybiner* *localstorage* attempt to decrypt.  All successfully decrypted *keyrings* are shown.  The user can select the appropriate tag to send all the metadata to the login page.  Hence the the symmetric *secrets-seed* and choice of *tag* are the access credentials--all local to the browser.  From this point forward the application has all the information it needs to synchronize with the specified *overhide* instance ('brokerUrl').  
-
-The *overhide.js* JavaScript library makes available the *keybiner* module for use by Web applications running in browsers.  The *keybiner* uses *localstorage* to store *keyrings*.  As such browser security restrictions imply *keyrings* are tied to the *keybiner's* domain:  *overhide.io*.
-
-Each *keyring* can be exported or re-setup from scratch--it's a convenience store to aid end-user experience.  For example:
-
-* an end-user can export their *keybiner* as an encrypted file, store it in the cloud, import it into another browser
-* an end-user can encrypt their *keybiner* and email themselves; opening the email on another device and pasting the contents into another browser's *keybiner*
-* an end-user can pop-up a QR code of a *keyring* on their screen and use their mobile camera to setup the *keyring* in their mobile browser's *keybiner*
+However; the [keybiner](https://github.com/overhide/keybiner.js) is a single easy to copy token, making a custom native service provisioning simpler.
