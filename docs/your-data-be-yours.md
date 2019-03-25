@@ -10,6 +10,16 @@ All assets available in the [images/byod/ folder](images/byod/).
 
 Keep in mind that these assets don't apply to [delegate data](delegation-subletting.md) access.  [Delegate data](delegation-subletting.md) access is necessary for ease of onboarding, usability, and convenience; but its use should be limited in scope and users should be encouraged to bring their own data.
 
+## Logo
+
+### Small
+
+![](images/byod/logo-sm.png)
+
+### Regular
+
+![](images/byod/logo.png)
+
 ## Detailed ([SVG](images/byod/oh-byod-detailed.svg))([PNG](images/byod/oh-byod-detailed.png))
 
 ![](images/byod/oh-byod-detailed.png)
