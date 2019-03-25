@@ -84,7 +84,7 @@ The above benefits can only be reaped for certain expected use-cases of a "servi
 
 Click through the flowchart below and decide how to jump around this material.
 
-!["Where To?" Flowchart](docs/images/where-to.svg)
+[!["Where To?" Flowchart](docs/images/where-to.svg)](https://overhide.github.io/overhide/docs/images/where-to.svg)
 
 ## [Glossary & Notation + Canonical Specifications](docs/glossary.md)
 
