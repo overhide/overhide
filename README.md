@@ -150,12 +150,12 @@ An example of *overhide* [applicability](docs/state-funnel.md) to a problem cust
 
 ## Tell Your Users
 
-This is a selection of pages you can link to from your application or service to tell your users that:
+The following page contains assets to include and link into your application or service--to tell your users that:
 
 * they own their data
 * their data is encrypted before it leaves their browser
 * they continue to have all the availability and reliability benefits of the cloud
 
-["We let your data be yours" pamphlet](docs/your-data-be-yours.html).
+[*b*ring *y*our *o*wn *d*ata <-> *y*our *d*ata *b*e *y*ours](docs/your-data-be-yours.md).
 
 Note that there is no such pamphlet for [delegate data](docs/delegation-subletting.md) access.  [Delegate data](docs/delegation-subletting.md) access is necessary for ease of onboarding, usability, and convenience; but its use should be limited in scope and users should be encouraged to bring their own data.
