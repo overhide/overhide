@@ -142,7 +142,7 @@ An [API](https://overhide.github.io/overhide/docs/broker.html) exposed by *overh
 
 ## [Remuneration API](docs/remuneration-api.md)
 
-The *overhide* [Remuneration API](docs/remuneration-api.md) enables [ledger-based authorization](https://stage.ohledger.com/demo/why/why.html) and permeates *overhide* features.
+The *overhide* [Remuneration API](docs/remuneration-api.md) enables [ledger-based authorization](https://github.com/overhide/ledgers.js/blob/master/why/why.md) and permeates *overhide* features.
 
 ## [On Applicability of a Key-Value Store](docs/state-funnel.md)
 

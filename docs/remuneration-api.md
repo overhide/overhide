@@ -1,10 +1,10 @@
 # Remuneration API
 
-Core to the *overhide* system is [ledger-based authorization](https://stage.ohledger.com/demo/why/why.html); whether for-pay or gratis.
+Core to the *overhide* system is [ledger-based authorization](https://github.com/overhide/ledgers.js/blob/master/why/why.md); whether for-pay or gratis.
 
-The *overhide* Remuneration API enables this [ledger-based authorization](https://stage.ohledger.com/demo/why/why.html) and permeates *overhide* features starting with the root concept of [identity](docs/identity.md) (see section on "[subscriptions](docs/identity.md#subscriptions)").
+The *overhide* Remuneration API enables this [ledger-based authorization](https://github.com/overhide/ledgers.js/blob/master/why/why.md) and permeates *overhide* features starting with the root concept of [identity](docs/identity.md) (see section on "[subscriptions](docs/identity.md#subscriptions)").
 
-[Ledger-based authorization](https://stage.ohledger.com/demo/why/why.html) is applied by *overhide* brokers on behalf of apps and services:  by virtue of using an *overhide* broker our apps and services gain full access to this authorization paradigm.
+[Ledger-based authorization](https://github.com/overhide/ledgers.js/blob/master/why/why.md) is applied by *overhide* brokers on behalf of apps and services:  by virtue of using an *overhide* broker our apps and services gain full access to this authorization paradigm.
 
 It is an API of a handful of HTTP methods exposed by various ledgers--blockchain and otherwise.
 
