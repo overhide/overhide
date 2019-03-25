@@ -406,11 +406,11 @@ Note that use of a *delegate-key* undermines the user's ownership of their own d
 
 It is recommended delegate data be only used for limited service-specific metadata and to enable collaboration through the service (e.g. lobbies).
 
-Delegate [data access](broker.html#tag-delegate) and [backchannel messaging](broker.html#tag-backchannel-queues) are made available after a [guest login](broker.html#operation--auth-guest-credentials-put).
+Delegate [data access](https://overhide.github.io/overhide/docs/broker.html#tag-delegate) and [backchannel messaging](https://overhide.github.io/overhide/docs/broker.html#tag-backchannel-queues) are made available after a [guest login](https://overhide.github.io/overhide/docs/broker.html#operation--auth-guest-credentials-put).
 
 Read more about *delegation* in the [delegates and subletting write-up](delegation-subletting.md)
 
-Review *delegation* APIs under [delegates](broker.html#tag-delegate) and [backchannel-queues](broker.html#tag-backchannel-queues) tags.
+Review *delegation* APIs under [delegates](https://overhide.github.io/overhide/docs/broker.html#tag-delegate) and [backchannel-queues](https://overhide.github.io/overhide/docs/broker.html#tag-backchannel-queues) tags.
 
 #### delegate qualification
 
@@ -420,13 +420,13 @@ This means multiple delegates may write into a *datastore-key* and not clobber t
 
 Read more about *delegation* in the [delegates and subletting write-up](delegation-subletting.md)
 
-Review *delegation* APIs under [delegates](broker.html#tag-delegate) and [backchannel-queues](broker.html#tag-backchannel-queues) tags.
+Review *delegation* APIs under [delegates](https://overhide.github.io/overhide/docs/broker.html#tag-delegate) and [backchannel-queues](https://overhide.github.io/overhide/docs/broker.html#tag-backchannel-queues) tags.
 
 #### invitee, visitor, guest
 
-A user must [log in as a visitor](broker.html#operation--auth-guest-credentials-put) of a [subscriber](identity.html#subscriptions) to use the *subscriber's* *delegate* data.
+A user must [log in as a visitor](https://overhide.github.io/overhide/docs/broker.html#operation--auth-guest-credentials-put) of a [subscriber](identity.md#subscriptions) to use the *subscriber's* *delegate* data.
 
-*Visitors* may or may not subscribe to the broker instance themselves.  When users login to access another user's *delegate* data they do not [login as subscribers](broker.html#operation--auth-credentials-put), they login as [visitors](broker.html#operation--auth-guest-credentials-put).  In other words *delegated* data access is only available to *visitors*.  Users who already *subscribe* to the broker cannot access another user's *delegate* data unless they [re-authorize as visitors](broker.html#operation--auth-guest-credentials-put).
+*Visitors* may or may not subscribe to the broker instance themselves.  When users login to access another user's *delegate* data they do not [login as subscribers](https://overhide.github.io/overhide/docs/broker.html#operation--auth-credentials-put), they login as [visitors](https://overhide.github.io/overhide/docs/broker.html#operation--auth-guest-credentials-put).  In other words *delegated* data access is only available to *visitors*.  Users who already *subscribe* to the broker cannot access another user's *delegate* data unless they [re-authorize as visitors](https://overhide.github.io/overhide/docs/broker.html#operation--auth-guest-credentials-put).
 
 A *visitor* is always invited to interact with a broker on behalf of the broker's *subscriber*.  
 
@@ -436,11 +436,11 @@ A *subscriber* may restrict access to their *segment-keys* pending sufficient tr
 
 Read more about *delegation* in the [delegates and subletting write-up](delegation-subletting.md)
 
-Review *delegation* APIs under [delegates](broker.html#tag-delegate) and [backchannel-queues](broker.html#tag-backchannel-queues) tags.
+Review *delegation* APIs under [delegates](https://overhide.github.io/overhide/docs/broker.html#tag-delegate) and [backchannel-queues](https://overhide.github.io/overhide/docs/broker.html#tag-backchannel-queues) tags.
 
 #### subletting, subtenants
 
-Broker specific allotment of storage *quota* from a [subscriber](identity.html#subscriptions) to a *subtenant* is a *sublet*.
+Broker specific allotment of storage *quota* from a [subscriber](identity.md#subscriptions) to a *subtenant* is a *sublet*.
 
 A *subscriber* [remunerates the broker](remuneration-api.md) and maintains storage *quotas* with the broker.  A *sublet* is a subsequent allotment of a fraction of these storage *quotas* to another user:  the *subtenant*.
 
@@ -448,25 +448,25 @@ The *subtenant* has full control and ownership of what's stored in the *sublet* 
 
 Think of a *sublet* as merely a broker specific, non-transferable, annotation, to be inquired on the *subtenant's* next authorization into the broker.  
 
-The [PUT /sublet](broker.html#operation--sublet-put) API method enumerates constraints on potential *subtenants* in order to leverage *subletting*.
+The [PUT /sublet](https://overhide.github.io/overhide/docs/broker.html#operation--sublet-put) API method enumerates constraints on potential *subtenants* in order to leverage *subletting*.
 
-A *subtenant* can access their data as long as the *subscriber* continues to *sublet*, or if the *subtenant* starts [remunerating](remuneration-api.md) the broker and converts to a [subscriber](identity.html#subscriptions) themselves.
+A *subtenant* can access their data as long as the *subscriber* continues to *sublet*, or if the *subtenant* starts [remunerating](remuneration-api.md) the broker and converts to a [subscriber](identity.md#subscriptions) themselves.
 
 Read more about benefits in the [delegates and subletting write-up](delegation-subletting.md)
 
-Review *subletting* APIs under the [subletting](broker.html#tag-subletting) tag.
+Review *subletting* APIs under the [subletting](https://overhide.github.io/overhide/docs/broker.html#tag-subletting) tag.
 
 #### data-steward
 
-Implementation dependant--each *overhide* broker is expected to leverage a decentralized persistence network (e.g. [IPFS](https://ipfs.io/)).  The concept of *stewards* is an important aspect of keeping *overhide* [decentralized](decentralization.html).  
+Implementation dependant--each *overhide* broker is expected to leverage a decentralized persistence network (e.g. [IPFS](https://ipfs.io/)).  The concept of *stewards* is an important aspect of keeping *overhide* [decentralized](decentralization.md).  
 
 Consider a decentralized persistence network with many peers, some of which are *overhide* brokers.  One or more *overhide* brokers that are peers on this network may be subscribed to by a user.  Peers on the network that are subscribed-to *overhide* brokers are "stewards" of a user's data.
 
 An "active" data-steward is an *overhide* broker that the user can write data against.  Read-only data-stewards are "passive".  The active data-steward is the source of truth for the user's most current data.  Passive data-stewards are eventually consistent, pending network delays.  Passive data-stewards necessarily error-out on writes.  Having more than one "active" data-steward may lead to write race-conditions on the distributed persistence network with unknown consequences.
 
-A "pour-active" data-steward is an "active" data-steward with special caveats to allow for consistency during data migration.  Enabling "pour-active" mode on a broker is a temporary measure before transitioning to "active" mode:  read more in the [broker API](broker.html#tag-data-stewardship).
+A "pour-active" data-steward is an "active" data-steward with special caveats to allow for consistency during data migration.  Enabling "pour-active" mode on a broker is a temporary measure before transitioning to "active" mode:  read more in the [broker API](https://overhide.github.io/overhide/docs/broker.html#tag-data-stewardship).
 
-It is up to the user--the user's tooling--to manage data stewardship via the [broker API](broker.html#tag-data-stewardship).
+It is up to the user--the user's tooling--to manage data stewardship via the [broker API](https://overhide.github.io/overhide/docs/broker.html#tag-data-stewardship).
 
 #### GUID -- Globally Unique ID
 
@@ -474,11 +474,11 @@ The *overhide* system expects brokers to be peers on a distributed persistence n
 
 Each client to *overhider* brokers can opt-in their data to being stored on this network.  A client's data on this network is referenced using GUIDs -- Globally Unique IDs.  E.g. GUIDs on the [IPFS](https://ipfs.io/) network are IPNS names as discussed in the [decentralization write-up](decentralization.md).
 
-GUIDs are used heavily for [managing data stewardship via the broker APIs](broker.html#tag-data-stewardship).
+GUIDs are used heavily for [managing data stewardship via the broker APIs](https://overhide.github.io/overhide/docs/broker.html#tag-data-stewardship).
 
 #### working-memory, permanent-memory, shared-memory (persistence-status)
 
-A *datastore-key* may be modified on a broker faster than it can be persisted or shared with other peers on the broker's decentralized persistence network--as is the case with the [IPFS reference implementation](decentralization.html).
+A *datastore-key* may be modified on a broker faster than it can be persisted or shared with other peers on the broker's decentralized persistence network--as is the case with the [IPFS reference implementation](decentralization.md).
 
 Each *datastore-key* has a *persistence-status* indicating resilience of it's most-recent value to catastrophic broker failure.
 
@@ -488,13 +488,13 @@ If the latest value of a *datastore-key* has been persisted to the broker's non-
 
 If the latest value of a *datastore-key* has been shared to the decentralized persistence network--making it available to other peers--it's considered to be in "shared-memory"--reads against other passive *data-stewards* will return this latest value.  
 
-Use the [GET /{segment-key}/persistence-status](broker.html#operation---segment-key--persistence-status-get) API call to determine *persistence-status* of a *segment-key*.
+Use the [GET /{segment-key}/persistence-status](https://overhide.github.io/overhide/docs/broker.html#operation---segment-key--persistence-status-get) API call to determine *persistence-status* of a *segment-key*.
 
 #### broker lookup
 
 Given an *user-address* or a *service-address*, provides ability to lookup that address' *active steward* broker's host name or IP.
 
-Since *user-addresses* and *service-addresses* are ledger specific ([remuneration provider](remuneration-api.md) specific) the *broker lookup* network is specific to a [remuneration-key](broker.html#/definitions/RemunerationKey).
+Since *user-addresses* and *service-addresses* are ledger specific ([remuneration provider](remuneration-api.md) specific) the *broker lookup* network is specific to a [remuneration-key](https://overhide.github.io/overhide/docs/broker.html#/definitions/RemunerationKey).
 
 See the [broker lookup](lookup.md) write-up.
 
@@ -504,11 +504,11 @@ A *passive steward*'s host name or IP explicitly set in the *broker lookup* netw
 
 The broker known as a *drain-host* is the original source-of-truth for a user's data during a data migration.
 
-Look at the data-stewardship use cases in [the API](broker.html#tag-data-stewardship) and take note that while a *passive steward* is designated as a *drain-host*, the currently *active steward* broker is [put in a temporary "pour" mode](broker.html#operation--pour-active-stewardship-put).
+Look at the data-stewardship use cases in [the API](https://overhide.github.io/overhide/docs/broker.html#tag-data-stewardship) and take note that while a *passive steward* is designated as a *drain-host*, the currently *active steward* broker is [put in a temporary "pour" mode](https://overhide.github.io/overhide/docs/broker.html#operation--pour-active-stewardship-put).
 
-[Setting up a drain-host](broker.html#operation--broker-lookup-put) and a ["pour" active-steward](broker.html#operation--pour-active-stewardship-put) is useful in two migration scenarios:
+[Setting up a drain-host](https://overhide.github.io/overhide/docs/broker.html#operation--broker-lookup-put) and a ["pour" active-steward](https://overhide.github.io/overhide/docs/broker.html#operation--pour-active-stewardship-put) is useful in two migration scenarios:
 
 1. migration to a new *active steward* with the help of a *persistence network*
-2. client driven [export](broker.html#operation-export-WIRE)+[fill](broker.html#operation-fill-WIRE)
+2. client driven [export](https://overhide.github.io/overhide/docs/broker.html#operation-export-WIRE)+[fill](https://overhide.github.io/overhide/docs/broker.html#operation-fill-WIRE)
 
-See [data-stewardship APIs](broker.html#tag-data-stewardship) for use cases.
+See [data-stewardship APIs](https://overhide.github.io/overhide/docs/broker.html#tag-data-stewardship) for use cases.

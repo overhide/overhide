@@ -45,7 +45,7 @@ info:
     email: info@overhide.io
   license:
     name: MIT License
-    url: 'https://pages.github.com/JakubNer/overhide/blob/master/LICENSE'
+    url: 'https://github.com/overhide/overhide/blob/master/LICENSE'
 tags:
   - name: capabilities
     description: |
@@ -154,7 +154,7 @@ tags:
 
       Any user, whether authorized as a [subscriber](#operation--auth-credentials-put) or [visitor](#operation--auth-guest-credentials-put), have their ledger-of-choice checked for existing transactions from themselves to the service provider.  The tally of transactions within an *entry-fee* gate established period of time must be at least equal to the *entry-fee* requirement to gain access (read, write, publish, subscribe).
 
-      This *entry-fee* requirement enables a service provider to leverage the simple [ledger-based authorization flow](https://test.ohledger.com/demo/why/why.html) via *overhide* brokers.
+      This *entry-fee* requirement enables a service provider to leverage the simple [ledger-based authorization flow](https://github.com/overhide/ledgers.js/blob/master/why/why.md) via *overhide* brokers.
   - name: metrics
     description: |
       Usage metrics for specific [datastore-keys](glossary.html#datastore-key) or overall for the [identity](glossary.html#identity).
@@ -3738,7 +3738,7 @@ definitions:
 
           Type      | Notes
           ---       | ---
-          ipns-ri   | An [*overhide* reference implementation](https://github.com/JakubNer/overhide-broker) GUID as per [using IPNS](https://github.com/JakubNer/overhide/blob/master/docs/decentralization.md).  `guid`  value will be in the format `<IPNS name>:<private-key>`, where `<IPNS name>` is the public hash visible to all, `<private-key>` must not be shared, it's included to share with other brokers to enable their custody of *identities* data.
+          ipns-ri   | An [*overhide* reference implementation](https://github.com/overhide/overhide-broker) GUID as per [using IPNS](https://github.com/overhide/overhide/blob/master/docs/decentralization.md).  `guid`  value will be in the format `<IPNS name>:<private-key>`, where `<IPNS name>` is the public hash visible to all, `<private-key>` must not be shared, it's included to share with other brokers to enable their custody of *identities* data.
       guid:
         type: string
         description: |
@@ -4480,4 +4480,4 @@ securityDefinitions:
       Token details are same as per the [Authorization Header](#security-definition-Authorization Header) security scheme.
 externalDocs:
   description: overhide documentation
-  url: 'https://pages.github.com/JakubNer/overhide'
+  url: 'https://github.com/overhide/overhide'

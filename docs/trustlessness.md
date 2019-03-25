@@ -2,13 +2,13 @@
 
 > "I trust you as far as I can throw you" -- unknown
 
-Core to *overhide* are the values of the system not knowing who the clients are or what their data is.  The clients are just [identities](identity.md) and the data is [encrypted](glossary.html#datastore-value).
+Core to *overhide* are the values of the system not knowing who the clients are or what their data is.  The clients are just [identities](identity.md) and the data is [encrypted](glossary.md#datastore-value).
 
 Trust doesn't factor into the brokers' ability to read client data or leverage client metadata--that's overtly hidden with cryptography.
 
 However; the brokers are trusted to write out and host their clients' encrypted data on an as-far-as-they-can-be-thrown basis--'they' being the brokers.
 
-As long as they're allowed, each broker writes to the distributed persistence network on behalf of its clients.  For example the [reference implementation](https://github.com/JakubNer/overhide-broker) broker has the IPNS PKI pairs of its clients and is trusted to write out the data as dictated.
+As long as they're allowed, each broker writes to the distributed persistence network on behalf of its clients.  For example the [reference implementation](https://github.com/overhide/overhide-broker) broker has the IPNS PKI pairs of its clients and is trusted to write out the data as dictated.
 
 *This is tantamount to a thin blockchain client's trust that a full-node writes out a transaction as dictated.*
 
@@ -18,10 +18,10 @@ Similarly an *overhide* broker could skip-out on eventual consistency of clients
 
 A deceitful blockchain node could corrupt a transaction--although that would be caught immediately by verifying peers.
 
-Similarly an *overhide* broker could corrupt a clients data; propagating a corrupted version to the network.  Although other *overhide* brokers do not validate data--an important distinction from blockchain peers--the client can [validate via content hashes](broker.html#operation---segment-key--persistence-status-get).
+Similarly an *overhide* broker could corrupt a clients data; propagating a corrupted version to the network.  Although other *overhide* brokers do not validate data--an important distinction from blockchain peers--the client can [validate via content hashes](https://overhide.github.io/overhide/docs/broker.html#operation---segment-key--persistence-status-get).
 
 #### Keep In Mind
 
-Brokers have an economic incentive to keep subscribers happy: subscribers aren't locked in and can drop a bad broker at any time: see ["Sample Use Case: Disassociation from Steward"](broker.html#tag-data-stewardship).
+Brokers have an economic incentive to keep subscribers happy: subscribers aren't locked in and can drop a bad broker at any time: see ["Sample Use Case: Disassociation from Steward"](https://overhide.github.io/overhide/docs/broker.html#tag-data-stewardship).
 
 A compromised broker can't target a victim.  Users are pseudonymous hence a broker compromise can only be indiscriminate and have the same chance to negatively affect all users.

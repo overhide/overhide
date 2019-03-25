@@ -11,36 +11,36 @@ The rest of the features will be put on the backlog and implemented in the futur
 * delegation
 * metrics
 
-All feature assume inclusion of both relevant [broker API](broker.html) implementation and relevant [overhide.js](overhide.js.md) implementation.
+All feature assume inclusion of both relevant [broker API](https://overhide.github.io/overhide/docs/broker.html) implementation and relevant [overhide.js](overhide.js.md) implementation.
 
 ## Features Planned for MVP
 
 ### ledgers.js
 
-* implement [keybiner](glossary.html#keybiner--keyrings)
+* implement [keybiner](glossary.md#keybiner--keyrings)
 * integrate into [ohledger](https://ohledger.com)
 
 ### overhide.js
 
-* [secrets](glossary.html#secrets)
+* [secrets](glossary.md#secrets)
 
 ### broker + overhide.js
 
-* [capabilities](broker.html#tag-capabilities)
-* [flow-control](broker.html#tag-flow-control)
-* [broker-lookup](broker.html#tag-broker-lookup)
-* portions of [auth](broker.html#tag-auth)
-    * [PUT /auth/credentials](broker.html#operation--auth-credentials-put)
-    * [GET /auth/authorities](broker.html#operation--auth-authorities-get)
-    * [PUT /auth/changed-credentials](broker.html#operation--auth-changed-credentials-put)
-    * [GET /auth/{remuneration-key}/{from-address}/{to-address}/transactions](broker.html#operation--auth--remuneration-key---from-address---to-address--transactions-get)
-* [subletting](broker.html#tag-subletting)
-* [data](broker.html#tag-data)
-* [backchannel queues](broker.html#operation-post-message-WIRE)
-* portions of [data-stewardship](broker.html#tag-data-stewardship):
-    * [GET /{segment-key}/persistence-status](broker.html#operation---segment-key--persistence-status-get)
-    * [PUT /guids](broker.html#operation--guids-put)
-    * [GET /guids](broker.html#operation--guids-get)
-    * [GET /latest-snapshot-id/{guid}](broker.html#operation--latest-snapshot-id--guid--get)
-* portions of [metrics](broker.html#tag-metrics)
-    * [WIRE segment-keys](broker.html#operation-segment-keys-WIRE)
+* [capabilities](https://overhide.github.io/overhide/docs/broker.html#tag-capabilities)
+* [flow-control](https://overhide.github.io/overhide/docs/broker.html#tag-flow-control)
+* [broker-lookup](https://overhide.github.io/overhide/docs/broker.html#tag-broker-lookup)
+* portions of [auth](https://overhide.github.io/overhide/docs/broker.html#tag-auth)
+    * [PUT /auth/credentials](https://overhide.github.io/overhide/docs/broker.html#operation--auth-credentials-put)
+    * [GET /auth/authorities](https://overhide.github.io/overhide/docs/broker.html#operation--auth-authorities-get)
+    * [PUT /auth/changed-credentials](https://overhide.github.io/overhide/docs/broker.html#operation--auth-changed-credentials-put)
+    * [GET /auth/{remuneration-key}/{from-address}/{to-address}/transactions](https://overhide.github.io/overhide/docs/broker.html#operation--auth--remuneration-key---from-address---to-address--transactions-get)
+* [subletting](https://overhide.github.io/overhide/docs/broker.html#tag-subletting)
+* [data](https://overhide.github.io/overhide/docs/broker.html#tag-data)
+* [backchannel queues](https://overhide.github.io/overhide/docs/broker.html#operation-post-message-WIRE)
+* portions of [data-stewardship](https://overhide.github.io/overhide/docs/broker.html#tag-data-stewardship):
+    * [GET /{segment-key}/persistence-status](https://overhide.github.io/overhide/docs/broker.html#operation---segment-key--persistence-status-get)
+    * [PUT /guids](https://overhide.github.io/overhide/docs/broker.html#operation--guids-put)
+    * [GET /guids](https://overhide.github.io/overhide/docs/broker.html#operation--guids-get)
+    * [GET /latest-snapshot-id/{guid}](https://overhide.github.io/overhide/docs/broker.html#operation--latest-snapshot-id--guid--get)
+* portions of [metrics](https://overhide.github.io/overhide/docs/broker.html#tag-metrics)
+    * [WIRE segment-keys](https://overhide.github.io/overhide/docs/broker.html#operation-segment-keys-WIRE)

@@ -12,7 +12,7 @@ For certain solutions--*overhide* isn't universally applicable--we want to free 
 
 Are users ready for *overhide*?  Although we all enjoy the benefits of centralization for discovery and distribution--e.g. app stores--we do want the freedom of not locking-in, owning our data, and keeping our particulars to ourselves.  
 
-Services built on top of *overhide* can be as decentralized as the service author enables.  An app can be fully decentralized leveraging a distributed implementation of the *overhide* (data) broker, and a blockchain solution for [remuneration](#remuneration-api).  Or said app could start with a simple on-premises instance of an *overhide* broker and no remuneration structure.  (The [reference implementation](https://github.com/JakubNer/overhide-broker) is fully [decentralized](docs/decentralization.md))
+Services built on top of *overhide* can be as decentralized as the service author enables.  An app can be fully decentralized leveraging a distributed implementation of the *overhide* (data) broker, and a blockchain solution for [remuneration](#remuneration-api).  Or said app could start with a simple on-premises instance of an *overhide* broker and no remuneration structure.  (The [reference implementation](https://github.com/overhide/overhide-broker) is fully [decentralized](docs/decentralization.md))
 
 ---
 
@@ -49,9 +49,9 @@ The model shows a browser with *overhide's* [*keybiner*](#secrets-and-the-keybin
    * broker API for data storage
    * [remuneration API](#remuneration-api) to enable payment of brokerage and service subscriptions
    * client library to promote decoupling of trust
-* as available and reliable as the technology stack implementing the specification; the [reference implementation](https://github.com/JakubNer/overhide-broker) is geared to be both
+* as available and reliable as the technology stack implementing the specification; the [reference implementation](https://github.com/overhide/overhide-broker) is geared to be both
 * provides ability to remunerate brokerage and service provider via blockchain: pseudonymous subscription fees
-* [decentralized](docs/decentralization.md); *overhide* broker is discoverable via [broker-lookup](docs/lookup.md) from *Web 2.0* stacks, and broker can be [easily switched out](docs/broker.html#tag-data-stewardship) when need arises. 
+* [decentralized](docs/decentralization.md); *overhide* broker is discoverable via [broker-lookup](docs/lookup.md) from *Web 2.0* stacks, and broker can be [easily switched out](docs/broker.md#tag-data-stewardship) when need arises. 
 
 ### Benefits to Service
 
@@ -120,7 +120,7 @@ The *overhide.c* linkable client library provides the client implementation of t
 
 ## [Data Decentralization](docs/decentralization.md)
 
-A core value of *overhide* is to keep user data [decentralized](decentralization.md) or at least [portable](decentralization.html#client-driven-quasi-decentralization).  The [overhide API](docs/broker.html) works in conjunction with resilient distributed persistence networks.
+A core value of *overhide* is to keep user data [decentralized](decentralization.md) or at least [portable](decentralization.md#client-driven-quasi-decentralization).  The [overhide API](docs/broker.md) works in conjunction with resilient distributed persistence networks.
 
 [The *overhide* reference implementation upholds data decentralization](docs/decentralization.md) in its solution.
 
@@ -132,17 +132,17 @@ The [*overhide* API minimizes required trust](docs/trustlessness.md).
 
 ## [Broker-Lookup:  On Targeting Data Hosts with Users' Ledger Addresses](docs/lookup.md)
 
-Users do not need to carry around and make available their data-hosting broker information for routine service access.  Services can leverage [broker-lookup](docs/lookup.md) when provided with just the public [user-address](glossary.html#user-address) associated with the data.
+Users do not need to carry around and make available their data-hosting broker information for routine service access.  Services can leverage [broker-lookup](docs/lookup.md) when provided with just the public [user-address](glossary.md#user-address) associated with the data.
 
-## [Broker API](docs/broker.html)
+## [Broker API](docs/broker.md)
 
-An [API](docs/broker.html) exposed by *overhide* broker, provides access to broker's services.
+An [API](docs/broker.md) exposed by *overhide* broker, provides access to broker's services.
 
 > An *overhide.io* broker instance with a [*minimally viable product* feature-set](docs/mvp.md) is planned first.
 
-## [Remuneration API](docs/remuneration-api.html)
+## [Remuneration API](docs/remuneration-api.md)
 
-The *overhide* [Remuneration API](docs/remuneration-api.html) enables [ledger-based authorization](https://stage.ohledger.com/demo/why/why.html) and permeates *overhide* features.
+The *overhide* [Remuneration API](docs/remuneration-api.md) enables [ledger-based authorization](https://stage.ohledger.com/demo/why/why.html) and permeates *overhide* features.
 
 ## [On Applicability of a Key-Value Store](docs/state-funnel.md)
 
