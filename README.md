@@ -157,5 +157,3 @@ The following page contains assets to include and link into your application or 
 * they continue to have all the availability and reliability benefits of the cloud
 
 [*b*ring *y*our *o*wn *d*ata <-> *y*our *d*ata *b*e *y*ours](docs/your-data-be-yours.md).
-
-Note that there is no such pamphlet for [delegate data](docs/delegation-subletting.md) access.  [Delegate data](docs/delegation-subletting.md) access is necessary for ease of onboarding, usability, and convenience; but its use should be limited in scope and users should be encouraged to bring their own data.
