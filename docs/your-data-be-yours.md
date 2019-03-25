@@ -12,20 +12,20 @@ Keep in mind that these assets don't apply to [delegate data](delegation-sublett
 
 ## Detailed ([SVG](images/byod/oh-byod-detailed.svg))([PNG](images/byod/oh-byod-detailed.png))
 
-![](images/byod/oh-byod-detailed.svg)
+![](images/byod/oh-byod-detailed.png)
 
 ## Sandwich ([SVG](images/byod/ydby-byod-sandwich.svg))([PNG](images/byod/ydby-byod-sandwich.png))
 
-![](images/byod/ydby-byod-sandwich.svg)
+![](images/byod/ydby-byod-sandwich.png)
 
 ## Banner ([SVG](images/byod/byod-banner.svg))([PNG](images/byod/byod-banner.png))
 
-![](images/byod/byod-banner.svg)
+![](images/byod/byod-banner.png)
 
 ## BYOD ([SVG](images/byod/byod.svg))([PNG](images/byod/byod.png))
 
-![](images/byod/byod.svg)
+![](images/byod/byod.png)
 
 ## YDBY ([SVG](images/byod/ydby.svg))([PNG](images/byod/ydby.png))
 
-![](images/byod/ydby.svg)
+![](images/byod/ydby.png)
