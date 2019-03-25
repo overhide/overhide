@@ -509,6 +509,6 @@ Look at the data-stewardship use cases in [the API](https://overhide.github.io/o
 [Setting up a drain-host](https://overhide.github.io/overhide/docs/broker.html#operation--broker-lookup-put) and a ["pour" active-steward](https://overhide.github.io/overhide/docs/broker.html#operation--pour-active-stewardship-put) is useful in two migration scenarios:
 
 1. migration to a new *active steward* with the help of a *persistence network*
-2. client driven [export](https://overhide.github.io/overhide/docs/broker.html#operation-export-WIRE)+[fill](https://overhide.github.io/overhide/docs/broker.html#operation-fill-WIRE)
+2. client driven [export](https://overhide.github.io/overhide/docs/broker.html#operation-export-options)+[fill](https://overhide.github.io/overhide/docs/broker.html#operation-fill-options)
 
 See [data-stewardship APIs](https://overhide.github.io/overhide/docs/broker.html#tag-data-stewardship) for use cases.

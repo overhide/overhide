@@ -19,7 +19,7 @@ info:
 
       Operations *WIRE* are WebSocket events that use a custom wire protocol.  The SSL secured WebSockets connection is to the same address as the HTTPS connection.  [Authentication](#tag-auth) occurs using HTTPS and seamlessly propagates to the [WSS connection](#security-definition-Authorization%20WSS).  
 
-      Wire-protocol events require an additional step of a [handshake](#operation-handshake-WIRE) between client and broker:  beyond just being authenticated.  Failure to [handshake](#operation-handshake-WIRE) will result in "no handshake" 400-series error codes on wire-protocol events.
+      Wire-protocol events require an additional step of a [handshake](#operation-handshake-options) between client and broker:  beyond just being authenticated.  Failure to [handshake](#operation-handshake-options) will result in "no handshake" 400-series error codes on wire-protocol events.
 
       Please review the [flow-control](#tag-flow-control) documentation to understand the *WIRE* protocol flow-control mechanisms.
     ***
@@ -66,19 +66,19 @@ tags:
 
       From this point on the exchanges take place over the Websocket protocol, ursng *WIRE* events as documented here.
 
-      Before any data exchanges can take place, the client communicates its desired fragment and aggregate message parameters using the [*handshake* event](#operation-handshake-WIRE).  The server agrees--"shakes on it" with a ["response" *WIRE* event](#/responses/WIRE) having a code of *200/OK*.
+      Before any data exchanges can take place, the client communicates its desired fragment and aggregate message parameters using the [*handshake* event](#operation-handshake-options).  The server agrees--"shakes on it" with a ["response" *WIRE* event](#/responses/WIRE) having a code of *200/OK*.
 
-      The client proceeds to send a large [*datastore-value*](glossary.html#datastore-value) that is necessairly fragmented into multiple *WIRE* events.  The exchange is started with a [set data event](#operation-set-data-WIRE).  The *flags* attribute of this [set data event](#operation-set-data-WIRE) does not have the `0x80` bit set: indicating that the payload byte-stream is the first fragment of multiple fragments for the large aggregate message.  The broker replies with a ["response" *WIRE* event](#/responses/WIRE) having a code of *200/OK*.  The client does not send the subsequent fragment until the broker confirms receipt of the previous fragment with such a ["response" *WIRE* event](#/responses/WIRE).
+      The client proceeds to send a large [*datastore-value*](glossary.html#datastore-value) that is necessairly fragmented into multiple *WIRE* events.  The exchange is started with a [set data event](#operation-set-data-options).  The *flags* attribute of this [set data event](#operation-set-data-options) does not have the `0x80` bit set: indicating that the payload byte-stream is the first fragment of multiple fragments for the large aggregate message.  The broker replies with a ["response" *WIRE* event](#/responses/WIRE) having a code of *200/OK*.  The client does not send the subsequent fragment until the broker confirms receipt of the previous fragment with such a ["response" *WIRE* event](#/responses/WIRE).
 
-      The client sends subsequent fragments using the [continue](#operation-continue-WIRE) events.  Before sending each subsequent fragment the client expects a ["response" *WIRE* event](#/responses/WIRE) having a code of *200/OK*.
+      The client sends subsequent fragments using the [continue](#operation-continue-options) events.  Before sending each subsequent fragment the client expects a ["response" *WIRE* event](#/responses/WIRE) having a code of *200/OK*.
 
       The client sends the final fragment with a *flags* having the `0x80` bit toggled: indicating last fragment sent.
 
-      The final exchange modeled is the client retrieving a large payload from the broker.  The exchange is initiated with a [get data event](#operation-get-data-WIRE).  The broker responds with a [*WIRE* event](#/responses/WIRE) having a code of *206/fragment*.  The client accepts the payload byte-stream as the first fragment of a larger response.  The client sends an [acknowledge event](#operation-acknowledge-WIRE) to the broker; acknowledging receipt of the fragment and freeing the broker to send the subsequent fragment.
+      The final exchange modeled is the client retrieving a large payload from the broker.  The exchange is initiated with a [get data event](#operation-get-data-options).  The broker responds with a [*WIRE* event](#/responses/WIRE) having a code of *206/fragment*.  The client accepts the payload byte-stream as the first fragment of a larger response.  The client sends an [acknowledge event](#operation-acknowledge-options) to the broker; acknowledging receipt of the fragment and freeing the broker to send the subsequent fragment.
 
       The broker does so, looping through the 206-acknowledge exchanges.
 
-      When the broker sends the last fragment of the aggregate message byte-stream, it sends it with a code of *200/OK*.  The client doesn't have to [acknowledge](#operation-acknowledge-WIRE) this last response as it's not a *206/fragment*.
+      When the broker sends the last fragment of the aggregate message byte-stream, it sends it with a code of *200/OK*.  The client doesn't have to [acknowledge](#operation-acknowledge-options) this last response as it's not a *206/fragment*.
   - name: broker-lookup
     description: |
       Allow services to discover users' specific broker *host names* and *IPs* through [user-addresses](glossary.html#user-address).
@@ -252,7 +252,7 @@ tags:
 
       The *client* discovers that state of the hosts [6] and continues to use the brokers in tandem, uninterrupted [7,8].  The reads on both brokers [7,8] respect the decision matrix as per [result code 246](#/responses/246).  Reads against *broker 2* could return [result code 422](#/responses/422) when a [segment-key](glossary.html#segment-key) is not yet available.  Writes on *broker 1* are disallowed with result code 400 -- "cannot write, broker not an active steward of user's data".  Writes to *broker 2* [7] proceed as usual.
 
-      While the user is accessing the brokers in tandem, the *client* is used to [export](#operation-export-WIRE) data out of *broker 1* [9] and [fill](#operation-fill-WIRE) the data into *broker 2* [10].  The [fill](#operation-fill-WIRE) operation is an over-the-top alternative to indiscriminate [importing](#operation-import-WIRE):  the [fill](#operation-fill-WIRE) operation does not overwrite exitsting [segment-keys](glossary.html#segment-key) on *broker 2*.  This, in combination with the result codes describe in the previous paragraph, allows for over-the-top migration of user's data while the user continues to access their data via the *client*.
+      While the user is accessing the brokers in tandem, the *client* is used to [export](#operation-export-options) data out of *broker 1* [9] and [fill](#operation-fill-options) the data into *broker 2* [10].  The [fill](#operation-fill-options) operation is an over-the-top alternative to indiscriminate [importing](#operation-import-options):  the [fill](#operation-fill-options) operation does not overwrite exitsting [segment-keys](glossary.html#segment-key) on *broker 2*.  This, in combination with the result codes describe in the previous paragraph, allows for over-the-top migration of user's data while the user continues to access their data via the *client*.
       
       At the end the user deletes their data from [12] and continues to access data with *broker 2* [13,14].
 
@@ -260,11 +260,11 @@ tags:
 
       The previous two use cases described data migration with minimal interruption to user's access to their data.
 
-      For completeness, this use case describes the most basic over-the-top data migration that does interrupt the user's access to their data.  This use case is likely practical when a single user is migrating their data and they're fine waiting for their data to [export](#operation-export-WIRE) and [import](#operation-import-WIRE) before continuing to use it.  Contrast this to the previous use cases--which are likely more practical when the data migrating user is a service provider--whose data is being accessed by many other users (e.g. [delegtes](glossary.html#delegate-key)) while the migration is in progress.
+      For completeness, this use case describes the most basic over-the-top data migration that does interrupt the user's access to their data.  This use case is likely practical when a single user is migrating their data and they're fine waiting for their data to [export](#operation-export-options) and [import](#operation-import-options) before continuing to use it.  Contrast this to the previous use cases--which are likely more practical when the data migrating user is a service provider--whose data is being accessed by many other users (e.g. [delegtes](glossary.html#delegate-key)) while the migration is in progress.
 
       ![overhide disassociation from steward using export+import infographic](images/steward-export-import.png)
 
-      The sequence is similar to the previous use cases with two notable differences.  First difference being the *ERROR* in writing data during the migration [6].  Second difference being the [import](#operation-import-WIRE) call [9].  This call clobbers all data on *broker 2* with the import payload.
+      The sequence is similar to the previous use cases with two notable differences.  First difference being the *ERROR* in writing data during the migration [6].  Second difference being the [import](#operation-import-options) call [9].  This call clobbers all data on *broker 2* with the import payload.
 
 paths:
   handshake:
@@ -364,9 +364,9 @@ paths:
       description: |
         For the following *WIRE* events the message payload may be fragmented into multiple requests:
         
-          * [WIRE set data](#operation-set-data-WIRE)
-          * [WIRE post message](#operation-post-message-WIRE)
-          * [WIRE import](#operation-import-WIRE)
+          * [WIRE set data](#operation-set-data-options)
+          * [WIRE post message](#operation-post-message-options)
+          * [WIRE import](#operation-import-options)
         
         The first request is one of the above *WIRE* event calls.  Subsequent requests are this *continuation* call.  All the requests are sequential fragments of the same aggregate message.  The order of the initial *WIRE* event call and these subsequent *continuation* fragments is guaranteed.
 
@@ -455,20 +455,20 @@ paths:
     options:
       summary: Acknowledge receipt of a response fragment from a "getter" endpoint of a broker.
       description: |
-        The response payload of the following *WIRE* events--as well as broker initiated messages (see [subscribe endpoint](#operation-subscribe-WIRE))--may be fragmented into multiple responses:
+        The response payload of the following *WIRE* events--as well as broker initiated messages (see [subscribe endpoint](#operation-subscribe-options))--may be fragmented into multiple responses:
           
-          * [WIRE get data](#operation-get-data-WIRE)
-          * [WIRE fetch messages](#operation-fetch-messages-WIRE)
-          * [WIRE get delegate data](#operation-get-delegate-data-WIRE)
-          * [WIRE get all delegate values](#operation-get-all-delegate-values-WIRE)
-          * [WIRE segment-keys](#operation-segment-keys-WIRE)
-          * [WIRE export](#operation-export-WIRE)
+          * [WIRE get data](#operation-get-data-options)
+          * [WIRE fetch messages](#operation-fetch-messages-options)
+          * [WIRE get delegate data](#operation-get-delegate-data-options)
+          * [WIRE get all delegate values](#operation-get-all-delegate-values-options)
+          * [WIRE segment-keys](#operation-segment-keys-options)
+          * [WIRE export](#operation-export-options)
 
         All WSS response events from the broker and broker-initiated events adhere to the [*WIRE* response](#/responses/WIRE) specification.  
         
         Any [*WIRE* response](#/responses/WIRE) with *code 206* (fragment response) must be acknowledged by this *acknowledge* message: the broker will not send additional messages until receipt of acknowledgment.
 
-        Any [broker-initiated *WIRE* message](#/responses/WIRE) with code 222--[subscription event](#operation-subscribe-WIRE)--must be acknowledged by this *acknowledge* message: the broker will not send additional messages until receipt of acknowledgment.
+        Any [broker-initiated *WIRE* message](#/responses/WIRE) with code 222--[subscription event](#operation-subscribe-options)--must be acknowledged by this *acknowledge* message: the broker will not send additional messages until receipt of acknowledgment.
 
         *WIRE* events enumerating that they expect a response with *code* *206* (fragment response) or *222* (subscription event) need concern themselves with these acknowledgments.  *WIRE* events not enumerating a response *code* *206* or *222* will never have a fragmented response.
 
@@ -515,11 +515,11 @@ paths:
     options:
       summary: Halt fragmented sending or receiving.
       description: |
-        Any fragmented sending or receiving--as per the [continue](#operation-continue-WIRE) or [acknowledge](#operation-acknowledge-WIRE) endpoints--may be halted.
+        Any fragmented sending or receiving--as per the [continue](#operation-continue-options) or [acknowledge](#operation-acknowledge-options) endpoints--may be halted.
 
         A halt signals further fragments should not be sent, should be dropped.
 
-        Only the client can initiate a halt.  The broker may similarly halt on timeout conditions as per [handshake](#operation-handshake-WIRE).
+        Only the client can initiate a halt.  The broker may similarly halt on timeout conditions as per [handshake](#operation-handshake-options).
       tags:
         - flow-control
       parameters:
@@ -579,7 +579,7 @@ paths:
     options:
       summary: Check if connection is live.
       description: |
-        Check if connection is live.  Broker has until [*ack-timeout-millis* (as per handshake)](#operation-handshake-WIRE) to respond with a 200/woof.
+        Check if connection is live.  Broker has until [*ack-timeout-millis* (as per handshake)](#operation-handshake-options) to respond with a 200/woof.
       tags:
         - flow-control
       parameters:
@@ -1187,7 +1187,7 @@ paths:
 
         For fine-grained control you may instead selectivelly [opt-in each key *segment-key*](#definition-DatastoreKeySettings).
 
-        You can still inspect all your data; [import](#operation-import-WIRE) or [export](#operation-export-WIRE) it manually.
+        You can still inspect all your data; [import](#operation-import-options) or [export](#operation-export-options) it manually.
 
         To automatically make all of an *identity's* data eventually consistent with the decentralized persistence network, 
         ensure to opt-in that [identity](glossary.html#identity) with this endpoint.
@@ -1552,7 +1552,7 @@ paths:
                   | 0x04 | wait-until-persisted | `1`: wait until datastore-key changes are persisted |
                   | 0x08 | wait-until-shared | `1`: wait until datastore-key changes are shared on distributed persistence network |
                   | 0x10 | gate-the-write | `1`: use SHA256 in *write-gate* to check value at *segment-key* for equality before overriding. |
-                  | 0x80 | done | `1`: this payload is not fragmented; `0`: this payload is a fragment and subsequent [continue](#operation-continue-WIRE) messages will follow after the broker responds with a *200*. |
+                  | 0x80 | done | `1`: this payload is not fragmented; `0`: this payload is a fragment and subsequent [continue](#operation-continue-options) messages will follow after the broker responds with a *200*. |
               write-gate:
                 type: bytes
                 description: |
@@ -1888,7 +1888,7 @@ paths:
                   | --- | --- | --- |
                   | 0x04 | wait-until-persisted | `1`: wait until datastore-key changes are persisted |
                   | 0x08 | wait-until-shared | `1`: wait until datastore-key changes are shared on distributed persistence network |                  
-                  | 0x80 | done | `1`: this payload is not fragmented; `0`: this payload is a fragment and subsequent [continue](#operation-continue-WIRE) messages will follow after the broker responds with a *200*. |
+                  | 0x80 | done | `1`: this payload is not fragmented; `0`: this payload is a fragment and subsequent [continue](#operation-continue-options) messages will follow after the broker responds with a *200*. |
               payload:
                 type: bytes
                 description: |
@@ -2182,7 +2182,7 @@ paths:
 
         If the *shunt* query parameter is not specified, subscription doesn't send actual message content, just notification of new messages with a new *unixtime-millis*.
 
-        If the *shunt* query parameter is specified, full message content is sent via subscription.  Unless the *auto-acknowledge* flag is set, the messages do have to be explicitly [acknowledged](#operation-acknowledge-messages-WIRE) to clear the backchannel queue.  Failure to acknowledge messages with *auto-acknowledge* off and [limit-bytes set](#definition-DatastoreKeySettings) may lead to a full backchannel queue and dropped messages; not forwarded to these live subscriptions.
+        If the *shunt* query parameter is specified, full message content is sent via subscription.  Unless the *auto-acknowledge* flag is set, the messages do have to be explicitly [acknowledged](#operation-acknowledge-messages-options) to clear the backchannel queue.  Failure to acknowledge messages with *auto-acknowledge* off and [limit-bytes set](#definition-DatastoreKeySettings) may lead to a full backchannel queue and dropped messages; not forwarded to these live subscriptions.
 
         If this broker is not an [(pour) active steward](#tag-data-stewardship) of data for [identity](glossary.html#identity) and the *auto-acknowledge* flag is set, call fails with a 400 --         "cannot write, broker not an active steward of user's data"
       tags:
@@ -2255,7 +2255,7 @@ paths:
                   | *value* | *name* | *description* |
                   | --- | --- | --- |
                   | 0x01 | shunt | `0`: subscription doesn't send actual message content, just notification of new messages with a new *unixtime-millis*.  `1`: full message content is sent via subscription. |
-                  | 0x02 | auto-acknowledge | `0`: explicit acknowledgment via [acknowledge](#operation-acknowledge-messages-WIRE) call required.  `1`: messages are auto-acknowledged, not queued.  This falg only applies in conjunction with the *shunt* flag |  
+                  | 0x02 | auto-acknowledge | `0`: explicit acknowledgment via [acknowledge](#operation-acknowledge-messages-options) call required.  `1`: messages are auto-acknowledged, not queued.  This falg only applies in conjunction with the *shunt* flag |  
                   | 0x04 | wait-until-persisted | `1`: wait until datastore-key changes are persisted (only relevant if *auto-acknowledge* is `1`) |
                   | 0x08 | wait-until-shared | `1`: wait until datastore-key changes are shared on distributed persistence network (only relevant if *auto-acknowledge* is `1`) |                  
       consumes:
@@ -2271,7 +2271,7 @@ paths:
           description: |
             For as long as the connection remains opened, all [datastore-keys](glossary.html#datastore-key)--subscribed to using this *subscribe* request--may emit 222 responses.
 
-            Each 222 event requires a subsequent [acknowledgment](#operation-acknowledge-WIRE) by the client.
+            Each 222 event requires a subsequent [acknowledgment](#operation-acknowledge-options) by the client.
 
             The following details the possible messages that will come across.
 
@@ -2283,7 +2283,7 @@ paths:
             |   unixtime-millis | 8       |         |
             | }                 |         | ``      |
 
-            The events stream are just *unixtime-millis*s, indicating messages are present to be retrieved via [the getter](#operation-fetch-messages-WIRE).
+            The events stream are just *unixtime-millis*s, indicating messages are present to be retrieved via [the getter](#operation-fetch-messages-options).
 
             An example event stream coming across the Web scoket for a *shunt* subscription:
 
@@ -2428,7 +2428,7 @@ paths:
                   | 0x04 | wait-until-persisted | `1`: wait until datastore-key changes are persisted |
                   | 0x08 | wait-until-shared | `1`: wait until datastore-key changes are shared on distributed persistence network |                  
                   | 0x10 | gate-the-write | `1`: use SHA256 in *write-gate* to check value at *segment-key* for equality before overriding. |
-                  | 0x80 | done | `1`: this payload is not fragmented; `0`: this payload is a fragment and subsequent [continue](#operation-continue-WIRE) messages will follow after the broker responds with a *200*. |
+                  | 0x80 | done | `1`: this payload is not fragmented; `0`: this payload is a fragment and subsequent [continue](#operation-continue-options) messages will follow after the broker responds with a *200*. |
               write-gate:
                 type: bytes
                 description: |
@@ -3060,7 +3060,7 @@ paths:
       description: |
         All of the user's data with caller's [identity](glossary.html#identity) is wiped and reset to the payload.
 
-        > When filling broker in [pour-active-steward](#operation--pour-active-stewardship-put) mode don't use this *import*--as it's indiscriminate--use [*fill*](#operation-fill-WIRE) instead.
+        > When filling broker in [pour-active-steward](#operation--pour-active-stewardship-put) mode don't use this *import*--as it's indiscriminate--use [*fill*](#operation-fill-options) instead.
 
         If transferring a [segment-key](glossary.html#segment-key) with a public restricted identity (0 .. 9999), if the
         [segment-key](glossary.html#segment-key) already exists at provided identity for a different *owner*, the message
@@ -3115,7 +3115,7 @@ paths:
                   | --- | --- | --- |
                   | 0x04 | wait-until-persisted | `1`: wait until datastore-key changes are persisted |
                   | 0x08 | wait-until-shared | `1`: wait until datastore-key changes are shared on distributed persistence network |
-                  | 0x80 | done | `1`: this payload is not fragmented; `0`: this payload is a fragment and subsequent [continue](#operation-continue-WIRE) messages will follow after the broker responds with a *200*. |
+                  | 0x80 | done | `1`: this payload is not fragmented; `0`: this payload is a fragment and subsequent [continue](#operation-continue-options) messages will follow after the broker responds with a *200*. |
               payload:
                 description: |
                   All data in JSON format with UTF-8 encoding.
@@ -3208,7 +3208,7 @@ paths:
                   | --- | --- | --- |
                   | 0x04 | wait-until-persisted | `1`: wait until datastore-key changes are persisted |
                   | 0x08 | wait-until-shared | `1`: wait until datastore-key changes are shared on distributed persistence network |
-                  | 0x80 | done | `1`: this payload is not fragmented; `0`: this payload is a fragment and subsequent [continue](#operation-continue-WIRE) messages will follow after the broker responds with a *200*. |
+                  | 0x80 | done | `1`: this payload is not fragmented; `0`: this payload is a fragment and subsequent [continue](#operation-continue-options) messages will follow after the broker responds with a *200*. |
               payload:
                 description: |
                   All data in JSON format with UTF-8 encoding.
@@ -3485,7 +3485,7 @@ paths:
 
         * *getter methods* will return [246/Inconclusive](#/responses/246) on successful reads of [segment-key](glossary.html#segment-key) that weren't explicitly written to: see [response status code *246*](#/responses/246).  This is important for continuity of data-access during migrations:
             1. finishing up any persistence storage network synchronization from a previously [active-steward](glossary.html#data-steward) before making this broker a [regular active-steward](#operation--active-stewardship-put).  See [data-stewardship](#tag-data-stewardship) for use-cases.
-            1. allowing for time-consuming explicit export from a previously [active-steward](glossary.html#data-steward) and explicit [fill](#operation-fill-WIRE) of this broker; before making this broker a [regular active-steward](#operation--active-stewardship-put).  See [data-stewardship](#tag-data-stewardship) for use-cases.
+            1. allowing for time-consuming explicit export from a previously [active-steward](glossary.html#data-steward) and explicit [fill](#operation-fill-options) of this broker; before making this broker a [regular active-steward](#operation--active-stewardship-put).  See [data-stewardship](#tag-data-stewardship) for use-cases.
         * accepts decentralized storage data changes until an explicit API write to a [segment-key](glossary.html#segment-key):
             * overwrites data in that [segment-key](glossary.html#segment-key) as usual (see [response code *246](#/responses/246))
             * causes the [segment-key](glossary.html#segment-key) to stops being overwritten by decentralized storage changes
@@ -3497,7 +3497,7 @@ paths:
 
         This call is idempotent: call this to change from [passive or active stewardship](#tag-data-stewardship).
 
-        Note that this *pour-active stewardship* mode is complementary with the [fill endpoint](#operation-fill-WIRE) when not leveraging distributed persistence.
+        Note that this *pour-active stewardship* mode is complementary with the [fill endpoint](#operation-fill-options) when not leveraging distributed persistence.
 
         When in this *pour-active stewardship* mode--while waiting for persistence network to synchronize data from a [passive-steward](glossary.html#data-steward)--this *pour-active steward* can be safely transitioned to an [active steward](#operation--active-stewardship-put) once the [passive-steward](glossary.html#data-steward) and this broker both return the same identifier from [GET /latest-snapshot-id](#operation--latest-snapshot-id--guid--get).
         
@@ -3977,11 +3977,11 @@ definitions:
       allow-others-publish-all-delegates:
         type: boolean
         description: |
-          If `true` [backchannel message posting](#operation-post-message-WIRE) allows messages publishing to all delegates by non-owner--the glob `*` value for the event's *delegate* parameter can be used by all *allowed-publishers*.
+          If `true` [backchannel message posting](#operation-post-message-options) allows messages publishing to all delegates by non-owner--the glob `*` value for the event's *delegate* parameter can be used by all *allowed-publishers*.
       allow-others-read-all-delegates:
         type: boolean
         description: |
-          If `true` allows non-owners to use the ["get all delegate values"](#operation-get-all-delegate-values-WIRE) event.
+          If `true` allows non-owners to use the ["get all delegate values"](#operation-get-all-delegate-values-options) event.
       entry-fee:
         type: array
         items:
@@ -4320,7 +4320,7 @@ responses:
             
             *Code 200* signifies the response is complete.  For unfragmented responses only one response message is returned and it has a *code* of *200*.  A fragmented response returns one or more [*code 206*](#/responses/206) events followed by a final *code 200* response; signalling end of fragments--at which point the aggregate payload can be reconstituted.  
 
-            For [*code 206*](#/responses/206) the *response* is a non-final fragment of an aggregate response.  A [*code 206*](#/responses/206) event from the broker needs to be [acknowledged](#operation-acknowledge-WIRE) by the client.
+            For [*code 206*](#/responses/206) the *response* is a non-final fragment of an aggregate response.  A [*code 206*](#/responses/206) event from the broker needs to be [acknowledged](#operation-acknowledge-options) by the client.
 
             **[Code 246](#/responses/246)**
 
@@ -4344,7 +4344,7 @@ responses:
 
       Subsequent *206* responses may follow--in-order for reconstituting the response byte stream--until the aggregate response is finalized with a *200* response code.
 
-      Every *206* response must be [acknowledged](#operation-acknowledge-WIRE) by the client before the broker will send subsequent fragments.
+      Every *206* response must be [acknowledged](#operation-acknowledge-options) by the client before the broker will send subsequent fragments.
   246:
     description: |
       Inconclusive - check other broker for newer data.
