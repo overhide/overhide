@@ -14,7 +14,7 @@ The *overhide* [ledgers.js](https://www.npmjs.com/package/ledgers.js) library he
 
 *Figure 1: Ledger-based authorization flow.*
 
-The library can be used in a browser without an caveats for bad actors modifying the source code--as the *login UX* exposes ledger tallies for information purposes only.  It allows signing for identity and popping-up widgets for transacting, but these are all user provided aspects.  The bad actor--being the user here--doesn't gain anything by hacking away at the *login UX*.
+The library can be used in a browser without any caveats for bad actors modifying the source code--as the *login UX* exposes ledger tallies for information purposes only.  It allows signing for identity and popping-up widgets for transacting, but these are all user provided aspects.  The bad actor--being the user here--doesn't gain anything by hacking away at the *login UX*.
 
 ## The Problem
 
@@ -76,8 +76,8 @@ To do so we need to instrument our solution leveraging the following concepts:
     * should be a dynamic piece of data that depends on other aspects of your solution
         * at least changing with each release
         * optimally constantly changing without which your application is gimped
-    * perhaps in-app routing look-up-table
-    * perhaps a core [backchannel](glossary.md#backchannel-queue)
+    * perhaps an in-app routing look-up-table?
+    * perhaps a core [backchannel](glossary.md#backchannel-queue)?
 
 Even with the above in-place, the bad actor might take the effort to always update their hack.
 
