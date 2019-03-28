@@ -83,7 +83,7 @@ Even with the above in-place, the bad actor might take the effort to always upda
 
 The bad actor might go as far as stand-up their own data-set for their hack of your application on their own broker.
 
-At the end of the day--a bad actor is not a legitimate user--and majority of your efforts should likely focus on supporting legitimate users.  Keep your fees fair and your updates frequent, and you should be OK.
+At the end of the day--a bad actor is not a legitimate user--and majority of your efforts should likely focus on supporting legitimate users.  Keep your fees fair and your updates frequent.
 
 The challenge discussed above--and the counter-measures--are the same facing [Progressive Web Apps](https://developers.google.com/web/progressive-web-apps/) in offline mode: [see this thread](https://www.reddit.com/r/PWA/comments/b5ugcg/counters_to_inbrowser_hacks_of_offline_pwas/).
 
