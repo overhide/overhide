@@ -18,7 +18,6 @@ All feature assume inclusion of both relevant [broker API](https://overhide.gith
 ### ledgers.js
 
 * implement [keybiner](secrets-keybiner.md#keybiner)
-* integrate into [ohledger](https://ohledger.com)
 
 ### overhide.js
 
