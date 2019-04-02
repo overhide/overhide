@@ -2,17 +2,21 @@
 
 # overhide
 
-*Over*tly *hide*: a system to store users' clandestine data within their purview and to enable rich collaborative services without the cost of private and proprietary infrastructure.
+*Over*tly *hide*: a system to store users' data within their purview and to free software-client developers from the responsibility for their users' data.
 
 ## About
 
-At it's core *overhide* is solving a people problem.  Consider an app developer who wants to create something, but doesn't want to front time, money, resources, into infrastructure to support the solution.  Further consider a user who wants to use said service, but doesn't want to worry about who they're trusting with their data and information.  Although both likely want the ease of centralized hubs for discovery, they might not want the burden of maintaining some centralized relationship: another account/login/network.
+At it's core *overhide* is solving a people problem.  Consider an app developer who wants to create something, but doesn't want to front time, money, resources, into infrastructure to support the solution.  Further consider a user who wants to use said service, but doesn't want to worry about who they're trusting with their data and information.  
 
-For certain solutions--*overhide* isn't universally applicable--we want to free the app developer from the standard deployment model and free the user from trusting yet another provider.
+We're building a software ecosystem to allow users of online client-software (applications/Web services) to remain pseudonymous and in full control of their data, without sacrificing data availability or impacting user experience.  The users' data is hosted online providing all the availability benefits, but the hosts--known as data-brokers--do not know what the data is or who the users are.  The client-software necessarily interprets their users' data so as to be useful, but the users can retain their pseudonymity.
 
-Are users ready for *overhide*?  Although we all enjoy the benefits of centralization for discovery and distribution--e.g. app stores--we do want the freedom of not locking-in, owning our data, and keeping our particulars to ourselves.  
+The client-software developers benefit from this ecosystem by having available data backends they don't need to administer and maintain.  They are absolved of being responsible for their users' data as the users themselves are empowered with their own data security: no data-breaches.  The client-software developers need only focus on their software's functionality.
 
-Services built on top of *overhide* can be as decentralized as the service author enables.  An app can be fully decentralized leveraging a distributed implementation of the *overhide* (data) broker, and a blockchain solution for [remuneration](#remuneration-api).  Or said app could start with a simple on-premises instance of an *overhide* broker and no remuneration structure.  (The [reference implementation](https://github.com/overhide/overhide-broker) is fully [decentralized](docs/decentralization.md))
+A necessary quality of the software ecosystem is that the data-broker hosts, as well as the client-software authors, can be remunerated despite their users being pseudonymous.  The data-brokers and the client-software can be commercial offerings.  Additionally, the remuneration to the data-brokers and software clients can be in the form of fiat money or crypto-currencies.
+
+Overhide's mission is to make available open-source software enabling data-brokers with the above qualities.  Overhide intends to run and maintain data-broker instances, to host necessary and related infrastructure, and offers the aforementioned remuneration framework.
+
+The remuneration framework is flexible enough to be usable for fiat money today--hence accessible to the vast majority of online users--while future-proofing against rewrites of client-software for any new crypto-currencies in the future.
 
 ---
 
@@ -26,16 +30,16 @@ A "user" could be a person who wants to own all the data used by the "service" a
 
 For reference, below is a sample model of the above mentioned components.  In <span style="color:lightgreen">green</span> are the artifacts documented by this repository.
 
-The model shows a browser with *overhide's* [*keybiner*](#secrets-and-the-keybiner) abstracted by [*overhide.js*](#overhidejs) and exposed to the *app (service)* through its (<span style="color:lightgreen">green</span>) [*overhide* interface](#overhidejs).  The [*keybiner*](#secrets-and-the-keybiner) is a widget to deal with credentials and [*overhide.js*](#overhidejs) is an implementation of the *overhide* JavaScript client API.  The [*overhide.js*](#overhidejs) references [ledger APIs](#remuneration-api) (*web3.js*, [ohledger.com](https://ohledger.com)) as injected by [*wallets*](docs/glossary.md#wallet) and libraries.  The [ledger APIs](#remuneration-api) as well as the *overhide broker* are seen using the *Ethereum blockchain*.  The broker is also seen using [*IPFS*](https://ipfs.io/) for persistence.  This is but one model of possible implementation patterns; it is the reference model.  There is nothing precluding a service or tooling written in any language from using the APIs directly, going against another blockchain stack, or a completely different remuneration mechanism altogether (as long as it implements [remuneration API](#remuneration-api)).
+The model shows a browser with *overhide's* [*keybiner*](#secrets-and-the-keybiner) abstracted by [*overhide.js*](#overhidejs) and exposed to the *app (service)* through its (<span style="color:lightgreen">green</span>) [*overhide* interface](#overhidejs).  The [*keybiner*](#secrets-and-the-keybiner) is a widget to deal with credentials and [*overhide.js*](#overhidejs) is an implementation of the *overhide* JavaScript client API.  The [*overhide.js*](#overhidejs) references [ledger APIs](#remuneration-api) (*web3.js*, [ohledger.com](https://ohledger.com)) as injected by [*wallets*](docs/glossary.md#wallet) and libraries.  The [ledger APIs](#remuneration-api) as well as the *overhide broker* are seen using the *Ethereum blockchain*.  The broker is also seen using [*IPFS*](https://ipfs.io/) for persistence.  This is but one model of possible implementation patterns; it is the reference model.  There is nothing precluding a service or tooling written in any language from using the APIs directly, going against another ledger, or a completely different remuneration mechanism altogether (as long as it implements [remuneration API](#remuneration-api)).
 
 ![components](docs/images/provided.png)
 
 * a user uses the Web app, persisting and sharing data via *overhide*
 * a user interfaces with an Ethereum blockchain using their [*wallet*](docs/glossary.md#wallet) browser module--external to *overhide*, optionally paying service and broker subscriptions
-* the app (service) code interfaces with the blockchain via *overhide.js*, a clean abstraction to initiate payment of service and broker subscriptions with a cohesive UX wrapper
+* the app (service) code interfaces with the ledger via *overhide.js*, a clean abstraction to initiate payment of service and broker subscriptions with a cohesive UX wrapper
 * a user interfaces with a [*keybiner*](#secrets-and-the-keybiner) to group--in a user-friendly way--all the credentials, secrets, and *overhide* references as used by a given app (service)
 * All the [*wallet*](docs/glossary.md#wallet) and the [*keybiner*](#secrets-and-the-keybiner) modules are decoupled from the app (service)
-* the [*wallets*](docs/glossary.md#wallet) inject blockchain libraries--such as Ethereum's *web3.js* JavaScript library or *ShapeShift* API--making it available to any in-browser app, service, or tool; albeit it's advisable to avoid direct use and decouple with *overhide.js*.
+* the [*wallets*](docs/glossary.md#wallet) inject ledger libraries--such as Ethereum's *web3.js* JavaScript library--making it available to any in-browser app, service, or tool; albeit it's advisable to avoid direct use and decouple with *overhide.js*.
 * the [*keybiner*](#secrets-and-the-keybiner) is a standalone Web widget--making it available to any in-browser app, service, or tool (or a "Web view")
 * the *overhide* broker uses [*IPFS*](https://ipfs.io/) for distributed persistence of the data
 * the "user data" structure in [*IPFS*](https://ipfs.io/) is openly specified and accessible to user with external [*IPFS*](https://ipfs.io/) *tooling*
@@ -50,18 +54,17 @@ The model shows a browser with *overhide's* [*keybiner*](#secrets-and-the-keybin
    * [remuneration API](#remuneration-api) to enable payment of brokerage and service subscriptions
    * client library to promote decoupling of trust
 * as available and reliable as the technology stack implementing the specification; the [reference implementation](https://github.com/overhide/overhide-broker) is geared to be both
-* provides ability to remunerate brokerage and service provider via blockchain: pseudonymous subscription fees
+* provides ability to remunerate brokerage and service provider via various ledgers: pseudonymous subscription fees
 * [decentralized](docs/decentralization.md); *overhide* broker is discoverable via [broker-lookup](docs/lookup.md) from *Web 2.0* stacks, and broker can be [easily switched out](https://overhide.github.io/overhide/docs/broker.html#tag-data-stewardship) when need arises. 
 
-### Benefits to Service
+### Benefits to Service/Application
 
 * no need to administer a backend: outsource reliability and availability to experts
 * no need to be responsible for user data: empower user with their data security, no data breaches
 * General Data Protection Regulation (GDPR) compliance
 * no need to worry about who the users are: they're pseudonymous shadows
 * no need to deal with user passwords, password complexity, password recovery
-* can still collect service subscription fees using APIs via blockchain
-* retains option to implement own *overhide* brokerage, own blockchain/tokens (leverage that business model); but *overhide* won't help making it proprietary
+* can still collect service subscription fees using APIs via various ledgers
 
 ### Benefits to User
 
@@ -69,16 +72,14 @@ The model shows a browser with *overhide's* [*keybiner*](#secrets-and-the-keybin
 * *overhide.js* secures user's data client side--secured before leaves the browser
 * user can validate security of their data: user has transparency into *overhide* broker to validate encryption by service
 * user has the option to treat their online data like any other local computer application data; back it up, export, import, move providers.  
-   * depending on service, user might have flexibility to choose own *overhide* broker
 * user continues to have all the availability and reliability benefits of storing data in the cloud/on-prem server
-* user controls their passwords: e.g. manage them with a browser [*keybiner*](#secrets-and-the-keybiner) widget
 
 ### Expected Use Cases
 
 The above benefits can only be reaped for certain expected use-cases of a "service".
 
-* only suitable for certain data patterns where service's data can be reasonably expected to be fully managed within a rich client application: no use of SQL relational data, database-engine, indices, server-side processing, or server-side third-party integrations
-* suitable to make decentralized apps (DApps) regardless of their use of blockchain technology: seems the right fit for DApps' off-chain data and no-chain DApps
+* only suitable for certain data patterns where service's data can be reasonably expected to be fully managed within a rich client application: no use of [SQL relational data, database-engine, indices](docs/exposed.md), server-side processing, or server-side third-party integrations
+* suitable to make decentralized apps (DApps) regardless of their use of ledger technology: seems the right fit for DApps' off-chain data and no-chain DApps
 
 ## Where To?
 
