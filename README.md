@@ -2,7 +2,7 @@
 
 # overhide
 
-*Over*tly *hide*: a system to store users' data within their purview and to free software-client developers from the responsibility for their users' data.
+*Over*tly *hide*: a system to store users' data within their purview and to free client-software developers from the responsibility for their users' data.
 
 ## About
 
