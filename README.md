@@ -61,7 +61,7 @@ The model shows a browser with *overhide's* [*keybiner*](#secrets-and-the-keybin
 
 * no need to administer a backend: outsource reliability and availability to experts
 * no need to be responsible for user data: empower user with their data security, no data breaches
-* no API keys in code or code metadata executing in unprotected contexts (browsers)
+* no API keys in client code or code metadata executing in unprotected contexts (browsers)
 * General Data Protection Regulation (GDPR) compliance
 * no need to worry about who the users are: they're pseudonymous shadows
 * no need to deal with user passwords, password complexity, password recovery
