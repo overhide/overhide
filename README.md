@@ -8,7 +8,7 @@
 
 At it's core *overhide* is solving a people problem.  Consider an app developer who wants to create something, but doesn't want to front time, money, resources, into infrastructure to support the solution.  Further consider a user who wants to use said service, but doesn't want to worry about who they're trusting with their data and information.  
 
-We're building a [Backend as a Service](https://en.wikipedia.org/wiki/Mobile_backend_as_a_service) ecosystem to allow users of online client-software (applications/Web services) to remain pseudonymous and in full control of their data, without sacrificing data availability or impacting user experience.  The users' data is hosted online providing all the availability benefits, but the hosts--known as data-brokers--do not know what the data is or who the users are.  The client-software necessarily interprets their users' data so as to be useful, but the users can retain their pseudonymity.
+We're building a "trustless" [Backend as a Service](https://en.wikipedia.org/wiki/Mobile_backend_as_a_service) ecosystem to allow users of online client-software (applications/Web services) to remain pseudonymous and in full control of their data, without sacrificing data availability or impacting user experience.  The users' data is hosted online providing all the availability benefits, but the hosts--known as data-brokers--do not know what the data is or who the users are.  The client-software necessarily interprets their users' data so as to be useful, but the users can retain their pseudonymity.
 
 Part of users' ownership of their data means they can switch their data-brokers on demand.  Their data is hosted online within specific brokers--for availability and performance--but the hosts are interchangeable at users' will.
 
@@ -59,7 +59,7 @@ The model shows a browser with *overhide's* [*keybiner*](#secrets-and-the-keybin
    * client library to promote decoupling of trust
 * as available and reliable as the technology stack implementing the specification; the [reference implementation](https://github.com/overhide/overhide-broker) is geared to be both
 * provides ability to remunerate brokerage and service provider via various ledgers: pseudonymous subscription fees
-* [decentralized](docs/decentralization.md); *overhide* broker is discoverable via [broker-lookup](docs/lookup.md) from *Web 2.0* stacks, and broker can be [easily switched out](https://overhide.github.io/overhide/docs/broker.html#tag-data-stewardship) when need arises. 
+* ["trustless" (decentralized)](docs/decentralization.md); *overhide* broker is discoverable via [broker-lookup](docs/lookup.md) from *Web 2.0* stacks, and broker can be [easily switched out](https://overhide.github.io/overhide/docs/broker.html#tag-data-stewardship) when need arises. 
 
 ### Benefits to Service/Application
 
