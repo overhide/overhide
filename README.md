@@ -10,13 +10,15 @@ At it's core *overhide* is solving a people problem.  Consider an app developer 
 
 We're building a "trustless" [Backend as a Service](https://en.wikipedia.org/wiki/Mobile_backend_as_a_service) ecosystem to allow users of online client-software (applications/Web services) to remain pseudonymous and in full control of their data, without sacrificing data availability or impacting user experience.  The users' data is hosted online providing all the availability benefits, but the hosts--known as data-brokers--do not know what the data is or who the users are.  The client-software necessarily interprets their users' data so as to be useful, but the users can retain their pseudonymity.
 
-Part of users' ownership of their data means they can switch their data-brokers on demand.  Their data is hosted online within specific brokers--for availability and performance--but the hosts are interchangeable at users' will.
+An aspect of users' ownership of their data is that they can switch their data-brokers on demand.  Their data is hosted online within specific brokers--for availability and performance--but the hosts are interchangeable at users' will.
 
 The client-software developers benefit from this ecosystem by having available data backends they don't need to administer and maintain.  They are absolved of being responsible for their users' data as the users themselves are empowered with their own data security: no data-breaches.  The client-software developers need only focus on their software's functionality.
 
 Furthermore the client-software developers can target platforms that don't protect executable software code from inspection and modification.  The client-software has no need to store secrets client-side and remains commercially viable even when run in environments where the client-software can be fully decompiled.  Namely the target platforms can be browsers.  
 
-A necessary quality of the software ecosystem is that the data-broker hosts, as well as the client-software authors, can be remunerated despite their users being pseudonymous.  The data-brokers and the client-software can be commercial offerings.  Additionally, the remuneration to the data-brokers and software clients can be in the form of fiat money or crypto-currencies.
+A necessary quality of the software ecosystem is that the data-broker hosts, as well as the client-software authors, can be remunerated despite their users being pseudonymous.  The data-brokers and the client-software can be commercial offerings.  It should be noted that the remuneration to the data-brokers and software clients can be in the form of fiat money or crypto-currencies.
+
+The remuneration functionality is an integral piece of the BaaS solution, but is also offered separately for *ledger-based authorization* by client-software not needing the reminder of the BaaS stack.  The standalone remuneration piece is known as Ledger-Based Authorization as a Service (LBAaaS) (see the [keybiner repo](https://github.com/overhide/keybiner.js)).
 
 Overhide's mission is to make available open-source software enabling data-brokers with the above qualities.  Overhide intends to run and maintain data-broker instances, to host necessary and related infrastructure, and offers the aforementioned remuneration framework.
 
