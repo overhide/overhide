@@ -6,7 +6,7 @@ Core to the *overhide* system is *ledger-based authorization*; whether for-pay o
 
 *Ledger-based authorization* is depicted in the figure below:
 
-![](images/authN-authR.svg)
+![](images/authN-authR.png)
 
 *Figure 1: Ledger-based authorization*
 
