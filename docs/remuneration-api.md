@@ -2,6 +2,8 @@
 
 ## Ledger-Based Authorization
 
+([video introduction](https://www.youtube.com/watch?v=moc1P9W0yTk))
+
 Core to the *overhide* system is *ledger-based authorization*; whether for-pay or gratis.
 
 *Ledger-based authorization* is depicted in the figure below:
