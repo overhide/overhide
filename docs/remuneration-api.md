@@ -59,5 +59,5 @@ At this moment we have the following *overhide* remuneration providers exposing 
 
 #### US Dollars:
 
-* [test *overhide-ledger*](https://test.ohledger.com/swagger.html) with corresponding [application](https://test.ohledger.com)
-* [production *overhide-ledger*](https://ohledger.com/swagger.html) with corresponding [application](https://ohledger.com)
+* [test *overhide-ledger*](https://test.ohledger.com/swagger.html) with corresponding [application](https://test.ledger.overhide.io)
+* [production *overhide-ledger*](https://ohledger.com/swagger.html) with corresponding [application](https://ledger.overhide.io)

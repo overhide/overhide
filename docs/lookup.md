@@ -26,7 +26,7 @@ The purpose of [broker-lookup](https://overhide.github.io/overhide/docs/broker.h
 
 It's envisioned that in case of crypto-currencies the [user-address](glossary.md#user-address) is something the user commonly interacts with through their crypto-wallet: the wallet signs on behalf of the [user-address](glossary.md#user-address).  
 
-In case of fiat money--where [overhide-ledger](https://ohledger.com) is used for US dollars--the [user-address](glossary.md#user-address) might not be in a crypto-wallet and as such its *secret-key* is directly handled by the user.  When a [user-address](glossary.md#user-address) is handled directly with its *secret-key*, this can be considered similar to a *username* and *password* in traditional login setups.
+In case of fiat money--where [overhide-ledger](https://ledger.overhide.io) is used for US dollars--the [user-address](glossary.md#user-address) might not be in a crypto-wallet and as such its *secret-key* is directly handled by the user.  When a [user-address](glossary.md#user-address) is handled directly with its *secret-key*, this can be considered similar to a *username* and *password* in traditional login setups.
 
 Hence a [user-address](glossary.md#user-address) can be thought of as a fairly household concept.  Since [broker-lookup](https://overhide.github.io/overhide/docs/broker.html#tag-broker-lookup) allows users to discover the other information from just the [user-address](glossary.md#user-address), it makes for a streamlined user experience.
 
@@ -60,9 +60,9 @@ Some specifics of the [broker-lookup peer node reference implementation](https:/
 
 ![](images/peer-mesh-detail.svg)
 
-In the figure above we now replaced BitCoin with [overhide-ledger](https://ohledger.com) to reflect the [remuneration keys](https://overhide.github.io/overhide/docs/broker.html#/definitions/RemunerationKey) available in the initial release.  
+In the figure above we now replaced BitCoin with [overhide-ledger](https://ledger.overhide.io) to reflect the [remuneration keys](https://overhide.github.io/overhide/docs/broker.html#/definitions/RemunerationKey) available in the initial release.  
 
-*Psi* and *omega* are not shown pointing to either Ethereum nor [overhide-ledger](https://ohledger.com) [remuneration providers](remuneration-api.md); instead they point to some mystery ledger.  The mystery ledger is not part of the explicitly supported [remuneration keys](https://overhide.github.io/overhide/docs/broker.html#/definitions/RemunerationKey) by the [spec](https://overhide.github.io/overhide/docs/broker.html#/definitions/RemunerationKey).  As such, [nodes participating in the broker-lookup mesh](https://github.com/overhide/overhide-lookup) do not have knowledge of this ledger.
+*Psi* and *omega* are not shown pointing to either Ethereum nor [overhide-ledger](https://ledger.overhide.io) [remuneration providers](remuneration-api.md); instead they point to some mystery ledger.  The mystery ledger is not part of the explicitly supported [remuneration keys](https://overhide.github.io/overhide/docs/broker.html#/definitions/RemunerationKey) by the [spec](https://overhide.github.io/overhide/docs/broker.html#/definitions/RemunerationKey).  As such, [nodes participating in the broker-lookup mesh](https://github.com/overhide/overhide-lookup) do not have knowledge of this ledger.
 
 The take-away here:  only [remuneration keys](https://overhide.github.io/overhide/docs/broker.html#/definitions/RemunerationKey) explicitly listed are supported in the *broker-lookup* mesh maintained by *overhide*.
 
@@ -135,6 +135,6 @@ A valid resolution payload (as per above) is all that's necessary for a *broker-
 
 Should any new data for a [user-address](glossary.md#user-address) overwrite some previous data, the overwrite is allowed to happen without ceremony.
 
-It is possible to contrive a case where two different ledgers using the same PKI scheme (Ethereum and [overhide-ledger](https://ohledger.com)) are used with the same [user-address](glossary.md#user-address) to store data on two different *overhide* brokers with two different [remuneration-keys](https://overhide.github.io/overhide/docs/broker.html#/definitions/RemunerationKey).  In this case one of the brokers will always remain unresolvable through *broker-lookup*.  
+It is possible to contrive a case where two different ledgers using the same PKI scheme (Ethereum and [overhide-ledger](https://ledger.overhide.io)) are used with the same [user-address](glossary.md#user-address) to store data on two different *overhide* brokers with two different [remuneration-keys](https://overhide.github.io/overhide/docs/broker.html#/definitions/RemunerationKey).  In this case one of the brokers will always remain unresolvable through *broker-lookup*.  
 
 Collisions between [user-addresses](glossary.md#user-address) from two different owners, perhaps on different ledgers, are not a concern as these are improbable.
