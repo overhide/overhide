@@ -8,7 +8,7 @@ This becomes an issue when your business-logic has code flows conditional on aut
 
 ## ledgers.js
 
-The *overhide* [ledgers.js](https://www.npmjs.com/package/ledgers.js) library helps a user authenticate, review authorizations, and top-up payments as necessary.  The library--for its intended purposes--has its place in the *login UX* portion of *overhide's* [ledger-based authorization flow](https://github.com/overhide/ledgers.js/blob/master/why/why.md).  
+The *overhide* [ledgers.js](https://www.npmjs.com/package/ledgers.js) library helps a user authenticate, review authorizations, and top-up payments as necessary.  The library--for its intended purposes--has its place in the *login UX* portion of *overhide's* [ledger-based authorization flow](https://overhide.io/2019/03/20/why.html).  
 
 ![](images/authR-exposed.png)
 

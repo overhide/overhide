@@ -28,7 +28,7 @@ Step (4) is the *service* authorizing the *user* *u* with address *u-public*.  T
 
 In step ($) the *service provider* accesses the ledger to collect fees paid.
 
-That was a brief on *ledger-based authorization*.  For a more detailed look, especially as it concerns US dollars, please see the [ledger-based authorization write-up](https://github.com/overhide/ledgers.js/blob/master/why/why.md).
+That was a brief on *ledger-based authorization*.  For a more detailed look, especially as it concerns US dollars, please see the [ledger-based authorization write-up](https://overhide.io/2019/03/20/why.html).
 
 ## The Remuneration API and *ledgers.js*
 
@@ -42,9 +42,9 @@ The Remuneration API (*HTTP APIs*) is accessed directly from back-ends (*busines
 
 The Remuneration API is accessed via helpers such as [*ledgers.js* (or *overhide.js*)](overhide.js.md) from in-browser login pages.  These JavaScript libraries provide tools and abstractions for dealing with wallets and other niceties.
 
-The *overhide* Remuneration API enables the [ledger-based authorization](https://github.com/overhide/ledgers.js/blob/master/why/why.md) flow summarized above and permeates *overhide* features starting with the root concept of [identity](identity.md) (see section on "[subscriptions](identity.md#subscriptions)").
+The *overhide* Remuneration API enables the [ledger-based authorization](https://overhide.io/2019/03/20/why.html) flow summarized above and permeates *overhide* features starting with the root concept of [identity](identity.md) (see section on "[subscriptions](identity.md#subscriptions)").
 
-[Ledger-based authorization](https://github.com/overhide/ledgers.js/blob/master/why/why.md) is applied by *overhide* brokers on behalf of apps and services:  by virtue of using an *overhide* broker our apps and services gain full access to this authorization paradigm.
+[Ledger-based authorization](https://overhide.io/2019/03/20/why.html) is applied by *overhide* brokers on behalf of apps and services:  by virtue of using an *overhide* broker our apps and services gain full access to this authorization paradigm.
 
 It is an API of a handful of HTTP methods exposed by various ledgers--blockchain and otherwise.
 
@@ -59,5 +59,5 @@ At this moment we have the following *overhide* remuneration providers exposing 
 
 #### US Dollars:
 
-* [test *overhide-ledger*](https://test.ohledger.com/swagger.html) with corresponding [application](https://test.ledger.overhide.io)
-* [production *overhide-ledger*](https://ohledger.com/swagger.html) with corresponding [application](https://ledger.overhide.io)
+* [test *overhide-ledger*](https://test.ohledger.com/swagger.html) with corresponding [onboarding flow](https://test.ledger.overhide.io)
+* [production *overhide-ledger*](https://ohledger.com/swagger.html) with corresponding [onboarding flow](https://ledger.overhide.io)

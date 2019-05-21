@@ -154,7 +154,7 @@ tags:
 
       Any user, whether authorized as a [subscriber](#operation--auth-credentials-put) or [visitor](#operation--auth-guest-credentials-put), have their ledger-of-choice checked for existing transactions from themselves to the service provider.  The tally of transactions within an *entry-fee* gate established period of time must be at least equal to the *entry-fee* requirement to gain access (read, write, publish, subscribe).
 
-      This *entry-fee* requirement enables a service provider to leverage the simple [ledger-based authorization flow](https://github.com/overhide/ledgers.js/blob/master/why/why.md) via *overhide* brokers.
+      This *entry-fee* requirement enables a service provider to leverage the simple [ledger-based authorization flow](https://overhide.io/2019/03/20/why.html) via *overhide* brokers.
   - name: metrics
     description: |
       Usage metrics for specific [datastore-keys](https://github.com/overhide/overhide/blob/master/docs/glossary.md#datastore-key) or overall for the [identity](https://github.com/overhide/overhide/blob/master/docs/glossary.md#identity).

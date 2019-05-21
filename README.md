@@ -150,7 +150,11 @@ An [API](https://overhide.github.io/overhide/docs/broker.html) exposed by *overh
 
 ## [Remuneration API](docs/remuneration-api.md)
 
-The *overhide* [Remuneration API](docs/remuneration-api.md) enables [ledger-based authorization](https://github.com/overhide/ledgers.js/blob/master/why/why.md) and permeates *overhide* features.
+The *overhide* [Remuneration API](docs/remuneration-api.md) enables [ledger-based authorization](https://overhide.io/2019/03/20/why.html) and permeates *overhide* features.
+
+## [On Scaling and High Availability :: Reference Implementation Deployment as of May 2019](docs/scaling.md)
+
+Brief on *overhide* deployments with regards to [scaling and high availability](docs/scaling.md).  Discusses *overhide* deployments as they're running at https://overhide.io and https://ohledger.com (as of May 2019).
 
 ## [On Applicability of a Key-Value Store](docs/state-funnel.md)
 

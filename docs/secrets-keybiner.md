@@ -8,7 +8,7 @@ To deliver on the value-propositions set out by *overhide* the user is responsib
 
 The above figure shows the various values a user needs to provide to an *overhide* [client](https://github.com/overhide/overhide#overhidejs) in order to work with their data.
 
-To indicate which [remuneration ledger](https://github.com/overhide/overhide#remuneration-api) is being used the user provides a *remuneration-key*.  To [authenticate and authorize](https://github.com/overhide/ledgers.js/blob/master/why/why.md) on this *ledger* the user provides their [public-address](glossary.md#user-address).  To prove ownership of the *public-address* the user will need to sign with their [secret-key](glossary.md#private-key--secret-key).
+To indicate which [remuneration ledger](https://github.com/overhide/overhide#remuneration-api) is being used the user provides a *remuneration-key*.  To [authenticate and authorize](https://overhide.io/2019/03/20/why.html) on this *ledger* the user provides their [public-address](glossary.md#user-address).  To prove ownership of the *public-address* the user will need to sign with their [secret-key](glossary.md#private-key--secret-key).
 
 These three values will be second-nature to some users as they will be leveraging a [wallet](glossary.md#wallet).  However, to many other users these values and their purpose will be foreign and confusing.  
 
