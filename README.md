@@ -85,7 +85,7 @@ The model shows a browser with *overhide's* [*keybiner*](#secrets-and-the-keybin
 
 The above benefits can only be reaped for certain expected use-cases of a "service".
 
-* only suitable for certain data patterns where service's data can be reasonably expected to be fully managed within a rich client application: no use of [SQL relational data, database-engine, indices](docs/exposed.md), server-side processing, or server-side third-party integrations
+* only suitable for certain data patterns where service's data can be reasonably expected to be fully managed within a rich client application: no use of [SQL relational data, database-engine, indices](https://overhide.io/2019/03/27/authorizations-and-exposed-source-code.html), server-side processing, or server-side third-party integrations
 * suitable to make decentralized apps (DApps) regardless of their use of ledger technology: seems the right fit for DApps' off-chain data and no-chain DApps
 
 ## Where To?
@@ -156,13 +156,13 @@ The *overhide* [Remuneration API](docs/remuneration-api.md) enables [ledger-base
 
 Brief on *overhide* deployments with regards to [scaling and high availability](docs/scaling.md).  Discusses *overhide* deployments as they're running at https://overhide.io and https://ohledger.com (as of May 2019).
 
-## [On Applicability of a Key-Value Store](docs/state-funnel.md)
+## [On Applicability of a Key-Value Store](https://overhide.io/2019/01/11/state-funnel.html)
 
-An example of *overhide* [applicability](docs/state-funnel.md) to a problem customairly solved with a relational database in the back-end.
+An example of *overhide* [applicability](https://overhide.io/2019/01/11/state-funnel.html) to a problem customairly solved with a relational database in the back-end.
 
-## [On Authorizations and Exposed Source Code](docs/exposed.md)
+## [On Authorizations and Exposed Source Code](https://overhide.io/2019/03/27/authorizations-and-exposed-source-code.html)
 
-A [brief](docs/exposed.md) on dealing with authorization code-flows with source code exposed by user-agents such as browsers.
+A [brief](https://overhide.io/2019/03/27/authorizations-and-exposed-source-code.html) on dealing with authorization code-flows with source code exposed by user-agents such as browsers.
 
 ## [Tell Your Users](docs/your-data-be-yours.md)
 
