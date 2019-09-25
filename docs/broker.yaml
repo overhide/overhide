@@ -42,7 +42,8 @@ info:
   version: 1.0.0
   title: Overhide Broker API
   contact:
-    email: r/overhide (reddit)
+    name: r/overhide (reddit)
+    url: https://www.reddit.com/r/overhide/
   license:
     name: MIT License
     url: 'https://github.com/overhide/overhide/blob/master/LICENSE'
