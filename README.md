@@ -1,3 +1,5 @@
+<p align="center"><a href="https://github.com/overhide"><img src="docs/images/stale.png" width="100%"/></a></p>
+
 <p align="center"><a href="https://github.com/overhide"><img src="docs/images/logo.png" width="200px"/></a></p>
 
 # overhide
